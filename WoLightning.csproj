@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
+
+  <PropertyGroup>
+    <Version>0.1.0.0</Version>
+    <Description>A Plugin providing Pishock integration.</Description>
+    <PackageProjectUrl>https://github.com/FinalbossTom/testplugin</PackageProjectUrl>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\Data\icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </Content>
+  </ItemGroup>
+
+   <Target Name="CopyAssets" BeforeTargets="Build">
+       <Copy SourceFiles="..\Data\icon.png" DestinationFolder="$(OutDir)\images" />
+   </Target>
+</Project>

@@ -1,0 +1,11 @@
+{
+  "Author": "TheHeadPatCat",
+  "Name": "Warrior of Lightning",
+  "Punchline": "A integration for Pishock devices",
+  "Description": "Open the main window with /wolightning",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "Other",
+    "Social"
+  ]
+}
