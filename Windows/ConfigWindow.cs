@@ -163,7 +163,7 @@ public class ConfigWindow : Window, IDisposable
         }
 
         var PishockCodeField = Configuration.PishockShareCode;
-        if (ImGui.InputText("Generated Sharecode", ref PishockCodeField, 256, ImGuiInputTextFlags.Password))
+        if (ImGui.InputTextWithHint("Generated Sharecode", "Get this from \"Share\" on your Shocker", ref PishockCodeField, 256, ImGuiInputTextFlags.Password))
         {
             if (PishockCodeField.StartsWith("https://pishock.com/#/Control?sharecode=")) PishockCodeField = PishockCodeField.Split("https://pishock.com/#/Control?sharecode=")[1];
             Configuration.PishockShareCode = PishockCodeField;

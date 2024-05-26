@@ -57,21 +57,21 @@ namespace WoLightning
             Plugin.PluginLog.Info($"(Chat) type: {type} - SenderId: {senderId} - Sender SE: {sender} - Message: {message} - isHandled: ${isHandled}");
             if (message == null) return; //sanity check in case we get sent bad data
 
-            if (true && (int)type >= 800 && message.TextValue.Contains("You take") && message.TextValue.Contains("damage."))// Damage Taken
+            if (Plugin.Configuration.ShockOnDamage && (int)type >= 800 && message.TextValue.Contains("You take") && message.TextValue.Contains("damage."))// Damage Taken
             {
                 Plugin.PluginLog.Info("Damage Taken");
                 Plugin.WebClient.sendRequest(Plugin.Configuration.ShockDamageSettings);
                 return;
             }
 
-            if((int)type >= 800 && message.TextValue.Contains("You suffer the effect of ") && message.TextValue.Contains("Vulnerability Up.")) //Suffered Debuff
+            if(Plugin.Configuration.ShockOnVuln && (int)type >= 800 && message.TextValue.Contains("You suffer the effect of ") && message.TextValue.Contains("Vulnerability Up.")) //Suffered Debuff
             {
-                Plugin.PluginLog.Info("Vulnerability Up debuff taken (skill issue)");
+                Plugin.PluginLog.Info("Vulnerability Up debuff taken");
                 Plugin.WebClient.sendRequest(Plugin.Configuration.ShockVulnSettings);
                 return;
             }
 
-            if (type == XivChatType.StandardEmote && message.TextValue.Contains("gently pats you."))
+            if (Plugin.Configuration.ShockOnPat && type == XivChatType.StandardEmote && message.TextValue.Contains("gently pats you."))
             {
                 Plugin.PluginLog.Info("Headpatted");
                 Plugin.WebClient.sendRequest(Plugin.Configuration.ShockPatSettings);
@@ -88,7 +88,7 @@ namespace WoLightning
                 return;
             }
 
-            if ((int)type == 2874) //Death
+            if (Plugin.Configuration.ShockOnDeath && (int)type == 2874) //Death
             {
                 Plugin.PluginLog.Info("Player Died");
                 Plugin.WebClient.sendRequest(Plugin.Configuration.ShockDeathSettings);
