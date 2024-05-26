@@ -16,7 +16,7 @@ namespace WoLightning
 {
     public class NetworkWatcher
     {
-        bool cOnPat,cOnDamage,cOnRescue,cOnRandom = false;
+        //bool cOnPat,cOnDamage,cOnRescue,cOnRandom = false;   //unused - maybe remove?
         public bool running = false;
         Plugin Plugin;
         
@@ -24,10 +24,12 @@ namespace WoLightning
         {
             Plugin = plugin;
             
+            /*
             cOnPat = plugin.Configuration.ShockOnPat;
             cOnDamage = plugin.Configuration.ShockOnDamage;
             cOnRescue = plugin.Configuration.ShockOnRescue;
             cOnRandom = plugin.Configuration.ShockOnRandom;
+            */
             
 
         }
@@ -96,9 +98,5 @@ namespace WoLightning
             }
         }
 
-        private void UpdateConfiguration()
-        {
-
-        }
     }
 }
