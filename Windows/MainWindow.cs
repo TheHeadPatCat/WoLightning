@@ -65,18 +65,5 @@ public class MainWindow : Window, IDisposable
             Plugin.ToggleConfigUI();
         }
 
-        /*
-        ImGui.Text("Have a goat:");
-        if (GoatImage != null)
-        {
-            ImGuiHelpers.ScaledIndent(55f);
-            ImGui.Image(GoatImage.ImGuiHandle, new Vector2(GoatImage.Width, GoatImage.Height));
-            ImGuiHelpers.ScaledIndent(-55f);
-        }
-        else
-        {
-            ImGui.Text("Image not found.");
-        }
-        */
     }
 }

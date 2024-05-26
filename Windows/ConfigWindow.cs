@@ -51,8 +51,8 @@ public class ConfigWindow : Window, IDisposable
                 Configuration.ShockPatSettings = ShockPatSettings;
                 Configuration.Save();
             }
-            ImGui.SliderInt("Intensity", ref ShockPatSettings[1], 1, 100);
-            ImGui.SliderInt("Duration", ref ShockPatSettings[2], 1, 10);
+            ImGui.SliderInt("Intensity##patInt", ref ShockPatSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##patDur", ref ShockPatSettings[2], 1, 10);
             ImGui.Spacing();
             ImGui.Spacing();
         }
@@ -72,8 +72,8 @@ public class ConfigWindow : Window, IDisposable
                 Configuration.ShockDeathrollSettings = ShockDeathrollSettings;
                 Configuration.Save();
             }
-            ImGui.SliderInt("Intensity", ref ShockDeathrollSettings[1], 1, 100);
-            ImGui.SliderInt("Duration", ref ShockDeathrollSettings[2], 1, 10);
+            ImGui.SliderInt("Intensity##deathrollInt", ref ShockDeathrollSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##deathrollDur", ref ShockDeathrollSettings[2], 1, 10);
             ImGui.Spacing();
             ImGui.Spacing();
         }
@@ -99,8 +99,8 @@ public class ConfigWindow : Window, IDisposable
                 Configuration.ShockVulnSettings = ShockVulnSettings;
                 Configuration.Save();
             }
-            ImGui.SliderInt("Intensity", ref ShockVulnSettings[1], 1, 100);
-            ImGui.SliderInt("Duration", ref ShockVulnSettings[2], 1, 10);
+            ImGui.SliderInt("Intensity##vulnInt", ref ShockVulnSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##vulnDur", ref ShockVulnSettings[2], 1, 10);
             ImGui.Spacing();
             ImGui.Spacing();
         }
@@ -120,8 +120,8 @@ public class ConfigWindow : Window, IDisposable
                 Configuration.ShockDamageSettings = ShockDamageSettings;
                 Configuration.Save();
             }
-            ImGui.SliderInt("Intensity", ref ShockDamageSettings[1], 1, 100);
-            ImGui.SliderInt("Duration", ref ShockDamageSettings[2], 1, 10);
+            ImGui.SliderInt("Intensity##damageInt", ref ShockDamageSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##damageDur", ref ShockDamageSettings[2], 1, 10);
             ImGui.Spacing();
             ImGui.Spacing();
         }
@@ -141,8 +141,8 @@ public class ConfigWindow : Window, IDisposable
                 Configuration.ShockDeathSettings = ShockDeathSettings;
                 Configuration.Save();
             }
-            ImGui.SliderInt("Intensity", ref ShockDeathSettings[1], 1, 100);
-            ImGui.SliderInt("Duration", ref ShockDeathSettings[2], 1, 10);
+            ImGui.SliderInt("Intensity##deathInt", ref ShockDeathSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##deathDur", ref ShockDeathSettings[2], 1, 10);
             ImGui.Spacing();
             ImGui.Spacing();
         }

@@ -10,14 +10,4 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="..\Data\icon.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>false</Visible>
-    </Content>
-  </ItemGroup>
-
-   <Target Name="CopyAssets" BeforeTargets="Build">
-       <Copy SourceFiles="..\Data\icon.png" DestinationFolder="$(OutDir)\images" />
-   </Target>
 </Project>
