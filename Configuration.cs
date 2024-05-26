@@ -1,6 +1,8 @@
 using Dalamud.Configuration;
 using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using System;
+using System.Collections.Generic;
 
 namespace WoLightning;
 
@@ -24,6 +26,8 @@ public class Configuration : IPluginConfiguration
     public int[] ShockPatSettings {  get; set; } = new int[3];
     public bool ShockOnDeathroll { get; set; } = false;
     public int[] ShockDeathrollSettings { get; set; } = new int[3];
+    public bool ShockOnBadWord { get; set; } = false;
+    public Dictionary<string, int[]> ShockBadWordSettings { get; set; } = new Dictionary<string, int[]>();
 
     // Combat Triggers
     public bool ShockOnDamage { get; set; } = false;
@@ -34,6 +38,8 @@ public class Configuration : IPluginConfiguration
     public int[] ShockRescueSettings { get; set; } = new int[3];
     public bool ShockOnDeath { get; set; } = false;
     public int[] ShockDeathSettings { get; set; } = new int[3];
+    public bool ShockOnWipe { get; set; } = false;
+    public int[] ShockWipeSettings { get; set; } = new int[3];
 
     // Misc Triggers
     public bool ShockOnRandom { get; set; } = false;

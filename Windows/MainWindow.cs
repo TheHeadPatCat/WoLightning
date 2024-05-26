@@ -28,8 +28,7 @@ public class MainWindow : Window, IDisposable
     {
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(250, 200),
-            MaximumSize = new Vector2(250, 200)
+            MinimumSize = new Vector2(280, 200)
         };
 
         GoatImage = goatImage;

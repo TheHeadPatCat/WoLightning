@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Dalamud;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
@@ -19,7 +20,7 @@ namespace WoLightning
         //bool cOnPat,cOnDamage,cOnRescue,cOnRandom = false;   //unused - maybe remove?
         public bool running = false;
         Plugin Plugin;
-        
+        PlayerCharacter PlayerCharacter;
         public NetworkWatcher(Plugin plugin)
         {
             Plugin = plugin;
@@ -39,16 +40,22 @@ namespace WoLightning
             running = true;
             //Plugin.GameNetwork.NetworkMessage += HandleNetworkMessage;
             Plugin.ChatGui.ChatMessage += HandleChatMessage;
+            if(Plugin.Configuration.ShockOnWipe)Plugin.DutyState.DutyWiped += HandleWipe;
+            Plugin.ClientState.Login += HandleLogin;
+            Plugin.ClientState.TerritoryChanged += HandlePlayerTerritoryChange;
         }
 
        public void Dispose()
         {
             //Plugin.GameNetwork.NetworkMessage -= HandleNetworkMessage;
             Plugin.ChatGui.ChatMessage -= HandleChatMessage;
+            Plugin.DutyState.DutyWiped -= HandleWipe;
+            Plugin.ClientState.Login -= HandleLogin;
+            Plugin.ClientState.TerritoryChanged -= HandlePlayerTerritoryChange;
             running = false;
         }
 
-        private void HandleNetworkMessage(nint dataPtr, ushort OpCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
+        private unsafe void HandleNetworkMessage(nint dataPtr, ushort OpCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
         {
             Plugin.PluginLog.Info($"(Net) dataPtr: {dataPtr} - OpCode: {OpCode} - ActorId: {sourceActorId} - TargetId: {targetActorId} - direction: ${direction.ToString()}");
         }
@@ -58,6 +65,21 @@ namespace WoLightning
         {
             Plugin.PluginLog.Info($"(Chat) type: {type} - SenderId: {senderId} - Sender SE: {sender} - Message: {message} - isHandled: ${isHandled}");
             if (message == null) return; //sanity check in case we get sent bad data
+
+            if (Plugin.Configuration.ShockOnBadWord && Plugin.ClientState.LocalPlayer.Name.ToString() == sender.ToString()  && (int)type <= 70) // its proooobably a social message
+            {
+                foreach ( var (word, settings) in Plugin.Configuration.ShockBadWordSettings)
+                {
+
+                    if (message.ToString().ToLower().Contains(word.ToLower()))
+                    {
+                        Plugin.PluginLog.Info($"Found bad word: {word}");
+                        Plugin.WebClient.sendRequest(settings);
+                        return;
+                    }
+                }
+                return;
+            }
 
             if (Plugin.Configuration.ShockOnDamage && (int)type >= 800 && message.TextValue.Contains("You take") && message.TextValue.Contains("damage."))// Damage Taken
             {
@@ -96,6 +118,31 @@ namespace WoLightning
                 Plugin.WebClient.sendRequest(Plugin.Configuration.ShockDeathSettings);
                 return;
             }
+        }
+
+        private void HandleWipe(object? e, ushort i)
+        {
+            if (Plugin.Configuration.ShockOnWipe)
+            {
+                Plugin.PluginLog.Info("Team Wiped");
+                Plugin.WebClient.sendRequest(Plugin.Configuration.ShockWipeSettings);
+                return;
+            }
+        }
+
+        private void HandleLogin()
+        {
+            if(Plugin.ClientState.LocalPlayer == null)
+            {
+                Plugin.PluginLog.Error("Wtf, LocalPlayer is null?");
+                return;
+            }
+            PlayerCharacter = Plugin.ClientState.LocalPlayer;
+        }
+
+        private void HandlePlayerTerritoryChange(ushort obj)
+        {
+            PlayerCharacter = Plugin.ClientState.LocalPlayer;
         }
 
     }

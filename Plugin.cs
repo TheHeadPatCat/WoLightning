@@ -24,6 +24,8 @@ public sealed class Plugin : IDalamudPlugin
     public IFramework Framework { get; init; }
     public IGameNetwork GameNetwork { get; init; }
     public IChatGui ChatGui { get; init; }
+    public IDutyState DutyState { get; init; }
+    public IClientState ClientState { get; init; }
 
     public readonly WindowSystem WindowSystem = new("WoLightning");
     private ConfigWindow ConfigWindow { get; init; }
@@ -41,7 +43,10 @@ public sealed class Plugin : IDalamudPlugin
         [RequiredVersion("1.0")] IPluginLog pluginlog,
         [RequiredVersion("1.0")] IFramework framework,
         [RequiredVersion("1.0")] IGameNetwork gamenetwork,
-        [RequiredVersion("1.0")] IChatGui chatgui)
+        [RequiredVersion("1.0")] IChatGui chatgui,
+        [RequiredVersion("1.0")] IDutyState dutystate,
+        [RequiredVersion("1.0")] IClientState clientstate
+        )
     {
         
         PluginInterface = pluginInterface;
@@ -51,7 +56,11 @@ public sealed class Plugin : IDalamudPlugin
         GameNetwork = gamenetwork;
         WebClient = new WebClient(this);
         ChatGui = chatgui;
+        DutyState = dutystate;
+        ClientState = clientstate;
 
+
+        
         
         
 
