@@ -1,12 +1,19 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
+using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using ImGuiNET;
 using System;
 using System.Linq;
 using System.Numerics;
+using System.Text.RegularExpressions;
+using WoLightning.Types;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace WoLightning.Windows;
 
@@ -419,6 +426,7 @@ public class ConfigWindow : Window, IDisposable
     {
         if(ImGui.BeginTabItem("Default Trigger Settings"))
         {
+            ImGui.Text("Default triggers will always be prioritized over custom triggers, if passthrough is not enabled.");
             if (Configuration.isDisallowed) ImGui.BeginDisabled();
             DrawSocial();
             DrawCombat();
@@ -429,8 +437,12 @@ public class ConfigWindow : Window, IDisposable
 
     private void DrawCustomTriggerTab()
     {
+
         if (ImGui.BeginTabItem("Custom Trigger Settings"))
         {
+            DrawCustomChats();
+            DrawCustomTable();
+            
             ImGui.EndTabItem();
         }
     }
@@ -876,5 +888,176 @@ public class ConfigWindow : Window, IDisposable
             ImGui.Spacing();
         }
         
+    }
+    private void DrawCustomChats()
+    {
+        if (!ImGui.CollapsingHeader("Custom Trigger Channels"))
+        {
+            return;
+        }
+        var i = 0;
+        foreach (var e in ChatType.GetOrderedChannels())
+        {
+            // See if it is already enabled by default
+            var enabled = Configuration.Channels.Contains(e);
+            // Create a new line after every 4 columns
+            if (i != 0 && (i == 4 || i == 7 || i == 11 || i == 15 || i == 19 || i == 23))
+            {
+                ImGui.NewLine();
+                //i = 0;
+            }
+            // Move to the next row if it is LS1 or CWLS1
+            if (e is ChatType.ChatTypes.LS1 or ChatType.ChatTypes.CWL1)
+                ImGui.Separator();
+
+            if (ImGui.Checkbox($"{e}", ref enabled))
+            {
+                // See If the UIHelpers.Checkbox is clicked, If not, add to the list of enabled channels, otherwise, remove it.
+                if (enabled) Configuration.Channels.Add(e);
+                else Configuration.Channels.Remove(e);
+                Configuration.Save();
+            }
+
+            ImGui.SameLine();
+            i++;
+        }
+        ImGui.NewLine();
+    }
+    private void DrawCustomTable()
+    {
+        if (!ImGui.CollapsingHeader("Custom Triggers"))
+        {
+            return;
+        }
+        List<Trigger> triggers = Configuration.Triggers;
+        ImGui.PushFont(UiBuilder.IconFont);
+        if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
+        {
+            Configuration.Triggers.Add(new());
+            Configuration.Save();
+        }
+        ImGui.PopFont();
+
+        int cnt = 6;
+        if (ImGui.BeginTable("##Triggers", cnt, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable | ImGuiTableFlags.Reorderable))
+        {
+            ImGui.TableSetupColumn(" ", ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoSort);
+            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.None, ImGuiHelpers.GlobalScale * 100);
+            ImGui.TableSetupColumn("Regex");
+            ImGui.TableSetupColumn("Duration", ImGuiTableColumnFlags.None, ImGuiHelpers.GlobalScale * 100);
+            ImGui.TableSetupColumn("Intensity", ImGuiTableColumnFlags.None, ImGuiHelpers.GlobalScale * 100);
+            ImGui.TableSetupColumn(" ", ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoSort);
+            ImGui.TableHeadersRow();
+
+            for (int i = 0; i < triggers.Count; i++)
+            {
+                var trigger = triggers[i];
+
+                ImGui.PushID(trigger.GUID.ToString());
+
+                ImGui.TableNextColumn();
+                if (ImGui.Checkbox("##enabled", ref trigger.Enabled))
+                {
+                    Configuration.Save();
+                }
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("Enable the trigger to be used.");
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.InputTextWithHint("##name", "Trigger name", ref trigger.Name, 100))
+                {
+                    Configuration.Save();
+                }
+
+                ImGui.TableNextColumn();
+                if (trigger.Regex == null)
+                {
+                    ImGui.PushFont(UiBuilder.IconFont);
+                    ImGui.TextColored(ImGuiColors.DPSRed, FontAwesomeIcon.ExclamationTriangle.ToIconString());
+                    ImGui.PopFont();
+                    if (ImGui.IsItemHovered())
+                    {
+                        ImGui.SetTooltip("Not a valid regex. Will not be parsed.");
+                    }
+                    ImGui.SameLine();
+                }
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.InputTextWithHint("##regex", "Regex", ref trigger.RegexString, 200))
+                {
+                    try
+                    {
+                        trigger.Regex = new Regex(trigger.RegexString);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        trigger.Regex = null;
+                    }
+                    Configuration.Save();
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.InputInt("##duration", ref trigger.Duration, 1, 5))
+                {
+                    trigger.Duration = checkDuration(trigger.Duration);
+                    Configuration.Save();
+                }
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("1-15");
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.InputInt("##intensity", ref trigger.Intensity, 1, 5))
+                {
+                    trigger.Intensity = checkIntensity(trigger.Intensity);
+                    Configuration.Save();
+                }
+                if (ImGui.IsItemHovered())
+                {
+                    ImGui.SetTooltip("1-100");
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.PushFont(UiBuilder.IconFont);
+                if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
+                {
+                    Configuration.Triggers.Remove(trigger);
+                    Configuration.Save();
+                }
+                ImGui.PopFont();
+            }
+            ImGui.EndTable();
+        }
+    }
+
+    private int checkDuration(int duration)
+    {
+        if (duration < 1)
+        {
+            return duration = 1;
+        }
+        else if (duration > 15)
+        {
+            return duration = 15;
+        }
+        return duration;
+    }
+
+    private int checkIntensity(int intensity)
+    {
+        if (intensity < 1)
+        {
+            return intensity = 1;
+        }
+        else if (intensity > 100)
+        {
+            return intensity = 100;
+        }
+        return intensity;
     }
 }

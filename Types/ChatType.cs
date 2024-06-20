@@ -95,14 +95,7 @@ namespace WoLightning.Types
             LS7 = 25,
             [EnumOrder(24)]
             LS8 = 26,
-            [EnumOrder(-1)]
-            DeathOther = 4410,
-            [EnumOrder(-2)]
-            ReviveOther = 4154,
-            [EnumOrder(-3)]
-            DeathSelf = 2234,
-            [EnumOrder(-4)]
-            ReviveSelf = 2106
+
         }
 
         public static IEnumerable<ChatTypes> GetOrderedChannels()
@@ -154,10 +147,6 @@ namespace WoLightning.Types
                 XivChatType.CrossLinkShell6 => ChatTypes.CWL6,
                 XivChatType.CrossLinkShell7 => ChatTypes.CWL7,
                 XivChatType.CrossLinkShell8 => ChatTypes.CWL8,
-                (XivChatType)4410 => ChatTypes.DeathOther,
-                (XivChatType)4154 => ChatTypes.ReviveOther,
-                (XivChatType)2234 => ChatTypes.DeathSelf,
-                (XivChatType)2106 => ChatTypes.ReviveSelf,
                 _ => null
             };
         }

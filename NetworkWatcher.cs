@@ -8,10 +8,12 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Lumina.Excel.GeneratedSheets;
 using Lumina.Excel.GeneratedSheets2;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Timers;
 using WoLightning.Types;
+using static WoLightning.Types.ChatType;
 
 
 namespace WoLightning
@@ -282,6 +284,25 @@ namespace WoLightning
                     Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathrollSettings);
                 }
                 return;
+            }
+
+            ChatType.ChatTypes? chatType = ChatType.GetChatTypeFromXivChatType(type);
+            if (chatType == null)
+            {
+                return;
+            }
+            if (Plugin.Configuration.Channels.Contains(chatType.Value)) //If the channel can be selected and is activated by the user
+            {
+                List<Trigger> triggers = Plugin.Configuration.Triggers;
+                foreach (Trigger trigger in triggers)
+                {
+                    Plugin.PluginLog.Information(message.TextValue);
+                    if (trigger.Enabled && (trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue)))
+                    {
+                        Plugin.PluginLog.Information($"Trigger {trigger.Name} triggered. Zap!");
+                        Plugin.WebClient.sendRequestShock([0, trigger.Intensity, trigger.Duration]);
+                    }
+                }
             }
         }
 
