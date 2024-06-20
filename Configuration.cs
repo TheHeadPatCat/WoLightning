@@ -70,7 +70,7 @@ public class Configuration : IPluginConfiguration, IDisposable
     public bool ShockOnWipe { get; set; } = false;
     public int[] ShockWipeSettings { get; set; } = [0, 1, 1];
     public bool DeathMode { get; set; } = false;
-    public int[] DeathModeSettings { get; set; } = [0, 15, 100];
+    public int[] DeathModeSettings { get; set; } = [0, 100, 15];
 
 
 
