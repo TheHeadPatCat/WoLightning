@@ -107,8 +107,31 @@ public class ConfigWindow : Window, IDisposable
     public override void Draw() // TODO make this entire thing dynamic (if performance allows it)
     {
 
+        DrawHeader();
+
+        if (ImGui.BeginTabBar("Tab Bar##tabbarmain", ImGuiTabBarFlags.None))
+        {
+            DrawGeneralTab();
+            DrawDefaultTriggerTab();
+            if(Configuration.ShockOnBadWord)
+            {
+                DrawWordlistTab();
+            }
+            DrawCustomTriggerTab();
+            DrawPermissionsTab();
+            DrawCommandTab();
+            DrawDebugTab();
+
+            ImGui.EndTabBar();
+        }
 
 
+
+
+    }
+
+    private void DrawHeader()
+    {
         if (Configuration.Version < new Configuration().Version)
         {
             ImGui.TextColored(new Vector4(1, 0, 0, 1), "YOUR CONFIGURATION IS OUTDATED!");
@@ -117,7 +140,7 @@ public class ConfigWindow : Window, IDisposable
                 if (isAlternative) Plugin.ToggleMasterConfigUI();
                 else Plugin.ToggleConfigUI();
                 Configuration = new Configuration();
-                Configuration.Initialize(isAlternative,Plugin.ConfigurationDirectoryPath, true);
+                Configuration.Initialize(isAlternative, Plugin.ConfigurationDirectoryPath, true);
                 Plugin.sendNotif("Your configuration has been reset!");
 
                 Configuration.Save();
@@ -138,6 +161,11 @@ public class ConfigWindow : Window, IDisposable
             ImGui.BeginDisabled();
         }
 
+        DrawPresetHeader();
+    }
+
+    private void DrawPresetHeader()
+    {
         var presetIndex = Configuration.ActivePresetIndex;
         ImGui.PushItemWidth(ImGui.GetWindowSize().X - 90);
 
@@ -250,563 +278,603 @@ public class ConfigWindow : Window, IDisposable
             if (ImGui.Button("Cancel##canRem", new Vector2(ImGui.GetWindowSize().X / 2 - 10, 25))) ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
         }
+    }
 
-
-        if (ImGui.BeginTabBar("Tab Bar##tabbarmain", ImGuiTabBarFlags.None))
+    #region Tabs
+    private void DrawGeneralTab()
+    {
+        if (ImGui.BeginTabItem("General Settings"))
         {
-            if (ImGui.BeginTabItem("General Settings"))
+            if (Configuration.isDisallowed) ImGui.BeginDisabled();
+            var IsPassthroughAllowed = Configuration.IsPassthroughAllowed;
+
+            if (ImGui.Checkbox("Allow passthrough of triggers?", ref IsPassthroughAllowed))
             {
-                if (Configuration.isDisallowed) ImGui.BeginDisabled();
-                var IsPassthroughAllowed = Configuration.IsPassthroughAllowed;
+                Configuration.IsPassthroughAllowed = IsPassthroughAllowed;
+                Configuration.Save();
+            }
+            ImGui.SameLine();
+            ImGui.TextDisabled("(?)");
+            if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Will make it possible for multiple Triggers to happen at once (ex. Damage and Death)"); }
 
-                if (ImGui.Checkbox("Allow passthrough of triggers?", ref IsPassthroughAllowed))
+
+
+
+            ImGui.Spacing();
+            ImGui.Spacing();
+            ImGui.Spacing();
+            ImGui.Spacing();
+            ImGui.Spacing();
+
+            if (!isAlternative && !Configuration.HasMaster)
+            {
+                ImGui.Text($"Assign a Master\nCurrently targeted:");
+
+                if (Plugin.ClientState.LocalPlayer != null && Plugin.ClientState.LocalPlayer.TargetObject != null && Plugin.ClientState.LocalPlayer.TargetObject.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
                 {
-                    Configuration.IsPassthroughAllowed = IsPassthroughAllowed;
-                    Configuration.Save();
-                }
-                ImGui.SameLine();
-                ImGui.TextDisabled("(?)");
-                if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Will make it possible for multiple Triggers to happen at once (ex. Damage and Death)"); }
-
-
-
-
-                ImGui.Spacing();
-                ImGui.Spacing();
-                ImGui.Spacing();
-                ImGui.Spacing();
-                ImGui.Spacing();
-
-                if (!isAlternative && !Configuration.HasMaster)
-                {
-                    ImGui.Text($"Assign a Master\nCurrently targeted:");
-
-                    if (Plugin.ClientState.LocalPlayer != null && Plugin.ClientState.LocalPlayer.TargetObject != null && Plugin.ClientState.LocalPlayer.TargetObject.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+                    ImGui.SameLine();
+                    ImGui.TextColored(new Vector4(1, 1, 1, 1), "\n" + Plugin.ClientState.LocalPlayer.TargetObject.Name.ToString());
+                    if (Configuration.MasterNameFull == "")
                     {
-                        ImGui.SameLine();
-                        ImGui.TextColored(new Vector4(1, 1, 1, 1), "\n" + Plugin.ClientState.LocalPlayer.TargetObject.Name.ToString());
-                        if (Configuration.MasterNameFull == "")
+                        if (ImGui.Button("Send Request to targeted Player"))
                         {
-                            if (ImGui.Button("Send Request to targeted Player"))
-                            {
 
-                                if (Plugin.ClientState.LocalPlayer.TargetObject == null
-                                    || Plugin.ClientState.LocalPlayer.TargetObject.ObjectKind !=
-                                    Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player) return;
+                            if (Plugin.ClientState.LocalPlayer.TargetObject == null
+                                || Plugin.ClientState.LocalPlayer.TargetObject.ObjectKind !=
+                                Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player) return;
 
-                                Configuration.MasterNameFull = ((PlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).Name.ToString() + "#" + ((PlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).HomeWorld.Id;
-                                Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "requestmaster"], ["attempt", Configuration.MasterNameFull, "undefined"]));
+                            Configuration.MasterNameFull = ((PlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).Name.ToString() + "#" + ((PlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).HomeWorld.Id;
+                            Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "requestmaster"], ["attempt", Configuration.MasterNameFull, "undefined"]));
 
-                            }
                         }
                     }
-                    if (Configuration.MasterNameFull != "" && !Configuration.HasMaster)
-                    {
-                        ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Waiting for response from {Configuration.MasterNameFull}...");
-                    }
                 }
+                if (Configuration.MasterNameFull != "" && !Configuration.HasMaster)
+                {
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Waiting for response from {Configuration.MasterNameFull}...");
+                }
+            }
 
-                if (Configuration.isDisallowed) ImGui.EndDisabled();
-                ImGui.EndTabItem();
+            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            ImGui.EndTabItem();
+        }
+    }
+    private void DrawWordlistTab()
+    {
+        if (ImGui.BeginTabItem("Word List"))
+        {
+            if (Configuration.isDisallowed) ImGui.BeginDisabled();
+            var SavedWordSettings = Configuration.ShockBadWordSettings;
+
+            if (ImGui.InputTextWithHint("Word to add", "Click on a Entry to edit it.", ref WordListInput, 48))
+            {
+                if (currentWordIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
+                {
+                    int[] copyArray = new int[3];
+                    WordListSetting.CopyTo(copyArray, 0);
+                    WordListSetting = copyArray;
+                }
+            }
+
+            ImGui.ListBox("Mode##Word", ref WordListSetting[0], ["Shock", "Vibrate", "Beep"], 3);
+            ImGui.SliderInt("Intensity##WordInt", ref WordListSetting[1], 1, 100);
+            ImGui.SliderInt("Duration##WordDur", ref WordListSetting[2], 1, 10);
+
+
+            if (ImGui.Button("Add Word"))
+            {
+                if (SavedWordSettings.ContainsKey(WordListInput)) SavedWordSettings.Remove(WordListInput);
+                SavedWordSettings.Add(WordListInput, WordListSetting);
+                Configuration.ShockBadWordSettings = SavedWordSettings;
+                Configuration.Save();
+                currentWordIndex = -1;
+                WordListInput = new String("");
+                WordListSetting = new int[3];
+                selectedWord = new String("");
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Remove Word"))
+            {
+                if (SavedWordSettings.ContainsKey(WordListInput)) SavedWordSettings.Remove(WordListInput);
+                Configuration.ShockBadWordSettings = SavedWordSettings;
+                Configuration.Save();
+                currentWordIndex = -1;
+                WordListInput = new String("");
+                WordListSetting = new int[3];
+                selectedWord = new String("");
+            }
+
+            ImGui.Spacing();
+            ImGui.Spacing();
+
+            if (Configuration.isDisallowed) ImGui.EndDisabled();
+
+            if (ImGui.BeginListBox("Active Words"))
+            {
+                int index = 0;
+                foreach (var (word, settings) in SavedWordSettings)
+                {
+                    var modeInt = settings[0];
+                    var mode = new String("");
+                    bool is_Selected = (currentWordIndex == index);
+                    switch (modeInt) { case 0: mode = "Shock"; break; case 1: mode = "Vibrate"; break; case 2: mode = "Beep"; break; };
+                    if (ImGui.Selectable($" {word}   Mode: {mode}  Intensity: {settings[1]}  Duration: {settings[2]}", ref is_Selected))
+                    {
+                        selectedWord = word;
+                        currentWordIndex = index;
+                        WordListInput = word;
+                        WordListSetting = settings;
+                    }
+                    index++;
+                }
+                ImGui.EndListBox();
             }
 
 
+            ImGui.EndTabItem();
+        }
+    }
 
-            if (ImGui.BeginTabItem("Social Settings"))
+    private void DrawDefaultTriggerTab()
+    {
+        if(ImGui.BeginTabItem("Default Trigger Settings"))
+        {
+            if (Configuration.isDisallowed) ImGui.BeginDisabled();
+            DrawSocial();
+            DrawCombat();
+            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            ImGui.EndTabItem();
+        }
+    }
+
+    private void DrawCustomTriggerTab()
+    {
+        if (ImGui.BeginTabItem("Custom Trigger Settings"))
+        {
+            ImGui.EndTabItem();
+        }
+    }
+
+    private void DrawPermissionsTab()
+    {
+        if (ImGui.BeginTabItem("Permissions"))
+        {
+
+            if (Configuration.isDisallowed) ImGui.BeginDisabled();
+            var IsWhitelistEnforced = Configuration.IsWhitelistEnforced;
+            if (ImGui.Checkbox("Activate Whitelist mode.", ref IsWhitelistEnforced))
             {
-                if (Configuration.isDisallowed) ImGui.BeginDisabled();
-                var ShockOnPat = Configuration.ShockOnPat;
-                if (ImGui.Checkbox("Trigger when you get /pet", ref ShockOnPat))
-                {
-                    Configuration.ShockOnPat = ShockOnPat;
-                    Configuration.Save();
-                }
-
-                if (ShockOnPat)
-                {
-                    var ShockPatSettings = Configuration.ShockPatSettings;
-                    if (ImGui.ListBox("Mode##pat", ref ShockPatSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-                    {
-                        Configuration.ShockPatSettings = ShockPatSettings;
-                        Configuration.Save();
-                    }
-                    ImGui.SliderInt("Intensity##patInt", ref ShockPatSettings[1], 1, 100);
-                    ImGui.SliderInt("Duration##patDur", ref ShockPatSettings[2], 1, 10);
-                    ImGui.Spacing();
-                    ImGui.Spacing();
-                }
-
-                var ShockOnDeathroll = Configuration.ShockOnDeathroll;
-                if (ImGui.Checkbox("Trigger when you lose a Deathroll.", ref ShockOnDeathroll))
-                {
-                    Configuration.ShockOnDeathroll = ShockOnDeathroll;
-                    Configuration.Save();
-                }
-
-                if (ShockOnDeathroll)
-                {
-                    var ShockDeathrollSettings = Configuration.ShockDeathrollSettings;
-                    if (ImGui.ListBox("Mode##deathroll", ref ShockDeathrollSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-                    {
-                        Configuration.ShockDeathrollSettings = ShockDeathrollSettings;
-                        Configuration.Save();
-                    }
-                    ImGui.SliderInt("Intensity##deathrollInt", ref ShockDeathrollSettings[1], 1, 100);
-                    ImGui.SliderInt("Duration##deathrollDur", ref ShockDeathrollSettings[2], 1, 10);
-                    ImGui.Spacing();
-                    ImGui.Spacing();
-                }
-
-                var ShockOnBadWord = Configuration.ShockOnBadWord;
-                if (ImGui.Checkbox("Trigger when you say a specific word from a list.", ref ShockOnBadWord))
-                {
-                    Configuration.ShockOnBadWord = ShockOnBadWord;
-                    Configuration.Save();
-                }
-
-                if (ShockOnBadWord)
-                {
-                    ImGui.Text("You can find the Settings for this option in the tab \"Word List\"");
-                }
-
-                if (Configuration.isDisallowed) ImGui.EndDisabled();
-                ImGui.EndTabItem();
+                Configuration.IsWhitelistEnforced = IsWhitelistEnforced;
+                Configuration.Save();
             }
 
-            if (Configuration.ShockOnBadWord && ImGui.BeginTabItem("Word List"))
+            var PermissionList = Configuration.PermissionList;
+
+            if (ImGui.InputTextWithHint("##PlayerAddPerm", "Enter a playername or click on a entry", ref PermissionListInput, 48))
             {
-                if (Configuration.isDisallowed) ImGui.BeginDisabled();
-                var SavedWordSettings = Configuration.ShockBadWordSettings;
-
-                if (ImGui.InputTextWithHint("Word to add", "Click on a Entry to edit it.", ref WordListInput, 48))
+                if (currentPermissionIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
                 {
-                    if (currentWordIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
-                    {
-                        int[] copyArray = new int[3];
-                        WordListSetting.CopyTo(copyArray, 0);
-                        WordListSetting = copyArray;
-                    }
-                }
-
-                ImGui.ListBox("Mode##Word", ref WordListSetting[0], ["Shock", "Vibrate", "Beep"], 3);
-                ImGui.SliderInt("Intensity##WordInt", ref WordListSetting[1], 1, 100);
-                ImGui.SliderInt("Duration##WordDur", ref WordListSetting[2], 1, 10);
-
-
-                if (ImGui.Button("Add Word"))
-                {
-                    if (SavedWordSettings.ContainsKey(WordListInput)) SavedWordSettings.Remove(WordListInput);
-                    SavedWordSettings.Add(WordListInput, WordListSetting);
-                    Configuration.ShockBadWordSettings = SavedWordSettings;
-                    Configuration.Save();
-                    currentWordIndex = -1;
-                    WordListInput = new String("");
-                    WordListSetting = new int[3];
-                    selectedWord = new String("");
-                }
-                ImGui.SameLine();
-                if (ImGui.Button("Remove Word"))
-                {
-                    if (SavedWordSettings.ContainsKey(WordListInput)) SavedWordSettings.Remove(WordListInput);
-                    Configuration.ShockBadWordSettings = SavedWordSettings;
-                    Configuration.Save();
-                    currentWordIndex = -1;
-                    WordListInput = new String("");
-                    WordListSetting = new int[3];
-                    selectedWord = new String("");
-                }
-
-                ImGui.Spacing();
-                ImGui.Spacing();
-
-                if (Configuration.isDisallowed) ImGui.EndDisabled();
-
-                if (ImGui.BeginListBox("Active Words"))
-                {
-                    int index = 0;
-                    foreach (var (word, settings) in SavedWordSettings)
-                    {
-                        var modeInt = settings[0];
-                        var mode = new String("");
-                        bool is_Selected = (currentWordIndex == index);
-                        switch (modeInt) { case 0: mode = "Shock"; break; case 1: mode = "Vibrate"; break; case 2: mode = "Beep"; break; };
-                        if (ImGui.Selectable($" {word}   Mode: {mode}  Intensity: {settings[1]}  Duration: {settings[2]}", ref is_Selected))
-                        {
-                            selectedWord = word;
-                            currentWordIndex = index;
-                            WordListInput = word;
-                            WordListSetting = settings;
-                        }
-                        index++;
-                    }
-                    ImGui.EndListBox();
-                }
-
-
-                ImGui.EndTabItem();
-            }
-
-            if (ImGui.BeginTabItem("Combat Settings"))
-            {
-                if (Configuration.isDisallowed) ImGui.BeginDisabled();
-                var ShockOnVuln = Configuration.ShockOnVuln;
-                if (ImGui.Checkbox("Trigger when you get a [Vulnerability Up] debuff", ref ShockOnVuln))
-                {
-                    Configuration.ShockOnVuln = ShockOnVuln;
-                    Configuration.Save();
-                }
-
-                if (ShockOnVuln)
-                {
-                    var ShockVulnSettings = Configuration.ShockVulnSettings;
-                    if (ImGui.ListBox("Mode##vuln", ref ShockVulnSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-                    {
-                        Configuration.ShockVulnSettings = ShockVulnSettings;
-                        Configuration.Save();
-                    }
-                    ImGui.SliderInt("Intensity##vulnInt", ref ShockVulnSettings[1], 1, 100);
-                    ImGui.SliderInt("Duration##vulnDur", ref ShockVulnSettings[2], 1, 10);
-                    ImGui.Spacing();
-                    ImGui.Spacing();
-                }
-
-                var ShockOnDamage = Configuration.ShockOnDamage;
-                if (ImGui.Checkbox("Trigger when you take damage from a ability (No Auto Attacks)", ref ShockOnDamage))
-                {
-                    Configuration.ShockOnDamage = ShockOnDamage;
-                    Configuration.Save();
-                }
-
-                if (ShockOnDamage)
-                {
-                    var ShockDamageSettings = Configuration.ShockDamageSettings;
-                    if (ImGui.ListBox("Mode##damage", ref ShockDamageSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-                    {
-                        Configuration.ShockDamageSettings = ShockDamageSettings;
-                        Configuration.Save();
-                    }
-                    ImGui.SliderInt("Intensity##damageInt", ref ShockDamageSettings[1], 1, 100);
-                    ImGui.SliderInt("Duration##damageDur", ref ShockDamageSettings[2], 1, 10);
-                    ImGui.Spacing();
-                    ImGui.Spacing();
-                }
-
-                var ShockOnDeath = Configuration.ShockOnDeath;
-                if (ImGui.Checkbox("Trigger whenever you die.", ref ShockOnDeath))
-                {
-                    Configuration.ShockOnDeath = ShockOnDeath;
-                    Configuration.Save();
-                }
-
-                if (ShockOnDeath)
-                {
-                    var ShockDeathSettings = Configuration.ShockDeathSettings;
-                    if (ImGui.ListBox("Mode##Death", ref ShockDeathSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-                    {
-                        Configuration.ShockDeathSettings = ShockDeathSettings;
-                        Configuration.Save();
-                    }
-                    ImGui.SliderInt("Intensity##deathInt", ref ShockDeathSettings[1], 1, 100);
-                    ImGui.SliderInt("Duration##deathDur", ref ShockDeathSettings[2], 1, 10);
-                    ImGui.Spacing();
-                    ImGui.Spacing();
-                }
-
-                var ShockOnWipe = Configuration.ShockOnWipe;
-                if (ImGui.Checkbox("Trigger whenever everyone dies. (Wipe)", ref ShockOnWipe))
-                {
-                    Configuration.ShockOnWipe = ShockOnWipe;
-                    Configuration.Save();
-                }
-
-                if (ShockOnWipe)
-                {
-                    var ShockWipeSettings = Configuration.ShockWipeSettings;
-                    if (ImGui.ListBox("Mode##Wipe", ref ShockWipeSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-                    {
-                        Configuration.ShockWipeSettings = ShockWipeSettings;
-                        Configuration.Save();
-                    }
-                    ImGui.SliderInt("Intensity##WipeInt", ref ShockWipeSettings[1], 1, 100);
-                    ImGui.SliderInt("Duration##WipeDur", ref ShockWipeSettings[2], 1, 10);
-                    ImGui.Spacing();
-                    ImGui.Spacing();
-                }
-                if (Configuration.isDisallowed) ImGui.EndDisabled();
-                ImGui.EndTabItem();
-            }
-
-
-            if (ImGui.BeginTabItem("Permissions"))
-            {
-
-                if (Configuration.isDisallowed) ImGui.BeginDisabled();
-                var IsWhitelistEnforced = Configuration.IsWhitelistEnforced;
-                if (ImGui.Checkbox("Activate Whitelist mode.", ref IsWhitelistEnforced))
-                {
-                    Configuration.IsWhitelistEnforced = IsWhitelistEnforced;
-                    Configuration.Save();
-                }
-
-                var PermissionList = Configuration.PermissionList;
-
-                if (ImGui.InputTextWithHint("##PlayerAddPerm", "Enter a playername or click on a entry", ref PermissionListInput, 48))
-                {
-                    if (currentPermissionIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
-                    {
-                        PermissionListSetting = -1;
-                    }
-                }
-
-                ImGui.ListBox("##PermissionLevel", ref PermissionListSetting, ["Blocked", "Whitelisted", "Privileged"], 3);
-
-
-                if (ImGui.Button("Add Player", new Vector2(45, 25)))
-                {
-                    if (PermissionList.ContainsKey(PermissionListInput.ToLower())) PermissionList.Remove(PermissionListInput);
-                    PermissionList.Add(PermissionListInput.ToLower(), PermissionListSetting);
-                    Configuration.PermissionList = PermissionList;
-                    Configuration.Save();
-                    currentPermissionIndex = -1;
-                    PermissionListInput = new String("");
                     PermissionListSetting = -1;
-                    selectedPlayerName = new String("");
                 }
-                ImGui.SameLine();
-                if (ImGui.Button("Remove Player", new Vector2(45, 25)))
-                {
-                    if (PermissionList.ContainsKey(PermissionListInput)) PermissionList.Remove(PermissionListInput);
-                    Configuration.PermissionList = PermissionList;
-                    Configuration.Save();
-                    currentPermissionIndex = -1;
-                    PermissionListInput = new String("");
-                    PermissionListSetting = -1;
-                    selectedPlayerName = new String("");
-                }
-
-
-                if (Configuration.isDisallowed) ImGui.EndDisabled();
-                if (ImGui.BeginListBox("##PlayerPermissions"))
-                {
-                    int index = 0;
-                    foreach (var (name, permissionlevel) in PermissionList)
-                    {
-                        bool is_Selected = (currentWordIndex == index);
-                        var permissionleveltext = new String("");
-                        switch (permissionlevel) { case 0: permissionleveltext = "Blocked"; break; case 1: permissionleveltext = "Whitelisted"; break; case 2: permissionleveltext = "Privileged"; break; };
-                        if (ImGui.Selectable($" Player: {name}   Permission: {permissionleveltext}", ref is_Selected))
-                        {
-                            selectedPlayerName = name;
-                            currentPermissionIndex = index;
-                            PermissionListInput = name;
-                            PermissionListSetting = permissionlevel;
-                        }
-                        index++;
-                    }
-                    ImGui.EndListBox();
-                }
-
-                // TODO add text wrap
-                ImGui.TextWrapped(" - \"Privileged\" allows a player to enable/disable your Triggers through messages. [Currently Unused]");
-                ImGui.TextWrapped(" - \"Whitelisted\" allows a player to activate your Triggers, when you have \"Whitelist Mode\" on.");
-                ImGui.TextWrapped(" - \"Blocked\" disallows a player from interacting with this plugin in any way.");
-
-                ImGui.EndTabItem();
             }
 
+            ImGui.ListBox("##PermissionLevel", ref PermissionListSetting, ["Blocked", "Whitelisted", "Privileged"], 3);
 
-            
-            if (isAlternative && ImGui.BeginTabItem("Commands") || Configuration.CommandActionsEnabled && ImGui.BeginTabItem("Commands"))
+
+            if (ImGui.Button("Add Player", new Vector2(45, 25)))
             {
-
-                ImGui.Text("Not finished yet.");
-                /*
-                if (Configuration.isDisallowed) ImGui.BeginDisabled();
-                var IsWhitelistEnforced = Configuration.IsWhitelistEnforced;
-                if (ImGui.Checkbox("Activate Commands", ref IsWhitelistEnforced))
-                {
-                    Configuration.IsWhitelistEnforced = IsWhitelistEnforced;
-                    Configuration.Save();
-                }
-
-                var PermissionList = Configuration.PermissionList;
-
-                if (ImGui.InputTextWithHint("##PlayerAddPerm", "Enter a playername or click on a entry", ref PermissionListInput, 48))
-                {
-                    if (currentPermissionIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
-                    {
-                        PermissionListSetting = -1;
-                    }
-                }
-
-                ImGui.ListBox("##PermissionLevel", ref PermissionListSetting, ["Blocked", "Whitelisted", "Privileged"], 3);
-
-
-                if (ImGui.Button("Add Player", new Vector2(45, 25)))
-                {
-                    if (PermissionList.ContainsKey(PermissionListInput.ToLower())) PermissionList.Remove(PermissionListInput);
-                    PermissionList.Add(PermissionListInput.ToLower(), PermissionListSetting);
-                    Configuration.PermissionList = PermissionList;
-                    Configuration.Save();
-                    currentPermissionIndex = -1;
-                    PermissionListInput = new String("");
-                    PermissionListSetting = -1;
-                    selectedPlayerName = new String("");
-                }
-                ImGui.SameLine();
-                if (ImGui.Button("Remove Player", new Vector2(45, 25)))
-                {
-                    if (PermissionList.ContainsKey(PermissionListInput)) PermissionList.Remove(PermissionListInput);
-                    Configuration.PermissionList = PermissionList;
-                    Configuration.Save();
-                    currentPermissionIndex = -1;
-                    PermissionListInput = new String("");
-                    PermissionListSetting = -1;
-                    selectedPlayerName = new String("");
-                }
-
-
-                if (Configuration.isDisallowed) ImGui.EndDisabled();
-                if (ImGui.BeginListBox("##PlayerPermissions"))
-                {
-                    int index = 0;
-                    foreach (var (name, permissionlevel) in PermissionList)
-                    {
-                        bool is_Selected = (currentWordIndex == index);
-                        var permissionleveltext = new String("");
-                        switch (permissionlevel) { case 0: permissionleveltext = "Blocked"; break; case 1: permissionleveltext = "Whitelisted"; break; case 2: permissionleveltext = "Privileged"; break; };
-                        if (ImGui.Selectable($" Player: {name}   Permission: {permissionleveltext}", ref is_Selected))
-                        {
-                            selectedPlayerName = name;
-                            currentPermissionIndex = index;
-                            PermissionListInput = name;
-                            PermissionListSetting = permissionlevel;
-                        }
-                        index++;
-                    }
-                    ImGui.EndListBox();
-                }
-
-                // TODO add text wrap
-                ImGui.TextWrapped(" - \"Privileged\" allows a player to enable/disable your Triggers through messages. [Currently Unused]");
-                ImGui.TextWrapped(" - \"Whitelisted\" allows a player to activate your Triggers, when you have \"Whitelist Mode\" on.");
-                ImGui.TextWrapped(" - \"Blocked\" disallows a player from interacting with this plugin in any way.");
-                */
-                ImGui.EndTabItem();
+                if (PermissionList.ContainsKey(PermissionListInput.ToLower())) PermissionList.Remove(PermissionListInput);
+                PermissionList.Add(PermissionListInput.ToLower(), PermissionListSetting);
+                Configuration.PermissionList = PermissionList;
+                Configuration.Save();
+                currentPermissionIndex = -1;
+                PermissionListInput = new String("");
+                PermissionListSetting = -1;
+                selectedPlayerName = new String("");
             }
-
-
-
-
-            if (Configuration.DebugEnabled)
+            ImGui.SameLine();
+            if (ImGui.Button("Remove Player", new Vector2(45, 25)))
             {
-                // private void HandleChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
-                if (ImGui.BeginTabItem("Debug"))
+                if (PermissionList.ContainsKey(PermissionListInput)) PermissionList.Remove(PermissionListInput);
+                Configuration.PermissionList = PermissionList;
+                Configuration.Save();
+                currentPermissionIndex = -1;
+                PermissionListInput = new String("");
+                PermissionListSetting = -1;
+                selectedPlayerName = new String("");
+            }
+
+
+            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            if (ImGui.BeginListBox("##PlayerPermissions"))
+            {
+                int index = 0;
+                foreach (var (name, permissionlevel) in PermissionList)
                 {
-                    ImGui.Text("These are Debug settings.\nPlease don't touch them.");
-
-                    ImGui.InputInt("XIVChattype", ref debugFtype);
-                    //ImGui.InputInt("senderId", ref debugFtype);
-                    ImGui.InputText("Sender", ref debugFsender, 64);
-                    ImGui.InputText("Message", ref debugFmessage, 128);
-                    //ImGui.InputInt("XIVChattype", ref debugFtype);
-
-                    if (ImGui.Button("Send Fake Message", new Vector2(200, 60)))
+                    bool is_Selected = (currentWordIndex == index);
+                    var permissionleveltext = new String("");
+                    switch (permissionlevel) { case 0: permissionleveltext = "Blocked"; break; case 1: permissionleveltext = "Whitelisted"; break; case 2: permissionleveltext = "Privileged"; break; };
+                    if (ImGui.Selectable($" Player: {name}   Permission: {permissionleveltext}", ref is_Selected))
                     {
-                        XivChatType t = (XivChatType)debugFtype;
-                        SeString s = debugFsender.ToString();
-                        SeString m = debugFmessage.ToString();
-                        bool b = false;
-                        Plugin.PluginLog.Info("Sending Fake Message:");
-                        Plugin.NetworkWatcher.HandleChatMessage(t, 0, ref s, ref m, ref b);
+                        selectedPlayerName = name;
+                        currentPermissionIndex = index;
+                        PermissionListInput = name;
+                        PermissionListSetting = permissionlevel;
                     }
+                    index++;
+                }
+                ImGui.EndListBox();
+            }
 
+            // TODO add text wrap
+            ImGui.TextWrapped(" - \"Privileged\" allows a player to enable/disable your Triggers through messages. [Currently Unused]");
+            ImGui.TextWrapped(" - \"Whitelisted\" allows a player to activate your Triggers, when you have \"Whitelist Mode\" on.");
+            ImGui.TextWrapped(" - \"Blocked\" disallows a player from interacting with this plugin in any way.");
 
-                    ImGui.InputText("Sharestring Export", ref debugCstring, 256);
-                    if (ImGui.Button("generate", new Vector2(200, 60)))
-                    {
-                        debugCstring = Configuration.EncodeConfiguration("Permissions");
-                    }
+            ImGui.EndTabItem();
+        }
+    }
+    private void DrawCommandTab()
+    {
+        if (isAlternative && ImGui.BeginTabItem("Commands") || Configuration.CommandActionsEnabled && ImGui.BeginTabItem("Commands"))
+        {
 
-                    ImGui.InputText("Sharestring Import", ref debugCstring, 256);
-                    if (ImGui.Button("import", new Vector2(200, 60)))
-                    {
-                        Configuration.DecodeConfiguration(debugCstring);
-                    }
+            ImGui.Text("Not finished yet.");
+            /*
+            if (Configuration.isDisallowed) ImGui.BeginDisabled();
+            var IsWhitelistEnforced = Configuration.IsWhitelistEnforced;
+            if (ImGui.Checkbox("Activate Commands", ref IsWhitelistEnforced))
+            {
+                Configuration.IsWhitelistEnforced = IsWhitelistEnforced;
+                Configuration.Save();
+            }
 
+            var PermissionList = Configuration.PermissionList;
 
-                    if (ImGui.Button("toggle master mode", new Vector2(200, 60)))
-                    {
-                        Plugin.Configuration.isDisallowed = !Plugin.Configuration.isDisallowed;
-                    }
-
-                    if (ImGui.Button("Test Update", new Vector2(200, 60)))
-                    {
-                        Plugin.WebClient.sendServerRequest();
-                    }
-
-                    if (ImGui.Button("Test Transfer", new Vector2(200, 60)))
-                    {
-                        //Plugin.WebClient.sendServerData();
-                    }
-
-                    if (ImGui.Button("Test Register", new Vector2(200, 60)))
-                    {
-                        //Plugin.WebClient.sendRequestServer("register", "", "");
-                    }
-
-                    if (ImGui.Button("Test Upload", new Vector2(200, 60)))
-                    {
-                        //Plugin.WebClient.sendRequestServer("upload", "", "");
-                    }
-
-                    ImGui.InputTextWithHint("##hashkey", "Master Key", ref debugKmessage, 256);
-                    if (ImGui.Button("Update Hash", new Vector2(200, 60)))
-                    {
-                        Plugin.WebClient.sendUpdateHash();
-                    }
-
-                    if (ImGui.Button("Toggle isMaster", new Vector2(200, 60)))
-                    {
-                        Configuration.IsMaster = !Configuration.IsMaster;
-                        Configuration.Save();
-                    }
-
-                    if (ImGui.Button("Set Self to Master", new Vector2(200, 60)))
-                    {
-                        Configuration.MasterNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id;
-                        Configuration.Save();
-                    }
-
-                    if (ImGui.Button("Set Self to Sub", new Vector2(200, 60)))
-                    {
-                        Configuration.MasterNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id;
-                        Configuration.Save();
-                    }
-
-
-
-
-                    ImGui.InputTextWithHint("##resetkey", "Reset Key", ref debugRmessage, 256);
-                    if (ImGui.Button("Reset Userdata", new Vector2(200, 60)))
-                    {
-                        Plugin.WebClient.sendResetUserdata(debugRmessage);
-                        Configuration.DebugEnabled = false;
-                        debugRmessage = "";
-                        this.Toggle();
-                    }
-
-
-
-
-                    ImGui.EndTabItem();
+            if (ImGui.InputTextWithHint("##PlayerAddPerm", "Enter a playername or click on a entry", ref PermissionListInput, 48))
+            {
+                if (currentPermissionIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
+                {
+                    PermissionListSetting = -1;
                 }
             }
-            ImGui.EndTabBar();
+
+            ImGui.ListBox("##PermissionLevel", ref PermissionListSetting, ["Blocked", "Whitelisted", "Privileged"], 3);
+
+
+            if (ImGui.Button("Add Player", new Vector2(45, 25)))
+            {
+                if (PermissionList.ContainsKey(PermissionListInput.ToLower())) PermissionList.Remove(PermissionListInput);
+                PermissionList.Add(PermissionListInput.ToLower(), PermissionListSetting);
+                Configuration.PermissionList = PermissionList;
+                Configuration.Save();
+                currentPermissionIndex = -1;
+                PermissionListInput = new String("");
+                PermissionListSetting = -1;
+                selectedPlayerName = new String("");
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Remove Player", new Vector2(45, 25)))
+            {
+                if (PermissionList.ContainsKey(PermissionListInput)) PermissionList.Remove(PermissionListInput);
+                Configuration.PermissionList = PermissionList;
+                Configuration.Save();
+                currentPermissionIndex = -1;
+                PermissionListInput = new String("");
+                PermissionListSetting = -1;
+                selectedPlayerName = new String("");
+            }
+
+
+            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            if (ImGui.BeginListBox("##PlayerPermissions"))
+            {
+                int index = 0;
+                foreach (var (name, permissionlevel) in PermissionList)
+                {
+                    bool is_Selected = (currentWordIndex == index);
+                    var permissionleveltext = new String("");
+                    switch (permissionlevel) { case 0: permissionleveltext = "Blocked"; break; case 1: permissionleveltext = "Whitelisted"; break; case 2: permissionleveltext = "Privileged"; break; };
+                    if (ImGui.Selectable($" Player: {name}   Permission: {permissionleveltext}", ref is_Selected))
+                    {
+                        selectedPlayerName = name;
+                        currentPermissionIndex = index;
+                        PermissionListInput = name;
+                        PermissionListSetting = permissionlevel;
+                    }
+                    index++;
+                }
+                ImGui.EndListBox();
+            }
+
+            // TODO add text wrap
+            ImGui.TextWrapped(" - \"Privileged\" allows a player to enable/disable your Triggers through messages. [Currently Unused]");
+            ImGui.TextWrapped(" - \"Whitelisted\" allows a player to activate your Triggers, when you have \"Whitelist Mode\" on.");
+            ImGui.TextWrapped(" - \"Blocked\" disallows a player from interacting with this plugin in any way.");
+            */
+            ImGui.EndTabItem();
+        }
+    }
+    private void DrawDebugTab()
+    {
+        if (ImGui.BeginTabItem("Debug"))
+        {
+            ImGui.Text("These are Debug settings.\nPlease don't touch them.");
+
+            ImGui.InputInt("XIVChattype", ref debugFtype);
+            //ImGui.InputInt("senderId", ref debugFtype);
+            ImGui.InputText("Sender", ref debugFsender, 64);
+            ImGui.InputText("Message", ref debugFmessage, 128);
+            //ImGui.InputInt("XIVChattype", ref debugFtype);
+
+            if (ImGui.Button("Send Fake Message", new Vector2(200, 60)))
+            {
+                XivChatType t = (XivChatType)debugFtype;
+                SeString s = debugFsender.ToString();
+                SeString m = debugFmessage.ToString();
+                bool b = false;
+                Plugin.PluginLog.Info("Sending Fake Message:");
+                Plugin.NetworkWatcher.HandleChatMessage(t, 0, ref s, ref m, ref b);
+            }
+
+
+            ImGui.InputText("Sharestring Export", ref debugCstring, 256);
+            if (ImGui.Button("generate", new Vector2(200, 60)))
+            {
+                debugCstring = Configuration.EncodeConfiguration("Permissions");
+            }
+
+            ImGui.InputText("Sharestring Import", ref debugCstring, 256);
+            if (ImGui.Button("import", new Vector2(200, 60)))
+            {
+                Configuration.DecodeConfiguration(debugCstring);
+            }
+
+
+            if (ImGui.Button("toggle master mode", new Vector2(200, 60)))
+            {
+                Plugin.Configuration.isDisallowed = !Plugin.Configuration.isDisallowed;
+            }
+
+            if (ImGui.Button("Test Update", new Vector2(200, 60)))
+            {
+                Plugin.WebClient.sendServerRequest();
+            }
+
+            if (ImGui.Button("Test Transfer", new Vector2(200, 60)))
+            {
+                //Plugin.WebClient.sendServerData();
+            }
+
+            if (ImGui.Button("Test Register", new Vector2(200, 60)))
+            {
+                //Plugin.WebClient.sendRequestServer("register", "", "");
+            }
+
+            if (ImGui.Button("Test Upload", new Vector2(200, 60)))
+            {
+                //Plugin.WebClient.sendRequestServer("upload", "", "");
+            }
+
+            ImGui.InputTextWithHint("##hashkey", "Master Key", ref debugKmessage, 256);
+            if (ImGui.Button("Update Hash", new Vector2(200, 60)))
+            {
+                Plugin.WebClient.sendUpdateHash();
+            }
+
+            if (ImGui.Button("Toggle isMaster", new Vector2(200, 60)))
+            {
+                Configuration.IsMaster = !Configuration.IsMaster;
+                Configuration.Save();
+            }
+
+            if (ImGui.Button("Set Self to Master", new Vector2(200, 60)))
+            {
+                Configuration.MasterNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id;
+                Configuration.Save();
+            }
+
+            if (ImGui.Button("Set Self to Sub", new Vector2(200, 60)))
+            {
+                Configuration.MasterNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id;
+                Configuration.Save();
+            }
+
+
+
+
+            ImGui.InputTextWithHint("##resetkey", "Reset Key", ref debugRmessage, 256);
+            if (ImGui.Button("Reset Userdata", new Vector2(200, 60)))
+            {
+                Plugin.WebClient.sendResetUserdata(debugRmessage);
+                Configuration.DebugEnabled = false;
+                debugRmessage = "";
+                this.Toggle();
+            }
+
+
+
+
+            ImGui.EndTabItem();
         }
 
+    }
+    #endregion
 
+    private void DrawSocial()
+    {
+        if(!ImGui.CollapsingHeader("Social Triggers"))
+        {
+            return;
+        }
+        var ShockOnPat = Configuration.ShockOnPat;
+        if (ImGui.Checkbox("Trigger when you get /pet", ref ShockOnPat))
+        {
+            Configuration.ShockOnPat = ShockOnPat;
+            Configuration.Save();
+        }
 
+        if (ShockOnPat)
+        {
+            var ShockPatSettings = Configuration.ShockPatSettings;
+            if (ImGui.ListBox("Mode##pat", ref ShockPatSettings[0], ["Shock", "Vibrate", "Beep"], 3))
+            {
+                Configuration.ShockPatSettings = ShockPatSettings;
+                Configuration.Save();
+            }
+            ImGui.SliderInt("Intensity##patInt", ref ShockPatSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##patDur", ref ShockPatSettings[2], 1, 10);
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
 
+        var ShockOnDeathroll = Configuration.ShockOnDeathroll;
+        if (ImGui.Checkbox("Trigger when you lose a Deathroll.", ref ShockOnDeathroll))
+        {
+            Configuration.ShockOnDeathroll = ShockOnDeathroll;
+            Configuration.Save();
+        }
+
+        if (ShockOnDeathroll)
+        {
+            var ShockDeathrollSettings = Configuration.ShockDeathrollSettings;
+            if (ImGui.ListBox("Mode##deathroll", ref ShockDeathrollSettings[0], ["Shock", "Vibrate", "Beep"], 3))
+            {
+                Configuration.ShockDeathrollSettings = ShockDeathrollSettings;
+                Configuration.Save();
+            }
+            ImGui.SliderInt("Intensity##deathrollInt", ref ShockDeathrollSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##deathrollDur", ref ShockDeathrollSettings[2], 1, 10);
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
+
+        var ShockOnBadWord = Configuration.ShockOnBadWord;
+        if (ImGui.Checkbox("Trigger when you say a specific word from a list.", ref ShockOnBadWord))
+        {
+            Configuration.ShockOnBadWord = ShockOnBadWord;
+            Configuration.Save();
+        }
+
+        if (ShockOnBadWord)
+        {
+            ImGui.Text("You can find the Settings for this option in the tab \"Word List\"");
+        }
+
+    }
+    private void DrawCombat()
+    {
+        if (!ImGui.CollapsingHeader("Combat Triggers"))
+        {
+            return;
+        }
+        var ShockOnVuln = Configuration.ShockOnVuln;
+        if (ImGui.Checkbox("Trigger when you get a [Vulnerability Up] debuff", ref ShockOnVuln))
+        {
+            Configuration.ShockOnVuln = ShockOnVuln;
+            Configuration.Save();
+        }
+
+        if (ShockOnVuln)
+        {
+            var ShockVulnSettings = Configuration.ShockVulnSettings;
+            if (ImGui.ListBox("Mode##vuln", ref ShockVulnSettings[0], ["Shock", "Vibrate", "Beep"], 3))
+            {
+                Configuration.ShockVulnSettings = ShockVulnSettings;
+                Configuration.Save();
+            }
+            ImGui.SliderInt("Intensity##vulnInt", ref ShockVulnSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##vulnDur", ref ShockVulnSettings[2], 1, 10);
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
+
+        var ShockOnDamage = Configuration.ShockOnDamage;
+        if (ImGui.Checkbox("Trigger when you take damage from a ability (No Auto Attacks)", ref ShockOnDamage))
+        {
+            Configuration.ShockOnDamage = ShockOnDamage;
+            Configuration.Save();
+        }
+
+        if (ShockOnDamage)
+        {
+            var ShockDamageSettings = Configuration.ShockDamageSettings;
+            if (ImGui.ListBox("Mode##damage", ref ShockDamageSettings[0], ["Shock", "Vibrate", "Beep"], 3))
+            {
+                Configuration.ShockDamageSettings = ShockDamageSettings;
+                Configuration.Save();
+            }
+            ImGui.SliderInt("Intensity##damageInt", ref ShockDamageSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##damageDur", ref ShockDamageSettings[2], 1, 10);
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
+
+        var ShockOnDeath = Configuration.ShockOnDeath;
+        if (ImGui.Checkbox("Trigger whenever you die.", ref ShockOnDeath))
+        {
+            Configuration.ShockOnDeath = ShockOnDeath;
+            Configuration.Save();
+        }
+
+        if (ShockOnDeath)
+        {
+            var ShockDeathSettings = Configuration.ShockDeathSettings;
+            if (ImGui.ListBox("Mode##Death", ref ShockDeathSettings[0], ["Shock", "Vibrate", "Beep"], 3))
+            {
+                Configuration.ShockDeathSettings = ShockDeathSettings;
+                Configuration.Save();
+            }
+            ImGui.SliderInt("Intensity##deathInt", ref ShockDeathSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##deathDur", ref ShockDeathSettings[2], 1, 10);
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
+
+        var ShockOnWipe = Configuration.ShockOnWipe;
+        if (ImGui.Checkbox("Trigger whenever everyone dies. (Wipe)", ref ShockOnWipe))
+        {
+            Configuration.ShockOnWipe = ShockOnWipe;
+            Configuration.Save();
+        }
+
+        if (ShockOnWipe)
+        {
+            var ShockWipeSettings = Configuration.ShockWipeSettings;
+            if (ImGui.ListBox("Mode##Wipe", ref ShockWipeSettings[0], ["Shock", "Vibrate", "Beep"], 3))
+            {
+                Configuration.ShockWipeSettings = ShockWipeSettings;
+                Configuration.Save();
+            }
+            ImGui.SliderInt("Intensity##WipeInt", ref ShockWipeSettings[1], 1, 100);
+            ImGui.SliderInt("Duration##WipeDur", ref ShockWipeSettings[2], 1, 10);
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
+
+        var DeathMode = Configuration.DeathMode;
+        if(ImGui.Checkbox("Death Mode", ref DeathMode))
+        {
+            Configuration.DeathMode = DeathMode;
+            Configuration.Save();
+        }
+        ImGui.SameLine();
+        ImGui.TextDisabled("(?)");
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This delivers scaling shocks based on the amount of party members that are dead, up to the maximum with a wipe. Be warned."); }
+
+        if (DeathMode)
+        {
+            var DeathModeSettings = Configuration.DeathModeSettings;
+            if (ImGui.ListBox("Mode##dscale", ref DeathModeSettings[0], ["Shock", "Vibrate", "Beep"], 3))
+            {
+                Configuration.DeathModeSettings = DeathModeSettings;
+                Configuration.Save();
+            }
+            ImGui.SliderInt("Max Intensity##dscaleInt", ref DeathModeSettings[1], 1, 100);
+            ImGui.SliderInt("Max Duration##dscaleDur", ref DeathModeSettings[2], 1, 15);
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
+        
     }
 }

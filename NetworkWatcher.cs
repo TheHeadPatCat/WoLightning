@@ -1,5 +1,6 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
@@ -7,8 +8,10 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Lumina.Excel.GeneratedSheets;
 using Lumina.Excel.GeneratedSheets2;
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Timers;
+using WoLightning.Types;
 
 
 namespace WoLightning
@@ -28,6 +31,8 @@ namespace WoLightning
         public bool isLeashed = false;
         public bool isLeashing = false;
         private Timer LeashTimer = new Timer(new TimeSpan(0, 0, 1));
+
+        private int DeathModeCount = 0;
 
         public NetworkWatcher(Plugin plugin)
         {
@@ -173,7 +178,6 @@ namespace WoLightning
 
         public unsafe void HandleChatMessage(XivChatType type, uint senderId, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
-
             if (Plugin.ClientState.LocalPlayer == null)
             {
                 Plugin.PluginLog.Error("Wtf, LocalPlayer is null?");
@@ -213,6 +217,11 @@ namespace WoLightning
             }
 
 #pragma warning disable CS8602 // no localplayer can NOT be null here, because if it is then our game isnt even working
+            if(Plugin.Configuration.DeathMode)
+            {
+                HandleDeathMode();
+            }
+
 
             if (Plugin.Configuration.ShockOnBadWord && (int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString() == sender.ToString()) // its proooobably a social message
             {
@@ -230,8 +239,7 @@ namespace WoLightning
             }
 #pragma warning restore CS8602
 
-
-            if (Plugin.Configuration.ShockOnDeath && (int)type == 2874 && message.TextValue.Contains("You are defeated", StringComparison.Ordinal)) //Death TODO add unique player identifier
+            if (Plugin.Configuration.ShockOnDeath && ((int)type == 2874 || (int)type == 2234) && message.TextValue.Contains("You are defeated", StringComparison.Ordinal)) //Death TODO add unique player identifier
             {
                 Plugin.sendNotif($"You died!");
                 Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathSettings);
@@ -343,6 +351,56 @@ namespace WoLightning
             //Plugin.Configuration.MasterNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id;
             //Plugin.Configuration.Save();
 
+        }
+
+        private void HandleDeathMode(ChatType.ChatTypes type, string message)
+        {
+            int partysize, intensity, duration;
+            int[] settings;
+            switch (type)
+            {
+                case ChatType.ChatTypes.DeathOther:
+                    foreach ( PartyMember member in Plugin.PartyList)
+                    {
+                        if (message.Contains(member.Name.TextValue))
+                        {
+                            DeathModeCount++;
+                            settings = Plugin.Configuration.DeathModeSettings;
+                            partysize = Plugin.PartyList.Count;
+                            intensity = settings[1] * DeathModeCount / partysize;
+                            duration = settings[2] * DeathModeCount / partysize;
+                            Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
+                            Plugin.WebClient.sendRequestShock([settings[0], intensity, duration]);
+                            return;
+                        }
+                    }
+                    break;
+                case ChatType.ChatTypes.DeathSelf:
+                    DeathModeCount++;
+                    settings = Plugin.Configuration.DeathModeSettings;
+                    partysize = Plugin.PartyList.Count;
+                    intensity = settings[1] * DeathModeCount / partysize;
+                    duration = settings[2] * DeathModeCount / partysize;
+                    Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
+                    Plugin.WebClient.sendRequestShock([settings[0], intensity, duration]);
+                    return;
+
+                case ChatType.ChatTypes.ReviveOther:
+                    foreach (PartyMember member in Plugin.PartyList)
+                    {
+                        if (message.Contains(member.Name.TextValue))
+                        {
+                            DeathModeCount--;
+                            return;
+                        }
+                    }
+                    break;
+                case ChatType.ChatTypes.ReviveSelf:
+                    DeathModeCount--;
+                    return;
+                default:
+                    break;
+            }
         }
 
     }
