@@ -10,6 +10,7 @@ using Lumina.Excel.GeneratedSheets2;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Timers;
 using WoLightning.Types;
@@ -224,6 +225,7 @@ namespace WoLightning
             if (Plugin.Configuration.DeathMode && dmTypes.Contains((int)type))
             {
                 HandleDeathMode(type, message.TextValue);
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
 
 
@@ -236,10 +238,10 @@ namespace WoLightning
                     {
                         Plugin.sendNotif($"You said the bad word: {word}!");
                         Plugin.WebClient.sendRequestShock(settings);
-                        return;
+                        if (!Plugin.Configuration.IsPassthroughAllowed) return;
                     }
                 }
-                return;
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
 #pragma warning restore CS8602
 
@@ -283,7 +285,7 @@ namespace WoLightning
                     Plugin.sendNotif($"You lost a Deathroll!");
                     Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathrollSettings);
                 }
-                return;
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
 
             ChatType.ChatTypes? chatType = ChatType.GetChatTypeFromXivChatType(type);
@@ -301,6 +303,7 @@ namespace WoLightning
                     {
                         Plugin.PluginLog.Information($"Trigger {trigger.Name} triggered. Zap!");
                         Plugin.WebClient.sendRequestShock([0, trigger.Intensity, trigger.Duration]);
+                        if (!Plugin.Configuration.IsPassthroughAllowed) return;
                     }
                 }
             }
@@ -312,7 +315,7 @@ namespace WoLightning
             {
                 Plugin.sendNotif($"Your party wiped!");
                 Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockWipeSettings);
-                return;
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
         }
 
@@ -347,7 +350,8 @@ namespace WoLightning
                 Plugin.PluginLog.Info("Aborting call because target does not have enough permission");
                 return;
             }
-            if (emoteId == 105)
+
+            if (Plugin.Configuration.ShockOnPat && emoteId == 105)
             {
                 Plugin.sendNotif($"You got headpatted by {sourceObj.Name}!");
                 Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockPatSettings);
@@ -378,6 +382,8 @@ namespace WoLightning
 
         private void HandleDeathMode(XivChatType type, string message)
         {
+            Plugin.PluginLog.Error(((int)type).ToString());
+            Plugin.PluginLog.Error(message);
             int partysize, intensity, duration;
             int[] settings;
             switch (type)
@@ -393,20 +399,24 @@ namespace WoLightning
                             intensity = settings[1] * DeathModeCount / partysize;
                             duration = settings[2] * DeathModeCount / partysize;
                             Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
-                            Plugin.WebClient.sendRequestShock([settings[0], intensity, duration]);
+                            Plugin.WebClient.sendRequestShock([0, intensity, duration]);
                             return;
                         }
                     }
                     break;
                 case (XivChatType)2234:
                 case (XivChatType)2874:  //death self
+                    if (!message.Contains("You are defeated", StringComparison.Ordinal))
+                    {
+                        return;
+                    }
                     DeathModeCount++;
                     settings = Plugin.Configuration.DeathModeSettings;
                     partysize = Plugin.PartyList.Count;
                     intensity = settings[1] * DeathModeCount / partysize;
                     duration = settings[2] * DeathModeCount / partysize;
                     Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
-                    Plugin.WebClient.sendRequestShock([settings[0], intensity, duration]);
+                    Plugin.WebClient.sendRequestShock([0, intensity, duration]);
                     return;
                 case (XivChatType)4154: //revive other
                     foreach (PartyMember member in Plugin.PartyList)
