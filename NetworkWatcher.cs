@@ -217,9 +217,11 @@ namespace WoLightning
             }
 
 #pragma warning disable CS8602 // no localplayer can NOT be null here, because if it is then our game isnt even working
-            if(Plugin.Configuration.DeathMode)
+
+            int[] dmTypes = { 2234, 2874, 4410, 2106, 4154 };
+            if (Plugin.Configuration.DeathMode && dmTypes.Contains((int)type))
             {
-                HandleDeathMode();
+                HandleDeathMode(type, message.TextValue);
             }
 
 
@@ -353,13 +355,13 @@ namespace WoLightning
 
         }
 
-        private void HandleDeathMode(ChatType.ChatTypes type, string message)
+        private void HandleDeathMode(XivChatType type, string message)
         {
             int partysize, intensity, duration;
             int[] settings;
             switch (type)
             {
-                case ChatType.ChatTypes.DeathOther:
+                case (XivChatType)4410: //death other
                     foreach ( PartyMember member in Plugin.PartyList)
                     {
                         if (message.Contains(member.Name.TextValue))
@@ -375,7 +377,8 @@ namespace WoLightning
                         }
                     }
                     break;
-                case ChatType.ChatTypes.DeathSelf:
+                case (XivChatType)2234:
+                case (XivChatType)2874:  //death self
                     DeathModeCount++;
                     settings = Plugin.Configuration.DeathModeSettings;
                     partysize = Plugin.PartyList.Count;
@@ -384,8 +387,7 @@ namespace WoLightning
                     Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
                     Plugin.WebClient.sendRequestShock([settings[0], intensity, duration]);
                     return;
-
-                case ChatType.ChatTypes.ReviveOther:
+                case (XivChatType)4154: //revive other
                     foreach (PartyMember member in Plugin.PartyList)
                     {
                         if (message.Contains(member.Name.TextValue))
@@ -395,7 +397,7 @@ namespace WoLightning
                         }
                     }
                     break;
-                case ChatType.ChatTypes.ReviveSelf:
+                case (XivChatType)2106: //revive self
                     DeathModeCount--;
                     return;
                 default:
