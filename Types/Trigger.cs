@@ -15,7 +15,7 @@ namespace WoLightning.Types
         public bool Enabled = false;
         public string Name = "";
         public string RegexString = "(?!)";
-        public Regex? Regex = null;
+        public Regex? Regex = new Regex("(?!)");
         public int Mode = 0;
         public int Intensity = 1;
         public int Duration = 1;

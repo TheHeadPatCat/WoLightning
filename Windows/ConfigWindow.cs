@@ -976,14 +976,21 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.TableNextColumn();
                 if (trigger.Regex == null)
                 {
-                    ImGui.PushFont(UiBuilder.IconFont);
-                    ImGui.TextColored(ImGuiColors.DPSRed, FontAwesomeIcon.ExclamationTriangle.ToIconString());
-                    ImGui.PopFont();
-                    if (ImGui.IsItemHovered())
+                    try
                     {
-                        ImGui.SetTooltip("Not a valid regex. Will not be parsed.");
+                        trigger.Regex = new Regex(trigger.RegexString);
                     }
-                    ImGui.SameLine();
+                    catch (ArgumentException)
+                    {
+                        ImGui.PushFont(UiBuilder.IconFont);
+                        ImGui.TextColored(ImGuiColors.DPSRed, FontAwesomeIcon.ExclamationTriangle.ToIconString());
+                        ImGui.PopFont();
+                        if (ImGui.IsItemHovered())
+                        {
+                            ImGui.SetTooltip("Not a valid regex. Will not be parsed.");
+                        }
+                        ImGui.SameLine();
+                    }   
                 }
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
                 if (ImGui.InputTextWithHint("##regex", "Regex", ref trigger.RegexString, 200))
