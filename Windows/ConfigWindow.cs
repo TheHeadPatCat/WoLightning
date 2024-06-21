@@ -74,7 +74,7 @@ public class ConfigWindow : Window, IDisposable
 
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(490, 560),
+            MinimumSize = new Vector2(580, 620),
             MaximumSize = new Vector2(2000, 2000)
         };
 
@@ -90,7 +90,7 @@ public class ConfigWindow : Window, IDisposable
 
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(450, 520),
+            MinimumSize = new Vector2(580, 620),
             MaximumSize = new Vector2(2000, 2000)
         };
 
@@ -938,14 +938,15 @@ public class ConfigWindow : Window, IDisposable
         }
         ImGui.PopFont();
 
-        int cnt = 6;
+        int cnt = 7;
         if (ImGui.BeginTable("##Triggers", cnt, ImGuiTableFlags.Borders | ImGuiTableFlags.Resizable | ImGuiTableFlags.Reorderable))
         {
             ImGui.TableSetupColumn(" ", ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoSort);
-            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.None, ImGuiHelpers.GlobalScale * 100);
-            ImGui.TableSetupColumn("Regex");
-            ImGui.TableSetupColumn("Duration", ImGuiTableColumnFlags.None, ImGuiHelpers.GlobalScale * 100);
-            ImGui.TableSetupColumn("Intensity", ImGuiTableColumnFlags.None, ImGuiHelpers.GlobalScale * 100);
+            ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.NoResize, ImGuiHelpers.GlobalScale * 75);
+            ImGui.TableSetupColumn("Regex", ImGuiTableColumnFlags.NoResize, ImGuiHelpers.GlobalScale * 170);
+            ImGui.TableSetupColumn("Mode", ImGuiTableColumnFlags.NoResize, ImGuiHelpers.GlobalScale * 90);
+            ImGui.TableSetupColumn("Duration", ImGuiTableColumnFlags.None, ImGuiHelpers.GlobalScale * 40);
+            ImGui.TableSetupColumn("Intensity", ImGuiTableColumnFlags.None, ImGuiHelpers.GlobalScale * 40);
             ImGui.TableSetupColumn(" ", ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoSort);
             ImGui.TableHeadersRow();
 
@@ -967,7 +968,7 @@ public class ConfigWindow : Window, IDisposable
 
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
-                if (ImGui.InputTextWithHint("##name", "Trigger name", ref trigger.Name, 100))
+                if (ImGui.InputTextWithHint("##name", "", ref trigger.Name, 100))
                 {
                     Configuration.Save();
                 }
@@ -1000,26 +1001,25 @@ public class ConfigWindow : Window, IDisposable
 
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
-                if (ImGui.InputInt("##duration", ref trigger.Duration, 1, 5))
+                if (ImGui.Combo("##mode", ref trigger.Mode, ["Shock", "Vibrate", "Beep"], 3))
                 {
-                    trigger.Duration = checkDuration(trigger.Duration);
                     Configuration.Save();
-                }
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip("1-15");
                 }
 
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
-                if (ImGui.InputInt("##intensity", ref trigger.Intensity, 1, 5))
+                if (ImGui.SliderInt("##duration", ref trigger.Duration, 1, 10))
+                {
+                    trigger.Duration = checkDuration(trigger.Duration);
+                    Configuration.Save();
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.SliderInt("##intensity", ref trigger.Intensity, 1, 100))
                 {
                     trigger.Intensity = checkIntensity(trigger.Intensity);
                     Configuration.Save();
-                }
-                if (ImGui.IsItemHovered())
-                {
-                    ImGui.SetTooltip("1-100");
                 }
 
                 ImGui.TableNextColumn();

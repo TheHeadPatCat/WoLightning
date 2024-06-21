@@ -5,9 +5,9 @@ namespace WoLightning.Types
 {
     public enum OpType
     {
-        Shock,
-        Vibrate,
-        Beep
+        Shock = 0,
+        Vibrate = 1,
+        Beep = 2
     }
     public class Trigger
     {
@@ -16,6 +16,7 @@ namespace WoLightning.Types
         public string Name = "";
         public string RegexString = "(?!)";
         public Regex? Regex = null;
+        public int Mode = 0;
         public int Intensity = 1;
         public int Duration = 1;
     }

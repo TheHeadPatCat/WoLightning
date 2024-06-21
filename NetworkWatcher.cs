@@ -302,7 +302,7 @@ namespace WoLightning
                     if (trigger.Enabled && (trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue)))
                     {
                         Plugin.PluginLog.Information($"Trigger {trigger.Name} triggered. Zap!");
-                        Plugin.WebClient.sendRequestShock([0, trigger.Intensity, trigger.Duration]);
+                        Plugin.WebClient.sendRequestShock([trigger.Mode, trigger.Intensity, trigger.Duration]);
                         if (!Plugin.Configuration.IsPassthroughAllowed) return;
                     }
                 }
