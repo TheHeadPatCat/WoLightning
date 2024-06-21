@@ -1037,6 +1037,8 @@ public class ConfigWindow : Window, IDisposable
                     Configuration.Save();
                 }
                 ImGui.PopFont();
+
+                ImGui.PopID();
             }
             ImGui.EndTable();
         }
