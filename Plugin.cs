@@ -40,6 +40,7 @@ public sealed class Plugin : IDalamudPlugin
     public INotificationManager NotificationManager { get; init; }
     public IObjectTable ObjectTable { get; init; }
     public IGameInteropProvider GameInteropProvider { get; init; }
+    public IPartyList PartyList { get; init; }
     
 
     // Gui Interfaces
@@ -71,7 +72,8 @@ public sealed class Plugin : IDalamudPlugin
         [RequiredVersion("1.0")] IClientState clientstate,
         [RequiredVersion("1.0")] INotificationManager notificationManager,
         [RequiredVersion("1.0")] IObjectTable objectTable,
-        [RequiredVersion("1.0")] IGameInteropProvider gameInteropProvider
+        [RequiredVersion("1.0")] IGameInteropProvider gameInteropProvider,
+        [RequiredVersion("1.0")] IPartyList partyList
         )
     {
         // Setup all Services
@@ -86,6 +88,7 @@ public sealed class Plugin : IDalamudPlugin
             ClientState = clientstate;
             NotificationManager = notificationManager;
             GameInteropProvider = gameInteropProvider;
+            PartyList = partyList;
             NetworkWatcher = new NetworkWatcher( this ); // we need this to check for logins
             WindowSystem.AddWindow(BufferWindow);
 
