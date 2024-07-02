@@ -75,8 +75,7 @@ namespace WoLightning
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.Information(ex.Message);
-                    PluginLog.Information("If its 404 its a normal response.");
+                    //if its 404 its a normal response
                 }
             }
             else {

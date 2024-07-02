@@ -294,8 +294,8 @@ public class ConfigWindow : Window, IDisposable
                                     || Plugin.ClientState.LocalPlayer.TargetObject.ObjectKind !=
                                     Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player) return;
 
-                                Configuration.MasterNameFull = ((IPlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).Name.ToString() + "#" + ((IPlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).HomeWorld.Id;
-                                Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "requestmaster"], ["attempt", Configuration.MasterNameFull, "undefined"]));
+                            Configuration.MasterNameFull = ((IPlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).Name.ToString() + "#" + ((IPlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).HomeWorld.Id;
+                            Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "requestmaster"], ["attempt", Configuration.MasterNameFull, "undefined"]));
 
                             }
                         }

@@ -600,7 +600,6 @@ public class Configuration : IPluginConfiguration, IDisposable
         savePreset(ActivePreset);
         if (!loadPreset(name))
         {
-            PluginLog.Error($"Failed swapping to preset {name} as it does not exist.");
             return;
         }
         ActivePreset = name;
@@ -712,11 +711,10 @@ public class Configuration : IPluginConfiguration, IDisposable
                     return;
                 }
                 catch {
-                    PluginLog.Error("Tried to update a NoN-Bool Setting!!");
+                    // tried to set invalid setting
                 }
             }
         }
-        PluginLog.Error("Received invalid UpdateSetting!\n" + input);
     }
 
     public void Dispose()

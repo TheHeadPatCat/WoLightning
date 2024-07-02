@@ -10,9 +10,9 @@ namespace WoLightning
     public class EmoteReaderHooks : IDisposable
     {
         private Plugin Plugin;
-        public Action<PlayerCharacter, GameObject, ushort> OnEmoteUnrelated;
-        public Action<PlayerCharacter, ushort> OnEmoteIncoming;
-        public Action<GameObject, ushort> OnEmoteOutgoing;
+        public Action<IPlayerCharacter, IGameObject, ushort> OnEmoteUnrelated;
+        public Action<IPlayerCharacter, ushort> OnEmoteIncoming;
+        public Action<IGameObject, ushort> OnEmoteOutgoing;
         public Action<ushort> OnEmoteSelf;
 
         public delegate void OnEmoteFuncDelegate(ulong unk, ulong instigatorAddr, ushort emoteId, ulong targetId, ulong unk2);
@@ -25,7 +25,7 @@ namespace WoLightning
             Plugin = plugin;
             try
             {
-                hookEmote = Plugin.GameInteropProvider.HookFromSignature<OnEmoteFuncDelegate>("48 89 5c 24 08 48 89 6c 24 10 48 89 74 24 18 48 89 7c 24 20 41 56 48 83 ec 30 4c 8b 74 24 60 48 8b d9 48 81 c1 80 2f 00 00", OnEmoteDetour);
+                hookEmote = Plugin.GameInteropProvider.HookFromSignature<OnEmoteFuncDelegate>("40 53 56 41 54 41 57 48 83 EC ?? 48 8B 02", OnEmoteDetour);
                 hookEmote.Enable();
                 Plugin.PluginLog.Info("Started EmoteReaderHook!");
                 IsValid = true;
@@ -49,14 +49,14 @@ namespace WoLightning
             {
                 if (Plugin.ClientState.LocalPlayer != null)
                 {
-                    if (targetId == Plugin.ClientState.LocalPlayer.ObjectId) // we are the target
+                    if (targetId == Plugin.ClientState.LocalPlayer.GameObjectId) // we are the target
                     {
                         var instigatorOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.Address == instigatorAddr);
-                        if (instigatorOb != null) OnEmoteIncoming?.Invoke((PlayerCharacter)instigatorOb, emoteId); // someone is sending a emote targeting us
+                        if (instigatorOb != null) OnEmoteIncoming?.Invoke((IPlayerCharacter)instigatorOb, emoteId); // someone is sending a emote targeting us
                     }
                     else // We are not the target
                     {
-                        var targetOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.ObjectId == targetId);
+                        var targetOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.GameObjectId == targetId);
                         var instigatorOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.Address == instigatorAddr);
                         if (instigatorOb == null || targetOb == null) //bad data
                         {
@@ -65,13 +65,13 @@ namespace WoLightning
                         }
                         if (targetOb.ObjectKind != Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player) // No Target can be found
                         {
-                            if (instigatorOb.ObjectId == Plugin.ClientState.LocalPlayer.ObjectId) OnEmoteSelf?.Invoke(emoteId); // we are sending an emote without target
-                            else OnEmoteUnrelated?.Invoke((PlayerCharacter)instigatorOb, targetOb, emoteId); // seomeone is sending a emote without target
+                            if (instigatorOb.GameObjectId == Plugin.ClientState.LocalPlayer.GameObjectId) OnEmoteSelf?.Invoke(emoteId); // we are sending an emote without target
+                            else OnEmoteUnrelated?.Invoke((IPlayerCharacter)instigatorOb, targetOb, emoteId); // seomeone is sending a emote without target
                         }
                         else
                         {
-                            if (instigatorOb.ObjectId == Plugin.ClientState.LocalPlayer.ObjectId) OnEmoteOutgoing?.Invoke(targetOb, emoteId); // we are sending an emote
-                            else OnEmoteUnrelated?.Invoke((PlayerCharacter)instigatorOb, targetOb, emoteId); // someone is sending a emote to someone else
+                            if (instigatorOb.GameObjectId == Plugin.ClientState.LocalPlayer.GameObjectId) OnEmoteOutgoing?.Invoke(targetOb, emoteId); // we are sending an emote
+                            else OnEmoteUnrelated?.Invoke((IPlayerCharacter)instigatorOb, targetOb, emoteId); // someone is sending a emote to someone else
                         }
 
                     }

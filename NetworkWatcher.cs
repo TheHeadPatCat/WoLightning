@@ -26,8 +26,8 @@ namespace WoLightning
 
 
 
-        PlayerCharacter? PlayerCharacter;
-        PlayerCharacter? MasterCharacter;
+        IPlayerCharacter? IPlayerCharacter;
+        IPlayerCharacter? MasterCharacter;
         private Timer lookingForMaster = new Timer(new TimeSpan(0, 0, 5));
         private int masterLookDelay = 0;
 
@@ -107,12 +107,12 @@ namespace WoLightning
 
             //if (MasterCharacter != null && MasterCharacter.IsValid() && MasterCharacter.Name + "#" + MasterCharacter.HomeWorld.Id == Plugin.Configuration.MasterNameFull) return;
 
-            var targetOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.ObjectId == targetActorId);
+            var targetOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.GameObjectId == targetActorId);
             if (targetOb != null && targetOb.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
             {
-                if (((PlayerCharacter)targetOb).Name + "#" + ((PlayerCharacter)targetOb).HomeWorld.Id == Plugin.Configuration.MasterNameFull)
+                if (((IPlayerCharacter)targetOb).Name + "#" + ((IPlayerCharacter)targetOb).HomeWorld.Id == Plugin.Configuration.MasterNameFull)
                 {
-                    MasterCharacter = (PlayerCharacter)targetOb;
+                    MasterCharacter = (IPlayerCharacter)targetOb;
                     Plugin.PluginLog.Info("Found Master Signature!");
                     Plugin.PluginLog.Info(MasterCharacter.ToString());
                     Plugin.GameNetwork.NetworkMessage -= HandleNetworkMessage;
@@ -122,16 +122,16 @@ namespace WoLightning
             }
         }
 
-        public PlayerCharacter? scanForPlayerCharacter(string playerNameFull)
+        public IPlayerCharacter? scanForPlayerCharacter(string playerNameFull)
         {
-            var f = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.ObjectKind == 1 && ((PlayerCharacter)x).Name + "#" + ((PlayerCharacter)x).HomeWorld.Id == playerNameFull); //player character
-            if (f != null) return (PlayerCharacter)f;
+            var f = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.ObjectKind == 1 && ((IPlayerCharacter)x).Name + "#" + ((IPlayerCharacter)x).HomeWorld.Id == playerNameFull); //player character
+            if (f != null) return (IPlayerCharacter)f;
             else return null;
         }
-        public PlayerCharacter? scanForPlayerCharacter(uint ObjectId)
+        public IPlayerCharacter? scanForPlayerCharacter(uint GameObjectId)
         {
-            var f = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.ObjectKind == 1 && (ulong)x.ObjectId == ObjectId); //player character
-            if (f != null) return (PlayerCharacter)f;
+            var f = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.ObjectKind == 1 && (ulong)x.GameObjectId == GameObjectId); //player character
+            if (f != null) return (IPlayerCharacter)f;
             else return null;
         }
 
@@ -179,7 +179,7 @@ namespace WoLightning
         }
 
 
-        public unsafe void HandleChatMessage(XivChatType type, uint senderId, ref SeString senderE, ref SeString message, ref bool isHandled)
+        public unsafe void HandleChatMessage(XivChatType type, int timespamp, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
             if (Plugin.ClientState.LocalPlayer == null)
             {
@@ -322,7 +322,7 @@ namespace WoLightning
         private void HandleLogin()
         {
             Plugin.onLogin();
-            PlayerCharacter = Plugin.ClientState.LocalPlayer;
+            IPlayerCharacter = Plugin.ClientState.LocalPlayer;
             Plugin.ClientState.Login -= HandleLogin;
             Plugin.ClientState.Logout += HandleLogout;
         }
@@ -330,7 +330,7 @@ namespace WoLightning
         private void HandleLogout()
         {
             Plugin.onLogout();
-            PlayerCharacter = null;
+            IPlayerCharacter = null;
             Plugin.ClientState.Logout -= HandleLogout;
             Plugin.ClientState.Login += HandleLogin;
         }
@@ -342,7 +342,7 @@ namespace WoLightning
         }
 
 
-        private void OnEmoteIncoming(PlayerCharacter sourceObj, ushort emoteId)
+        private void OnEmoteIncoming(IPlayerCharacter sourceObj, ushort emoteId)
         {
             Plugin.PluginLog.Info("[INCOMING EMOTE] Source: " + sourceObj.ToString() + " EmoteId: " + emoteId);
             if (!Plugin.Configuration.checkPermission(sourceObj.Name + "#" + sourceObj.HomeWorld.Id, 0))
@@ -359,16 +359,16 @@ namespace WoLightning
 
         }
 
-        private void OnEmoteUnrelated(PlayerCharacter sourceObj, GameObject targetObj, ushort emoteId)
+        private void OnEmoteUnrelated(IPlayerCharacter sourceObj, IGameObject targetObj, ushort emoteId)
         {
             Plugin.PluginLog.Info("[Unrelated Emote] Source: " + sourceObj.ToString() + " Target:" + targetObj + " EmoteId: " + emoteId);
 
         }
 
-        private void OnEmoteOutgoing(GameObject targetObj, ushort emoteId)
+        private void OnEmoteOutgoing(IGameObject targetObj, ushort emoteId)
         {
             Plugin.PluginLog.Info("[OUTGOING EMOTE] Target: " + targetObj.ToString() + " EmoteId: " + emoteId);
-            //Plugin.Configuration.MasterNameFull = ((PlayerCharacter)targetObj).Name + "#" + ((PlayerCharacter)targetObj).HomeWorld.Id;
+            //Plugin.Configuration.MasterNameFull = ((IPlayerCharacter)targetObj).Name + "#" + ((IPlayerCharacter)targetObj).HomeWorld.Id;
             //Plugin.Configuration.Save();
         }
 
@@ -389,7 +389,7 @@ namespace WoLightning
             switch (type)
             {
                 case (XivChatType)4410: //death other
-                    foreach ( PartyMember member in Plugin.PartyList)
+                    foreach ( IPartyMember member in Plugin.PartyList)
                     {
                         if (message.Contains(member.Name.TextValue))
                         {
@@ -419,7 +419,7 @@ namespace WoLightning
                     Plugin.WebClient.sendRequestShock([0, intensity, duration]);
                     return;
                 case (XivChatType)4154: //revive other
-                    foreach (PartyMember member in Plugin.PartyList)
+                    foreach (IPartyMember member in Plugin.PartyList)
                     {
                         if (message.Contains(member.Name.TextValue))
                         {

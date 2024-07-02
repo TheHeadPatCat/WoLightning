@@ -29,7 +29,7 @@ public sealed class Plugin : IDalamudPlugin
 
 
     // Services
-    public DalamudPluginInterface PluginInterface { get; init; }
+    public IDalamudPluginInterface PluginInterface { get; init; }
     private ICommandManager CommandManager { get; init; }
     public IPluginLog PluginLog { get; init; }
     public IFramework Framework { get; init; }
@@ -61,19 +61,19 @@ public sealed class Plugin : IDalamudPlugin
 
 
     public Plugin(
-        [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
-        [RequiredVersion("1.0")] ICommandManager commandManager,
-        [RequiredVersion("1.0")] ITextureProvider textureProvider,
-        [RequiredVersion("1.0")] IPluginLog pluginlog,
-        [RequiredVersion("1.0")] IFramework framework,
-        [RequiredVersion("1.0")] IGameNetwork gamenetwork,
-        [RequiredVersion("1.0")] IChatGui chatgui,
-        [RequiredVersion("1.0")] IDutyState dutystate,
-        [RequiredVersion("1.0")] IClientState clientstate,
-        [RequiredVersion("1.0")] INotificationManager notificationManager,
-        [RequiredVersion("1.0")] IObjectTable objectTable,
-        [RequiredVersion("1.0")] IGameInteropProvider gameInteropProvider,
-        [RequiredVersion("1.0")] IPartyList partyList
+        IDalamudPluginInterface pluginInterface,
+        ICommandManager commandManager,
+        ITextureProvider textureProvider,
+        IPluginLog pluginlog,
+        IFramework framework,
+        IGameNetwork gamenetwork,
+        IChatGui chatgui,
+        IDutyState dutystate,
+        IClientState clientstate,
+        INotificationManager notificationManager,
+        IObjectTable objectTable,
+        IGameInteropProvider gameInteropProvider,
+        IPartyList partyList
         )
     {
         // Setup all Services
@@ -250,7 +250,7 @@ public sealed class Plugin : IDalamudPlugin
         Notification result = new Notification();
         result.InitialDuration = new TimeSpan(0, 0, 7);
         result.Title = "Warrior of Lighting";
-        result.Type = Dalamud.Interface.Internal.Notifications.NotificationType.Warning;
+        result.Type = NotificationType.Warning;
         return result;
     }
 
@@ -259,7 +259,7 @@ public sealed class Plugin : IDalamudPlugin
         Notification result = new Notification();
         result.InitialDuration = new TimeSpan(0, 0, 7);
         result.Title = "Warrior of Lighting";
-        result.Type = Dalamud.Interface.Internal.Notifications.NotificationType.Warning;
+        result.Type = NotificationType.Warning;
         result.Content = content;
         NotificationManager.AddNotification(result);
     }
