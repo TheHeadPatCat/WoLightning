@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using WoLightning.Types;
 
 
 namespace WoLightning;
@@ -15,7 +16,7 @@ namespace WoLightning;
 public class Configuration : IPluginConfiguration, IDisposable
 {
     // wipes the entire thing (except the above) or if version number is higher than found one
-    public int Version { get; set; } = 17;
+    public int Version { get; set; } = 18;
     public bool DebugEnabled { get; set; } = false;
 
     // General Settings
@@ -69,8 +70,8 @@ public class Configuration : IPluginConfiguration, IDisposable
     public int[] ShockDeathSettings { get; set; } = [0, 1, 1];
     public bool ShockOnWipe { get; set; } = false;
     public int[] ShockWipeSettings { get; set; } = [0, 1, 1];
-
-
+    public bool DeathMode { get; set; } = false;
+    public int[] DeathModeSettings { get; set; } = [0, 100, 15];
 
     // Lists
     public Dictionary<String, int> PermissionList { get; set; } = new Dictionary<string, int>();
@@ -80,6 +81,8 @@ public class Configuration : IPluginConfiguration, IDisposable
     public List<string> OwnedSubs { get; set; } = new List<string>();
     public Dictionary<String, int> SubsActivePresetIndexes { get; set; } = new Dictionary<string, int>();
     public Dictionary<String, bool> SubsIsDisallowed { get; set; } = new Dictionary<string, bool>();
+    public List<Trigger> Triggers { get; set; } = new List<Trigger>();
+    public List<ChatType.ChatTypes> Channels { get; set; } = new List<ChatType.ChatTypes>();
 
 
     // Instance-Only things
@@ -198,6 +201,10 @@ public class Configuration : IPluginConfiguration, IDisposable
 
             result += ShockOnWipe ? 1 : 0;
             result += EncodeArray(ShockWipeSettings);
+            result += "#";
+
+            result += DeathMode ? 1 : 0;
+            result += EncodeArray(DeathModeSettings);
             result += "#";
 
             ////PluginLog.Info($"Encoded Main Settings into string: {result}");
@@ -351,6 +358,11 @@ public class Configuration : IPluginConfiguration, IDisposable
                         //PluginLog.Info($"Saving Wipe {part}");
                         ShockOnWipe = part[0] == '1';
                         ShockWipeSettings = DecodeArray(part.Substring(1));
+                        break;
+                    case 8:
+                        //PluginLog.Info($"Saving Wipe {part}");
+                        DeathMode = part[0] == '1';
+                        DeathModeSettings = DecodeArray(part.Substring(1));
                         break;
                 }
                 x++;

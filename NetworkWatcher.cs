@@ -1,5 +1,6 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
@@ -7,8 +8,13 @@ using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Lumina.Excel.GeneratedSheets;
 using Lumina.Excel.GeneratedSheets2;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Timers;
+using WoLightning.Types;
+using static WoLightning.Types.ChatType;
 
 
 namespace WoLightning
@@ -28,6 +34,8 @@ namespace WoLightning
         public bool isLeashed = false;
         public bool isLeashing = false;
         private Timer LeashTimer = new Timer(new TimeSpan(0, 0, 1));
+
+        private int DeathModeCount = 0;
 
         public NetworkWatcher(Plugin plugin)
         {
@@ -173,7 +181,6 @@ namespace WoLightning
 
         public unsafe void HandleChatMessage(XivChatType type, uint senderId, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
-
             if (Plugin.ClientState.LocalPlayer == null)
             {
                 Plugin.PluginLog.Error("Wtf, LocalPlayer is null?");
@@ -214,6 +221,14 @@ namespace WoLightning
 
 #pragma warning disable CS8602 // no localplayer can NOT be null here, because if it is then our game isnt even working
 
+            int[] dmTypes = { 2234, 2874, 4410, 2106, 4154 };
+            if (Plugin.Configuration.DeathMode && dmTypes.Contains((int)type))
+            {
+                HandleDeathMode(type, message.TextValue);
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
+            }
+
+
             if (Plugin.Configuration.ShockOnBadWord && (int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString() == sender.ToString()) // its proooobably a social message
             {
                 foreach (var (word, settings) in Plugin.Configuration.ShockBadWordSettings)
@@ -223,15 +238,14 @@ namespace WoLightning
                     {
                         Plugin.sendNotif($"You said the bad word: {word}!");
                         Plugin.WebClient.sendRequestShock(settings);
-                        return;
+                        if (!Plugin.Configuration.IsPassthroughAllowed) return;
                     }
                 }
-                return;
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
 #pragma warning restore CS8602
 
-
-            if (Plugin.Configuration.ShockOnDeath && (int)type == 2874 && message.TextValue.Contains("You are defeated", StringComparison.Ordinal)) //Death TODO add unique player identifier
+            if (Plugin.Configuration.ShockOnDeath && ((int)type == 2874 || (int)type == 2234) && message.TextValue.Contains("You are defeated", StringComparison.Ordinal)) //Death TODO add unique player identifier
             {
                 Plugin.sendNotif($"You died!");
                 Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathSettings);
@@ -271,7 +285,27 @@ namespace WoLightning
                     Plugin.sendNotif($"You lost a Deathroll!");
                     Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathrollSettings);
                 }
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
+            }
+
+            ChatType.ChatTypes? chatType = ChatType.GetChatTypeFromXivChatType(type);
+            if (chatType == null)
+            {
                 return;
+            }
+            if (Plugin.Configuration.Channels.Contains(chatType.Value)) //If the channel can be selected and is activated by the user
+            {
+                List<Trigger> triggers = Plugin.Configuration.Triggers;
+                foreach (Trigger trigger in triggers)
+                {
+                    Plugin.PluginLog.Information(message.TextValue);
+                    if (trigger.Enabled && (trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue)))
+                    {
+                        Plugin.PluginLog.Information($"Trigger {trigger.Name} triggered. Zap!");
+                        Plugin.WebClient.sendRequestShock([trigger.Mode, trigger.Intensity, trigger.Duration]);
+                        if (!Plugin.Configuration.IsPassthroughAllowed) return;
+                    }
+                }
             }
         }
 
@@ -281,7 +315,7 @@ namespace WoLightning
             {
                 Plugin.sendNotif($"Your party wiped!");
                 Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockWipeSettings);
-                return;
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
         }
 
@@ -316,7 +350,8 @@ namespace WoLightning
                 Plugin.PluginLog.Info("Aborting call because target does not have enough permission");
                 return;
             }
-            if (emoteId == 105)
+
+            if (Plugin.Configuration.ShockOnPat && emoteId == 105)
             {
                 Plugin.sendNotif($"You got headpatted by {sourceObj.Name}!");
                 Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockPatSettings);
@@ -343,6 +378,62 @@ namespace WoLightning
             //Plugin.Configuration.MasterNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id;
             //Plugin.Configuration.Save();
 
+        }
+
+        private void HandleDeathMode(XivChatType type, string message)
+        {
+            Plugin.PluginLog.Error(((int)type).ToString());
+            Plugin.PluginLog.Error(message);
+            int partysize, intensity, duration;
+            int[] settings;
+            switch (type)
+            {
+                case (XivChatType)4410: //death other
+                    foreach ( PartyMember member in Plugin.PartyList)
+                    {
+                        if (message.Contains(member.Name.TextValue))
+                        {
+                            DeathModeCount++;
+                            settings = Plugin.Configuration.DeathModeSettings;
+                            partysize = Plugin.PartyList.Count;
+                            intensity = settings[1] * DeathModeCount / partysize;
+                            duration = settings[2] * DeathModeCount / partysize;
+                            Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
+                            Plugin.WebClient.sendRequestShock([0, intensity, duration]);
+                            return;
+                        }
+                    }
+                    break;
+                case (XivChatType)2234:
+                case (XivChatType)2874:  //death self
+                    if (!message.Contains("You are defeated", StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+                    DeathModeCount++;
+                    settings = Plugin.Configuration.DeathModeSettings;
+                    partysize = Plugin.PartyList.Count;
+                    intensity = settings[1] * DeathModeCount / partysize;
+                    duration = settings[2] * DeathModeCount / partysize;
+                    Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
+                    Plugin.WebClient.sendRequestShock([0, intensity, duration]);
+                    return;
+                case (XivChatType)4154: //revive other
+                    foreach (PartyMember member in Plugin.PartyList)
+                    {
+                        if (message.Contains(member.Name.TextValue))
+                        {
+                            DeathModeCount--;
+                            return;
+                        }
+                    }
+                    break;
+                case (XivChatType)2106: //revive self
+                    DeathModeCount--;
+                    return;
+                default:
+                    break;
+            }
         }
 
     }
