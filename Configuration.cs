@@ -16,7 +16,7 @@ namespace WoLightning;
 public class Configuration : IPluginConfiguration, IDisposable
 {
     // wipes the entire thing (except the above) or if version number is higher than found one
-    public int Version { get; set; } = 18;
+    public int Version { get; set; } = 20;
     public bool DebugEnabled { get; set; } = false;
 
     // General Settings
