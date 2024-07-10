@@ -23,7 +23,7 @@ public sealed class Plugin : IDalamudPlugin
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const string currentVersion = "0.2.5.0";
+    public const string currentVersion = "0.2.6.0";
     public const string randomKey = "mf9923hjn2t0mv9i923mbvobklxuin214nxi83";
     public string? ConfigurationDirectoryPath { get; set; }
 

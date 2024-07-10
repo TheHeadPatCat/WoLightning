@@ -1,4 +1,4 @@
-using Dalamud.Game.ClientState.Objects.SubKinds;
+﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.Colors;
@@ -727,19 +727,8 @@ public class ConfigWindow : Window, IDisposable
             Configuration.Save();
         }
 
-        if (ShockOnPat)
-        {
-            var ShockPatSettings = Configuration.ShockPatSettings;
-            if (ImGui.ListBox("Mode##pat", ref ShockPatSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-            {
-                Configuration.ShockPatSettings = ShockPatSettings;
-                Configuration.Save();
-            }
-            ImGui.SliderInt("Intensity##patInt", ref ShockPatSettings[1], 1, 100);
-            ImGui.SliderInt("Duration##patDur", ref ShockPatSettings[2], 1, 10);
-            ImGui.Spacing();
-            ImGui.Spacing();
-        }
+        if (ShockOnPat)createPickerBox("ShockOnPat", Configuration.ShockPatSettings);
+
 
         var ShockOnDeathroll = Configuration.ShockOnDeathroll;
         if (ImGui.Checkbox("Trigger when you lose a Deathroll.", ref ShockOnDeathroll))
@@ -748,19 +737,9 @@ public class ConfigWindow : Window, IDisposable
             Configuration.Save();
         }
 
-        if (ShockOnDeathroll)
-        {
-            var ShockDeathrollSettings = Configuration.ShockDeathrollSettings;
-            if (ImGui.ListBox("Mode##deathroll", ref ShockDeathrollSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-            {
-                Configuration.ShockDeathrollSettings = ShockDeathrollSettings;
-                Configuration.Save();
-            }
-            ImGui.SliderInt("Intensity##deathrollInt", ref ShockDeathrollSettings[1], 1, 100);
-            ImGui.SliderInt("Duration##deathrollDur", ref ShockDeathrollSettings[2], 1, 10);
-            ImGui.Spacing();
-            ImGui.Spacing();
-        }
+        if (ShockOnDeathroll) createPickerBox("ShockOnDeathroll", Configuration.ShockDeathrollSettings);
+
+
 
         var ShockOnBadWord = Configuration.ShockOnBadWord;
         if (ImGui.Checkbox("Trigger when you say a specific word from a list.", ref ShockOnBadWord))
@@ -788,19 +767,7 @@ public class ConfigWindow : Window, IDisposable
             Configuration.Save();
         }
 
-        if (ShockOnVuln)
-        {
-            var ShockVulnSettings = Configuration.ShockVulnSettings;
-            if (ImGui.ListBox("Mode##vuln", ref ShockVulnSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-            {
-                Configuration.ShockVulnSettings = ShockVulnSettings;
-                Configuration.Save();
-            }
-            ImGui.SliderInt("Intensity##vulnInt", ref ShockVulnSettings[1], 1, 100);
-            ImGui.SliderInt("Duration##vulnDur", ref ShockVulnSettings[2], 1, 10);
-            ImGui.Spacing();
-            ImGui.Spacing();
-        }
+        if (ShockOnVuln) createPickerBox("ShockOnVuln", Configuration.ShockVulnSettings);
 
         var ShockOnDamage = Configuration.ShockOnDamage;
         if (ImGui.Checkbox("Trigger when you take damage from a ability (No Auto Attacks)", ref ShockOnDamage))
@@ -809,19 +776,7 @@ public class ConfigWindow : Window, IDisposable
             Configuration.Save();
         }
 
-        if (ShockOnDamage)
-        {
-            var ShockDamageSettings = Configuration.ShockDamageSettings;
-            if (ImGui.ListBox("Mode##damage", ref ShockDamageSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-            {
-                Configuration.ShockDamageSettings = ShockDamageSettings;
-                Configuration.Save();
-            }
-            ImGui.SliderInt("Intensity##damageInt", ref ShockDamageSettings[1], 1, 100);
-            ImGui.SliderInt("Duration##damageDur", ref ShockDamageSettings[2], 1, 10);
-            ImGui.Spacing();
-            ImGui.Spacing();
-        }
+        if (ShockOnDamage) createPickerBox("ShockOnDamage", Configuration.ShockDamageSettings);
 
         var ShockOnDeath = Configuration.ShockOnDeath;
         if (ImGui.Checkbox("Trigger whenever you die.", ref ShockOnDeath))
@@ -830,19 +785,7 @@ public class ConfigWindow : Window, IDisposable
             Configuration.Save();
         }
 
-        if (ShockOnDeath)
-        {
-            var ShockDeathSettings = Configuration.ShockDeathSettings;
-            if (ImGui.ListBox("Mode##Death", ref ShockDeathSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-            {
-                Configuration.ShockDeathSettings = ShockDeathSettings;
-                Configuration.Save();
-            }
-            ImGui.SliderInt("Intensity##deathInt", ref ShockDeathSettings[1], 1, 100);
-            ImGui.SliderInt("Duration##deathDur", ref ShockDeathSettings[2], 1, 10);
-            ImGui.Spacing();
-            ImGui.Spacing();
-        }
+        if (ShockOnDeath) createPickerBox("ShockOnDeath", Configuration.ShockDeathSettings);
 
         var ShockOnWipe = Configuration.ShockOnWipe;
         if (ImGui.Checkbox("Trigger whenever everyone dies. (Wipe)", ref ShockOnWipe))
@@ -851,19 +794,7 @@ public class ConfigWindow : Window, IDisposable
             Configuration.Save();
         }
 
-        if (ShockOnWipe)
-        {
-            var ShockWipeSettings = Configuration.ShockWipeSettings;
-            if (ImGui.ListBox("Mode##Wipe", ref ShockWipeSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-            {
-                Configuration.ShockWipeSettings = ShockWipeSettings;
-                Configuration.Save();
-            }
-            ImGui.SliderInt("Intensity##WipeInt", ref ShockWipeSettings[1], 1, 100);
-            ImGui.SliderInt("Duration##WipeDur", ref ShockWipeSettings[2], 1, 10);
-            ImGui.Spacing();
-            ImGui.Spacing();
-        }
+        if (ShockOnWipe) createPickerBox("ShockOnWipe", Configuration.ShockWipeSettings);
 
         var DeathMode = Configuration.DeathMode;
         if (ImGui.Checkbox("Death Mode", ref DeathMode))
@@ -875,19 +806,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.TextDisabled("(?)");
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This delivers scaling shocks based on the amount of party members that are dead, up to the maximum with a wipe. Be warned."); }
 
-        if (DeathMode)
-        {
-            var DeathModeSettings = Configuration.DeathModeSettings;
-            if (ImGui.ListBox("Mode##dscale", ref DeathModeSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-            {
-                Configuration.DeathModeSettings = DeathModeSettings;
-                Configuration.Save();
-            }
-            ImGui.SliderInt("Max Intensity##dscaleInt", ref DeathModeSettings[1], 1, 100);
-            ImGui.SliderInt("Max Duration##dscaleDur", ref DeathModeSettings[2], 1, 15);
-            ImGui.Spacing();
-            ImGui.Spacing();
-        }
+        if (DeathMode) createPickerBox("DeathMode", Configuration.DeathModeSettings);
 
     }
     private void DrawCustomChats()
@@ -1070,4 +989,52 @@ public class ConfigWindow : Window, IDisposable
         }
         return intensity;
     }
+
+    private void createPickerBox(String Name, int[] Settings)
+    {
+        ImGui.BeginGroup();
+        ImGui.Text("    Mode");
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 15);
+        if (ImGui.Combo("##" + Name, ref Settings[0], ["Shock", "Vibrate", "Beep"], 3))Configuration.updateSetting(Name, Settings);
+        ImGui.EndGroup();
+
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        ImGui.Text("    Intensity");
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+        ImGui.SliderInt("##Intensity" + Name, ref Settings[1], 1, 100);
+        ImGui.EndGroup() ;
+
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        ImGui.Text("    Duration");
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+        ImGui.SliderInt("##Duration" + Name, ref Settings[2], 1, 10);
+        ImGui.EndGroup();
+    }
 }
+
+
+/*
+ * 
+ * 
+ * 
+ * ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 5);
+            var ShockPatSettings = Configuration.ShockPatSettings;
+            if (ImGui.Combo("##pat", ref ShockPatSettings[0], ["Shock", "Vibrate", "Beep"], 3))
+            {
+                Configuration.ShockPatSettings = ShockPatSettings;
+                Configuration.Save();
+            }
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+            ImGui.SliderInt("##patInt", ref ShockPatSettings[1], 1, 100);
+            ImGui.SameLine();
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+            ImGui.SliderInt("##patDur", ref ShockPatSettings[2], 1, 10);
+            ImGui.Spacing();
+            ImGui.Spacing();
+ *
+ * 
+ * 
+ */

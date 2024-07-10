@@ -697,9 +697,8 @@ public class Configuration : IPluginConfiguration, IDisposable
         return JsonConvert.DeserializeObject<Configuration>(input);
     }
 
-    public void updateBoolSetting(string input) {
+    public void updateBoolSetting(string input) { // todo possibly remove this?
         string[] keyValue = input.Split("#");
-        //PluginLog.Information("Key: " + keyValue[0] + "  Value: " + keyValue[1]);
         foreach (PropertyInfo prop in this.GetType().GetProperties())
         {   
             
@@ -711,6 +710,69 @@ public class Configuration : IPluginConfiguration, IDisposable
                     return;
                 }
                 catch {
+                    // tried to set invalid setting
+                }
+            }
+        }
+    }
+
+    public void updateSetting(string PropertyName, int Value)
+    {
+        foreach (PropertyInfo prop in this.GetType().GetProperties())
+        {
+
+            if (prop.PropertyType == typeof(int) && prop.Name.ToLower() == PropertyName.ToLower())
+            {
+                try
+                {
+                    prop.SetValue(this, Value);
+                    Save();
+                    return;
+                }
+                catch
+                {
+                    // tried to set invalid setting
+                }
+            }
+        }
+    }
+
+    public void updateSetting(string PropertyName, int[] Value)
+    {
+        foreach (PropertyInfo prop in this.GetType().GetProperties())
+        {
+
+            if (prop.PropertyType == typeof(int[]) && prop.Name.ToLower() == PropertyName.ToLower())
+            {
+                try
+                {
+                    prop.SetValue(this, Value);
+                    Save();
+                    return;
+                }
+                catch
+                {
+                    // tried to set invalid setting
+                }
+            }
+        }
+    }
+
+    public void updateSetting(string PropertyName, bool Value)
+    {
+        foreach (PropertyInfo prop in this.GetType().GetProperties())
+        {
+
+            if (prop.PropertyType == typeof(bool) && prop.Name.ToLower() == PropertyName.ToLower())
+            {
+                try
+                {
+                    prop.SetValue(this, Value);
+                    Save();
+                    return;
+                }
+                catch
+                {
                     // tried to set invalid setting
                 }
             }
