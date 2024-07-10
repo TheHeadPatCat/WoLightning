@@ -457,7 +457,6 @@ public class Configuration : IPluginConfiguration, IDisposable
 
             }
             Save();
-            w#o='dqq! kxod402#ghidxow#*m0#0000101#0000101#0000101#0000101#0000101#0000101#0000101#000640f#*b0#*p0#*c0#*twhvw.(123123?!).true.2.30.5#*
         }*/
 
         if (Sharestring[0] == 't')
