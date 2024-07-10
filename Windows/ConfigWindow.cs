@@ -291,7 +291,7 @@ public class ConfigWindow : Window, IDisposable
     #region Tabs
     private void DrawGeneralTab()
     {
-        if (ImGui.BeginTabItem("General Settings"))
+        if (ImGui.BeginTabItem("General"))
         {
             if (Configuration.isDisallowed) ImGui.BeginDisabled();
             var IsPassthroughAllowed = Configuration.IsPassthroughAllowed;
@@ -425,7 +425,7 @@ public class ConfigWindow : Window, IDisposable
 
     private void DrawDefaultTriggerTab()
     {
-        if (ImGui.BeginTabItem("Default Trigger Settings"))
+        if (ImGui.BeginTabItem("Default Triggers"))
         {
             ImGui.Text("Default triggers will always be prioritized over custom triggers, if passthrough is not enabled.");
             if (Configuration.isDisallowed) ImGui.BeginDisabled();
@@ -439,7 +439,7 @@ public class ConfigWindow : Window, IDisposable
     private void DrawCustomTriggerTab()
     {
 
-        if (ImGui.BeginTabItem("Custom Trigger Settings"))
+        if (ImGui.BeginTabItem("Custom Triggers"))
         {
             DrawCustomChats();
             DrawCustomTable();
