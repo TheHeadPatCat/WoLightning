@@ -148,7 +148,7 @@ public class ConfigWindow : Window, IDisposable
                 if (isAlternative) Plugin.ToggleMasterConfigUI();
                 else Plugin.ToggleConfigUI();
                 Configuration = new Configuration();
-                Configuration.Initialize(isAlternative, Plugin.ConfigurationDirectoryPath, true);
+                Configuration.Initialize(Plugin,isAlternative, Plugin.ConfigurationDirectoryPath, true);
                 Plugin.sendNotif("Your configuration has been reset!");
 
                 Configuration.Save();

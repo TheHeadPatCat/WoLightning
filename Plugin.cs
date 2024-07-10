@@ -23,8 +23,8 @@ public sealed class Plugin : IDalamudPlugin
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const string currentVersion = "0.2.6.0";
-    public const string randomKey = "mf9923hjn2t0mv9i923mbvobklxuin214nxi83";
+    public const string currentVersion = "0.2.5.2";
+    public const string randomKey = "809vmwm10gn3pvos01945n9icjs92gndn3u3bn1o23uj5nndsiwnbdo";
     public string? ConfigurationDirectoryPath { get; set; }
 
 
@@ -129,7 +129,7 @@ public sealed class Plugin : IDalamudPlugin
 
             Configuration = new Configuration();
             Configuration.LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
-            Configuration.Initialize(false, ConfigurationDirectoryPath);
+            Configuration.Initialize(this,false, ConfigurationDirectoryPath);
 
             if (Configuration.DebugEnabled)
             {

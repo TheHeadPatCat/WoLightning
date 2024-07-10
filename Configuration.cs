@@ -1,6 +1,8 @@
 using Dalamud.Configuration;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Component.Text;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -89,9 +91,11 @@ public class Configuration : IPluginConfiguration, IDisposable
     [NonSerialized] public bool isAlternative = false;
     [NonSerialized] public string ConfigurationDirectoryPath;
     [NonSerialized] public  Dictionary<String, bool> SubsIsActive = new Dictionary<string, bool>();
+    [NonSerialized] private Plugin plugin;
 
-    public void Initialize(bool isAlternative, string ConfigurationDirectoryPath)
+    public void Initialize(Plugin plugin, bool isAlternative, string ConfigurationDirectoryPath)
     {
+        this.plugin = plugin;
         this.isAlternative = isAlternative;
         this.ConfigurationDirectoryPath = ConfigurationDirectoryPath;
         isLeashed = false;
@@ -109,7 +113,7 @@ public class Configuration : IPluginConfiguration, IDisposable
         Save();
     }
 
-    public void Initialize(bool isAlternative, string ConfigurationDirectoryPath, bool createNew)
+    public void Initialize(Plugin plugin, bool isAlternative, string ConfigurationDirectoryPath, bool createNew)
     {
         this.isAlternative = isAlternative;
         this.ConfigurationDirectoryPath = ConfigurationDirectoryPath;
@@ -262,6 +266,23 @@ public class Configuration : IPluginConfiguration, IDisposable
                 result += "#";
             }
             //PluginLog.Info($"Encoded Master Settings into string: {result}");
+            return result.ToLower();
+        }
+
+        if (section == "Triggers")
+        {
+            result += "T";
+
+            foreach (var Trigger in Triggers)
+            {
+                result += EncodeWord(Trigger.Name);
+                result += ".";
+                result += Trigger.RegexString;
+                result += ".";
+                result += Trigger.Enabled ? 1 : 0;
+                result += "." + Trigger.Mode + "." + Trigger.Intensity + "." + Trigger.Duration;
+                result += "#";
+            }
             return result.ToLower();
         }
 
@@ -436,8 +457,31 @@ public class Configuration : IPluginConfiguration, IDisposable
 
             }
             Save();
-            
+            w#o='dqq! kxod402#ghidxow#*m0#0000101#0000101#0000101#0000101#0000101#0000101#0000101#000640f#*b0#*p0#*c0#*twhvw.(123123?!).true.2.30.5#*
         }*/
+
+        if (Sharestring[0] == 't')
+        {
+            Triggers.Clear();
+            var x = 0;
+            Trigger temp;
+            foreach (var part in Sharestring.Split("#"))
+            {
+                if (part.Length <= 2) break;
+                var lParts = part.Split(".");
+                temp = new Trigger();
+                temp.Name = DecodeWord(lParts[0]);
+                temp.RegexString = lParts[1];
+                temp.Regex = new System.Text.RegularExpressions.Regex(lParts[1]);
+                temp.Enabled = lParts[2] == "1";
+                temp.Intensity = int.Parse(lParts[3]);
+                temp.Duration = int.Parse(lParts[4]);
+                Triggers.Add(temp);
+                x++;
+
+            }
+            Save();
+        }
     }
 
     private int[] DecodeArray(string Sharestring)
@@ -581,6 +625,7 @@ public class Configuration : IPluginConfiguration, IDisposable
             EncodeConfiguration("Badword"),
             EncodeConfiguration("Permissions"),
             EncodeConfiguration("Master"),
+            EncodeConfiguration("Triggers")
         ];
         if (Presets.ContainsKey(name)) Presets.Remove(name);
         string[] encoded = new string[codes.Length];

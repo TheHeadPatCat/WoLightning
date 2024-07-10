@@ -29,7 +29,7 @@ public class MasterWindow : Window, IDisposable
     {
         Plugin = plugin;
         Configuration = new Configuration();
-        Configuration.Initialize(true, Plugin.ConfigurationDirectoryPath);
+        Configuration.Initialize(Plugin,true, Plugin.ConfigurationDirectoryPath);
         Flags = ImGuiWindowFlags.AlwaysUseWindowPadding;
         SizeConstraints = new WindowSizeConstraints
         {
