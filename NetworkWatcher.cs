@@ -37,6 +37,8 @@ namespace WoLightning
 
         private int DeathModeCount = 0;
 
+        private string[] FirstPersonWords = ["i", "i'd", "i'll", "me", "my", "myself", "mine"];
+
         public NetworkWatcher(Plugin plugin)
         {
             Plugin = plugin;
@@ -187,29 +189,7 @@ namespace WoLightning
                 return;
             }
 
-            //Plugin.PluginLog.Info(Plugin.ClientState.LocalPlayer.ToString());
-            //Plugin.PluginLog.Info(Plugin.ClientState.LocalPlayer.Address.ToString());
-            //Plugin.PluginLog.Info(Plugin.ClientState.LocalPlayer.NameId.ToString());
-
-            //Plugin.PluginLog.Info("Payloads:");
-            /*foreach (Payload p in senderE.Payloads)
-            {
-                if (p.Type == PayloadType.Player)
-                {
-                    Plugin.PluginLog.Info(p.ToString());
-
-                    Plugin.PluginLog.Info(((PlayerPayload)p).PlayerName);
-                    Plugin.PluginLog.Info(((PlayerPayload)p).DisplayedName);
-                    Plugin.PluginLog.Info(((PlayerPayload)p).World.ToString());
-
-
-                }
-            }*/
-
-            //Plugin.PluginLog.Info($"Current Length of GameObjectTable: {Plugin.ObjectTable.Length}");
-            //Plugin.ClientState.LocalPlayer.
-
-            //Plugin.PluginLog.Info($"(Chat) type: {type} - SenderId: {senderId} - Sender SE: {senderE} - Message: {message} - isHandled: ${isHandled}");
+            Plugin.PluginLog.Info($"(Chat) type: {type} - Sender SE: {senderE} - Message: {message} - isHandled: ${isHandled}");
             if (message == null) return; //sanity check in case we get sent bad data
 
             string sender = senderE.ToString().ToLower();
@@ -218,6 +198,7 @@ namespace WoLightning
                 //Plugin.PluginLog.Info($"Illegal character found on {sender} - removing...");
                 sender = sender.Substring(1);
             }
+
 
 #pragma warning disable CS8602 // no localplayer can NOT be null here, because if it is then our game isnt even working
 
@@ -229,19 +210,43 @@ namespace WoLightning
             }
 
 
-            if (Plugin.Configuration.ShockOnBadWord && (int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString() == sender.ToString()) // its proooobably a social message
+            if ((int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString().ToLower() == sender.ToString().ToLower()) // its proooobably a social message
             {
-                foreach (var (word, settings) in Plugin.Configuration.ShockBadWordSettings)
-                {
 
-                    if (message.ToString().ToLower().Contains(word.ToLower()))
+                if (Plugin.Configuration.ShockOnBadWord)
+                {
+                    foreach (var (word, settings) in Plugin.Configuration.ShockBadWordSettings)
                     {
-                        Plugin.sendNotif($"You said the bad word: {word}!");
-                        Plugin.WebClient.sendRequestShock(settings);
-                        if (!Plugin.Configuration.IsPassthroughAllowed) return;
+
+                        if (message.ToString().ToLower().Contains(word.ToLower()))
+                        {
+                            Plugin.sendNotif($"You said the bad word: {word}!");
+                            Plugin.WebClient.sendRequestShock(settings);
+                            if (!Plugin.Configuration.IsPassthroughAllowed) return;
+                        }
                     }
                 }
-                if (!Plugin.Configuration.IsPassthroughAllowed) return;
+
+                //slightly different logic
+                if (Plugin.Configuration.ShockOnFirstPerson)
+                {
+                    foreach(var word in message.ToString().Split(' '))
+                    {
+                        string sanWord = word.ToLower();
+                        sanWord = sanWord.Replace(".", "");
+                        sanWord = sanWord.Replace(",", "");
+                        sanWord = sanWord.Replace("!", "");
+                        sanWord = sanWord.Replace("?", "");
+                        sanWord = sanWord.Replace("\"", "");
+                        sanWord = sanWord.Replace("\'", "");
+                        if (FirstPersonWords.Contains(sanWord))
+                        {
+                            Plugin.sendNotif($"You referred to yourself wrongly!");
+                            Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockFirstPersonSettings);
+                            if (!Plugin.Configuration.IsPassthroughAllowed) return;
+                        }
+                    }
+                }
             }
 #pragma warning restore CS8602
 

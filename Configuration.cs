@@ -59,6 +59,8 @@ public class Configuration : IPluginConfiguration, IDisposable
     public int[] ShockPatSettings { get; set; } = [0, 1, 1];
     public bool ShockOnDeathroll { get; set; } = false;
     public int[] ShockDeathrollSettings { get; set; } = [0, 1, 1];
+    public bool ShockOnFirstPerson {  get; set; } = false;
+    public int[] ShockFirstPersonSettings { get; set; } = [0, 1, 1];
 
 
     // Combat Triggers
@@ -185,6 +187,10 @@ public class Configuration : IPluginConfiguration, IDisposable
 
             result += ShockOnDeathroll ? 1 : 0;
             result += EncodeArray(ShockDeathrollSettings);
+            result += "#";
+
+            result += ShockOnFirstPerson ? 1 : 0;
+            result += EncodeArray(ShockFirstPersonSettings);
             result += "#";
 
             result += ShockOnDamage ? 1 : 0;

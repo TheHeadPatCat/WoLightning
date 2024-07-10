@@ -740,6 +740,16 @@ public class ConfigWindow : Window, IDisposable
         if (ShockOnDeathroll) createPickerBox("ShockOnDeathroll", Configuration.ShockDeathrollSettings);
 
 
+        var ShockOnFirstPerson = Configuration.ShockOnFirstPerson;
+        if (ImGui.Checkbox("Trigger when you refer to yourself in the First Person.", ref ShockOnFirstPerson))
+        {
+            Configuration.ShockOnFirstPerson = ShockOnFirstPerson;
+            Configuration.Save();
+        }
+
+        if (ShockOnFirstPerson) createPickerBox("ShockOnFirstPerson ", Configuration.ShockFirstPersonSettings);
+
+
 
         var ShockOnBadWord = Configuration.ShockOnBadWord;
         if (ImGui.Checkbox("Trigger when you say a specific word from a list.", ref ShockOnBadWord))
