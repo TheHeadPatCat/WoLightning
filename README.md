@@ -10,22 +10,22 @@ You have to use the [XIVQuicklauncher](https://goatcorp.github.io/) with Dalamud
 
 
 ## Current Features
- - Premade Triggers for:
- - Getting /pet
- - Losing a Deathroll
- - Taking Damage
- - Getting a "Vulnerabity Up" Stack (so failing a mechanic)
- - Dying
- - Wiping
- - Saying specific phrases/words
+ - Premade Triggers for:  
+ Getting /pet  
+ Losing a Deathroll  
+ Taking Damage  
+ Getting a "Vulnerabity Up" Stack (so failing a mechanic)  
+ Dying  
+ Wiping  
+ Saying specific phrases/words  
 - Creation of Custom Triggers (Created by [Lexiconmage](https://github.com/lexiconmage))
 - A Whitelist/Blacklist
 - Presets and Preset Sharing
-- Master Mode
+- Master Mode  
   Allows another player to take control over your Configuration.
-- A safeword with /red
+- A safeword with /red  
   This disables all Pishock functionality from the plugin until used again.
-- "Death mode" (Created by [Lexiconmage](https://github.com/lexiconmage))
+- "Death mode" (Created by [Lexiconmage](https://github.com/lexiconmage))  
   Will shock you on any partymembers death - increasing in intensity with more members dead!
  
   ![Preview of Configuration](configPreview.png)
