@@ -9,6 +9,11 @@ You have to use the [XIVQuicklauncher](https://goatcorp.github.io/) with Dalamud
 ### Warning! This is a still in a prototype phase - Expect things to go wrong!
 
 
+If any problems or Questions or even suggestions come up, simply write me a message on discord!
+I go by `theheadpatcat`  
+Or if you want to be fancy, open a Issue. That also works.
+
+
 ## Current Features
  - Premade Triggers for:  
  Getting /pet  
@@ -35,27 +40,23 @@ You have to use the [XIVQuicklauncher](https://goatcorp.github.io/) with Dalamud
 ## Installation:
 
 ### One note beforehand:
-Once you install and activate this plugin, it will connect to a Webserver i created.
-This is to make the Master Mode work and nothing else.
-It will however store your Ingame Character Name for the time being.
+Once you install and activate this plugin, it will connect to a Webserver i created.  
+This is to make the Master Mode work and nothing else, for now.  
+It will however store your Ingame Character Name for the time being.  
 I do check on when the last connection to that server was, and delete those
-characters out of the database after 30 days.
+characters out of the database after 30 days.  
 If you however feel uncomfortable with this, or simply dont trust me, you can message me anytime and i will manually remove your entry.
 
 
-
 Ingame, open the Dalamud Settings, navigate to the "Experimental" Tab and scroll down.
-There you find "Custom Plugin Repositories" - Important do not mix this up with "Dev Plugins" at the top!
+There you find "Custom Plugin Repositories" - Important do not mix this up with "Dev Plugins" at the top!  
 You will then have to enter this link into the list:  
 `https://raw.githubusercontent.com/TheHeadPatCat/DalamudPlugins/main/repo.json`  
 Save it via the plus sign on the right and then the floppy disk on the bottom right.
 Then, open the Plugin Installer and search for "Warrior of Lightning"
 
 
-
 ## Usage
-
-
 
 Once installed, you can open the Main Menu.
 Here you can enable or disable the entire Plugin at any point - this is so it only actually shocks you when you are ready for it.
