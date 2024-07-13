@@ -4,9 +4,40 @@
 
 You have to use the XIVQuicklauncher with Dalamud enabled for this to work.
 
-### Warning! This is a veeeeeery early prototype - Expect things to go wrong!
+### Warning! This is a still in a prototype phase - Expect things to go wrong!
+
+
+## Current Features
+ - Premade Triggers for:
+ - Getting /pet
+ - Losing a Deathroll
+ - Taking Damage
+ - Dying
+ - Wiping
+ - Saying specific phrases/words
+- Creation of Custom Triggers
+- A Whitelist/Blacklist
+- Presets and Preset Sharing
+- Master Mode
+  Allows another player to take control over your Configuration.
+- A safeword with /red
+  This disables all Pishock functionality from the plugin until used again.
+- "Death mode"
+  Will shock you on any partymembers death - increasing in intensity with more members dead!
+  
+
 
 ## Installation:
+
+### One note beforehand:
+Once you install and activate this plugin, it will connect to a Webserver i created.
+This is to make the Master Mode work and nothing else.
+It will however store your Ingame Character Name for the time being.
+I do check on when the last connection to that server was, and delete those
+characters out of the database after 30 days.
+If you however feel uncomfortable with this, or simply dont trust me, you can message me anytime and i will manually remove your entry.
+
+
 
 Ingame, open the Dalamud Settings, navigate to the "Experimental" Tab and scroll down.
 There you find "Custom Plugin Repositories", add this link to it: `https://raw.githubusercontent.com/TheHeadPatCat/DalamudPlugins/main/repo.json`
@@ -40,4 +71,6 @@ After you have gotten all of this behind you, you can start customizing your exp
 Simply enable whichever trigger you like and set the according values to your liking.
 Every trigger gives you the option to choose between the three modes: "Shock", "Vibrate" and "Beep"
 Intensity and Duration can also be set.
+
+
 
