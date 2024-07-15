@@ -305,8 +305,16 @@ public class ConfigWindow : Window, IDisposable
             ImGui.TextDisabled("(?)");
             if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Will make it possible for multiple Triggers to happen at once (ex. Damage and Death)"); }
 
-
-
+            var GlobalTriggerCooldown = Configuration.globalTriggerCooldown;
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 240);
+            if(ImGui.SliderInt("Global Cooldown of Triggers (sec)", ref GlobalTriggerCooldown, 3, 300))
+            {
+                Configuration.globalTriggerCooldown = GlobalTriggerCooldown;
+                Configuration.Save();
+            }
+            ImGui.SameLine();
+            ImGui.TextDisabled("(?)");
+            if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This sets a Cooldown on how often you can be shocked, in seconds."); }
 
             ImGui.Spacing();
             ImGui.Spacing();
@@ -736,6 +744,9 @@ public class ConfigWindow : Window, IDisposable
             Configuration.ShockOnDeathroll = ShockOnDeathroll;
             Configuration.Save();
         }
+        ImGui.SameLine();
+        ImGui.TextDisabled("(?)");
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Deathroll is when you use /random against another player to see who reaches 1 first."); }
 
         if (ShockOnDeathroll) createPickerBox("ShockOnDeathroll", Configuration.ShockDeathrollSettings);
 
@@ -746,6 +757,9 @@ public class ConfigWindow : Window, IDisposable
             Configuration.ShockOnFirstPerson = ShockOnFirstPerson;
             Configuration.Save();
         }
+        ImGui.SameLine();
+        ImGui.TextDisabled("(?)");
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("First-Person refers to basically any way you can say 'me'. So saying 'I','I'll','Me','Myself' and so on.\nThis currently only works when writing in English."); }
 
         if (ShockOnFirstPerson) createPickerBox("ShockOnFirstPerson ", Configuration.ShockFirstPersonSettings);
 
@@ -757,6 +771,9 @@ public class ConfigWindow : Window, IDisposable
             Configuration.ShockOnBadWord = ShockOnBadWord;
             Configuration.Save();
         }
+        ImGui.SameLine();
+        ImGui.TextDisabled("(?)");
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("You can configure these words, once the setting is enabled."); }
 
         if (ShockOnBadWord)
         {
@@ -770,32 +787,6 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
-        var ShockOnVuln = Configuration.ShockOnVuln;
-        if (ImGui.Checkbox("Trigger when you get a [Vulnerability Up] debuff", ref ShockOnVuln))
-        {
-            Configuration.ShockOnVuln = ShockOnVuln;
-            Configuration.Save();
-        }
-
-        if (ShockOnVuln) createPickerBox("ShockOnVuln", Configuration.ShockVulnSettings);
-
-        var ShockOnDamage = Configuration.ShockOnDamage;
-        if (ImGui.Checkbox("Trigger when you take damage from a ability (No Auto Attacks)", ref ShockOnDamage))
-        {
-            Configuration.ShockOnDamage = ShockOnDamage;
-            Configuration.Save();
-        }
-
-        if (ShockOnDamage) createPickerBox("ShockOnDamage", Configuration.ShockDamageSettings);
-
-        var ShockOnDeath = Configuration.ShockOnDeath;
-        if (ImGui.Checkbox("Trigger whenever you die.", ref ShockOnDeath))
-        {
-            Configuration.ShockOnDeath = ShockOnDeath;
-            Configuration.Save();
-        }
-
-        if (ShockOnDeath) createPickerBox("ShockOnDeath", Configuration.ShockDeathSettings);
 
         var ShockOnWipe = Configuration.ShockOnWipe;
         if (ImGui.Checkbox("Trigger whenever everyone dies. (Wipe)", ref ShockOnWipe))
@@ -805,6 +796,15 @@ public class ConfigWindow : Window, IDisposable
         }
 
         if (ShockOnWipe) createPickerBox("ShockOnWipe", Configuration.ShockWipeSettings);
+
+        var ShockOnDeath = Configuration.ShockOnDeath;
+        if (ImGui.Checkbox("Trigger whenever you die.", ref ShockOnDeath))
+        {
+            Configuration.ShockOnDeath = ShockOnDeath;
+            Configuration.Save();
+        }
+
+        if (ShockOnDeath) createPickerBox("ShockOnDeath", Configuration.ShockDeathSettings);
 
         var DeathMode = Configuration.DeathMode;
         if (ImGui.Checkbox("Death Mode", ref DeathMode))
@@ -817,6 +817,30 @@ public class ConfigWindow : Window, IDisposable
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This delivers scaling shocks based on the amount of party members that are dead, up to the maximum with a wipe. Be warned."); }
 
         if (DeathMode) createPickerBox("DeathMode", Configuration.DeathModeSettings);
+
+        var ShockOnVuln = Configuration.ShockOnVuln;
+        if (ImGui.Checkbox("Trigger when you get a [Vulnerability Up] debuff", ref ShockOnVuln))
+        {
+            Configuration.ShockOnVuln = ShockOnVuln;
+            Configuration.Save();
+        }
+        ImGui.SameLine();
+        ImGui.TextDisabled("(?)");
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will trigger whenever you fail a mechanic - so some sort of dodgeable damage"); }
+
+        if (ShockOnVuln) createPickerBox("ShockOnVuln", Configuration.ShockVulnSettings);
+
+        var ShockOnDamage = Configuration.ShockOnDamage;
+        if (ImGui.Checkbox("Trigger when you take damage of any kind", ref ShockOnDamage))
+        {
+            Configuration.ShockOnDamage = ShockOnDamage;
+            Configuration.Save();
+        }
+        ImGui.SameLine();
+        ImGui.TextDisabled("(?)");
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will go off alot, so be warned! It does mean literally any damage, from Mobs to Dots and even Fall Damage!"); }
+
+        if (ShockOnDamage) createPickerBox("ShockOnDamage", Configuration.ShockDamageSettings);
 
     }
     private void DrawCustomChats()

@@ -1,10 +1,12 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.ClientState.Party;
+using Dalamud.Game.ClientState.Statuses;
 using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
+using Dalamud.Plugin.Services;
 using Lumina.Excel.GeneratedSheets;
 using Lumina.Excel.GeneratedSheets2;
 using System;
@@ -25,6 +27,14 @@ namespace WoLightning
         Plugin Plugin;
 
 
+        private IPlayerCharacter? LocalPlayer;
+        private uint lastHP = 0;
+        private uint lastMaxHP = 0;
+        private uint lastMP = 0;
+        private bool wasDead = true;
+        private uint lastVulnAmount = 0;
+        private uint lastDDownAmount = 0;
+        private int lastStatusCheck = 0;
 
         IPlayerCharacter? IPlayerCharacter;
         IPlayerCharacter? MasterCharacter;
@@ -37,7 +47,7 @@ namespace WoLightning
 
         private int DeathModeCount = 0;
 
-        private string[] FirstPersonWords = ["i", "i'd", "i'll", "me", "my", "myself", "mine"];
+        readonly private string[] FirstPersonWords = ["i", "i'd", "i'll", "me", "my", "myself", "mine"];
 
         public NetworkWatcher(Plugin plugin)
         {
@@ -50,7 +60,9 @@ namespace WoLightning
             running = true;
             //Plugin.GameNetwork.NetworkMessage += HandleNetworkMessage;
             LeashTimer.Elapsed += (sender, e) => CheckLeashDistance();
-            //LeashTimer.Start();
+            //LeashTimer.Start(); 650 // 305
+
+            Plugin.Framework.Update += checkLocalPlayerState;
 
             Plugin.ChatGui.ChatMessage += HandleChatMessage;
             Plugin.DutyState.DutyWiped += HandleWipe;
@@ -60,7 +72,6 @@ namespace WoLightning
             Plugin.EmoteReaderHooks.OnEmoteSelf += OnEmoteSelf;
             Plugin.EmoteReaderHooks.OnEmoteUnrelated += OnEmoteUnrelated;
         }
-
         public void Stop()
         {
             if (LeashTimer.Enabled) LeashTimer.Stop();
@@ -68,6 +79,8 @@ namespace WoLightning
 
             if (lookingForMaster.Enabled) lookingForMaster.Stop();
             lookingForMaster.Dispose();
+
+            Plugin.Framework.Update -= checkLocalPlayerState;
 
             Plugin.ChatGui.ChatMessage -= HandleChatMessage;
             Plugin.DutyState.DutyWiped -= HandleWipe;
@@ -78,7 +91,6 @@ namespace WoLightning
             Plugin.EmoteReaderHooks.OnEmoteUnrelated -= OnEmoteUnrelated;
             running = false;
         }
-
         public void Dispose()
         {
             //Plugin.GameNetwork.NetworkMessage -= HandleNetworkMessage;
@@ -88,6 +100,8 @@ namespace WoLightning
 
             if (lookingForMaster.Enabled) lookingForMaster.Stop();
             lookingForMaster.Dispose();
+
+            Plugin.Framework.Update -= checkLocalPlayerState;
 
             Plugin.ChatGui.ChatMessage -= HandleChatMessage;
             Plugin.DutyState.DutyWiped -= HandleWipe;
@@ -101,15 +115,14 @@ namespace WoLightning
             running = false;
         }
 
-
         // Unused currently
         private void HandleNetworkMessage(nint dataPtr, ushort OpCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
         {
-            //Plugin.PluginLog.Info($"(Net) dataPtr: {dataPtr} - OpCode: {OpCode} - ActorId: {sourceActorId} - TargetId: {targetActorId} - direction: ${direction.ToString()}");
+            Plugin.PluginLog.Info($"(Net) dataPtr: {dataPtr} - OpCode: {OpCode} - ActorId: {sourceActorId} - TargetId: {targetActorId} - direction: ${direction.ToString()}");
 
             //if (MasterCharacter != null && MasterCharacter.IsValid() && MasterCharacter.Name + "#" + MasterCharacter.HomeWorld.Id == Plugin.Configuration.MasterNameFull) return;
 
-            var targetOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.GameObjectId == targetActorId);
+            /*var targetOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.GameObjectId == targetActorId);
             if (targetOb != null && targetOb.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
             {
                 if (((IPlayerCharacter)targetOb).Name + "#" + ((IPlayerCharacter)targetOb).HomeWorld.Id == Plugin.Configuration.MasterNameFull)
@@ -121,7 +134,7 @@ namespace WoLightning
                     return;
                 }
                 //Plugin.PluginLog.Info(targetOb.ToString());
-            }
+            }*/
         }
 
         public IPlayerCharacter? scanForPlayerCharacter(string playerNameFull)
@@ -137,7 +150,6 @@ namespace WoLightning
             else return null;
         }
 
-
         public void scanForMasterCharacter()
         {
             MasterCharacter = scanForPlayerCharacter(Plugin.Configuration.MasterNameFull);
@@ -152,8 +164,6 @@ namespace WoLightning
             }
             else Plugin.PluginLog.Info("Could not find Signature... Retrying");
         }
-
-
 
         private void CheckLeashDistance()
         {
@@ -181,6 +191,103 @@ namespace WoLightning
         }
 
 
+        private void checkLocalPlayerState(IFramework Framework)
+        {
+            if (LocalPlayer == null)
+            {
+                LocalPlayer = Plugin.ClientState.LocalPlayer;
+                lastHP = LocalPlayer.CurrentHp;
+                lastMaxHP = LocalPlayer.MaxHp;
+                lastMP = LocalPlayer.CurrentMp;
+            }
+
+            if (lastHP != LocalPlayer.CurrentHp) HandleHPChange(); //check maxhp due to synching and such
+            if (lastMP != LocalPlayer.CurrentMp) HandleMPChange();
+
+            if (lastStatusCheck >= 60 && Plugin.Configuration.ShockOnVuln)
+            {
+                lastStatusCheck = 0;
+                bool foundVuln = false;
+                bool foundDDown = false;
+                foreach (var status in LocalPlayer.StatusList)
+                {
+                    //Yes. We have to check for the IconId. The StatusId is different for different expansions, while the Name is different through languages.
+                    if (status.GameData.Icon >= 17101 && status.GameData.Icon <= 17116) // Vuln Up
+                    {
+                        foundVuln = true;
+                        var amount = status.StackCount;
+
+                        Plugin.PluginLog.Verbose("Found Vuln Up - Amount: " + amount + " lastVulnCount: " + lastVulnAmount);
+                        if(amount > lastVulnAmount)
+                        {
+                            Plugin.sendNotif($"You failed a Mechanic!");
+                            Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
+                            if (!Plugin.Configuration.IsPassthroughAllowed)
+                            {
+                                lastVulnAmount = amount;
+                                return;
+                            }
+                        }
+                        lastVulnAmount = amount;
+                    }
+                    if (status.GameData.Icon >= 18441 && status.GameData.Icon <= 18456) // Damage Down
+                    {
+                        foundDDown = true;
+                        var amount = status.StackCount;
+                        if (amount > lastDDownAmount)
+                        {
+                            Plugin.sendNotif($"You failed a Mechanic!");
+                            Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
+                            if (!Plugin.Configuration.IsPassthroughAllowed)
+                            {
+                                lastDDownAmount = amount;
+                                return;
+                            }
+                        }
+                        lastDDownAmount = amount;
+                    }
+                }
+                if (!foundVuln) lastVulnAmount = 0;
+                if (!foundDDown) lastDDownAmount = 0;
+            }
+
+            lastStatusCheck++;
+        }
+
+        private void HandleHPChange()
+        {
+            //Plugin.PluginLog.Verbose("HP Changed from " + lastHP + "/" + lastMaxHP + " to " + LocalPlayer.CurrentHp + "/" + LocalPlayer.MaxHp);
+            if(lastMaxHP != LocalPlayer.MaxHp)
+            {
+                lastMaxHP = LocalPlayer.MaxHp;
+                return;
+            }
+            lastHP = LocalPlayer.CurrentHp;
+            if (Plugin.Configuration.ShockOnDeath && LocalPlayer.CurrentHp == 0 && !wasDead)
+            {
+                Plugin.sendNotif($"You Died!");
+                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathSettings);
+                wasDead = false;
+                if (!Plugin.Configuration.IsPassthroughAllowed) return;
+            }
+            if (lastHP < LocalPlayer.CurrentHp && Plugin.Configuration.ShockOnDamage)
+            {
+                Plugin.sendNotif($"You took Damage!"); // possibly remove this
+                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDamageSettings);
+            }
+            if (lastHP > 0) wasDead = false;
+        }
+        private void HandleMPChange()
+        {
+
+        }
+        private void HandleStatusChange()
+        {
+            //64 = vuln up
+            Plugin.PluginLog.Verbose("StatusList Changed");
+            Plugin.PluginLog.Verbose(LocalPlayer.StatusList.ToString());
+        }
+
         public unsafe void HandleChatMessage(XivChatType type, int timespamp, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
             if (Plugin.ClientState.LocalPlayer == null)
@@ -189,7 +296,7 @@ namespace WoLightning
                 return;
             }
 
-            Plugin.PluginLog.Info($"(Chat) type: {type} - Sender SE: {senderE} - Message: {message} - isHandled: ${isHandled}");
+            //Plugin.PluginLog.Info($"(Chat) type: {type} - Sender SE: {senderE} - Message: {message} - isHandled: ${isHandled}");
             if (message == null) return; //sanity check in case we get sent bad data
 
             string sender = senderE.ToString().ToLower();
@@ -249,27 +356,6 @@ namespace WoLightning
                 }
             }
 #pragma warning restore CS8602
-
-            if (Plugin.Configuration.ShockOnDeath && ((int)type == 2874 || (int)type == 2234) && message.TextValue.Contains("You are defeated", StringComparison.Ordinal)) //Death TODO add unique player identifier
-            {
-                Plugin.sendNotif($"You died!");
-                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathSettings);
-                if (!Plugin.Configuration.IsPassthroughAllowed) return;
-            }
-
-            if (Plugin.Configuration.ShockOnVuln && (int)type >= 800 && message.TextValue.Contains("You suffer the effect of ", StringComparison.Ordinal) && message.TextValue.Contains("Vulnerability Up.", StringComparison.Ordinal)) //Suffered Debuff
-            {
-                Plugin.sendNotif($"You took a Vulnerability Up debuff!");
-                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
-                if (!Plugin.Configuration.IsPassthroughAllowed) return;
-            }
-
-            if (Plugin.Configuration.ShockOnDamage && (int)type >= 800 && message.TextValue.Contains("You take", StringComparison.Ordinal) && message.TextValue.Contains("damage.", StringComparison.Ordinal))// Damage Taken
-            {
-                Plugin.sendNotif($"You took damage!");
-                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDamageSettings);
-                if (!Plugin.Configuration.IsPassthroughAllowed) return;
-            }
 
             /*if (Plugin.Configuration.ShockOnPat && type == XivChatType.StandardEmote && message.TextValue.Contains("gently pats you.", StringComparison.Ordinal))
             {
