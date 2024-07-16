@@ -14,6 +14,7 @@ using System.Text.RegularExpressions;
 using WoLightning.Types;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Timers;
 
 namespace WoLightning.Windows;
 
@@ -54,6 +55,7 @@ public class ConfigWindow : Window, IDisposable
     private MasterWindow? Parent;
     private int selectedSubIndex = 0;
     private string selectedSubNameFull;
+    private TimerPlus timeOutRequest = new TimerPlus();
 
     // Debug stuffs
     private int debugFtype = 0;
@@ -82,6 +84,9 @@ public class ConfigWindow : Window, IDisposable
         Configuration.Save(); //make sure all fields exist on first start
         Plugin = plugin;
 
+
+        timeOutRequest.Interval = 300000;
+        timeOutRequest.Elapsed += resetRequest;
     }
 
     public ConfigWindow(Plugin plugin, Configuration configuration, MasterWindow parent) : base("Master of Lightning Configuration##configmaster")
@@ -99,12 +104,22 @@ public class ConfigWindow : Window, IDisposable
         Plugin = plugin;
         isAlternative = true;
         Parent = parent;
+
+
+
     }
 
     public void Dispose()
     {
         if (this.IsOpen) this.Toggle();
         Configuration.Save();
+    }
+
+    private void resetRequest(object sender, ElapsedEventArgs e)
+    {
+        timeOutRequest.Stop();
+        Configuration.MasterNameFull = "";
+
     }
 
     public override void PreDraw()
@@ -341,13 +356,13 @@ public class ConfigWindow : Window, IDisposable
 
                             Configuration.MasterNameFull = ((IPlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).Name.ToString() + "#" + ((IPlayerCharacter)Plugin.ClientState.LocalPlayer.TargetObject).HomeWorld.Id;
                             Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "requestmaster"], ["attempt", Configuration.MasterNameFull, "undefined"]));
-
+                            timeOutRequest.Start();
                         }
                     }
                 }
                 if (Configuration.MasterNameFull != "" && !Configuration.HasMaster)
                 {
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Waiting for response from {Configuration.MasterNameFull}...");
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Waiting for response from {Configuration.MasterNameFull}...\n{(int)TimeSpan.FromMilliseconds(timeOutRequest.TimeLeft).TotalSeconds} seconds until timeout...");
                 }
             }
 
@@ -838,7 +853,7 @@ public class ConfigWindow : Window, IDisposable
         }
         ImGui.SameLine();
         ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will go off alot, so be warned! It does mean literally any damage, from Mobs to Dots and even Fall Damage!"); }
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will go off alot, so be warned! It does mean literally any damage, from Mobs to Dots and even Fall Damage!\nIf it ever gets too much, remember to set the Cooldown higher in General Settings!"); }
 
         if (ShockOnDamage) createPickerBox("ShockOnDamage", Configuration.ShockDamageSettings);
 
