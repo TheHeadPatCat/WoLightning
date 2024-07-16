@@ -831,7 +831,7 @@ public class ConfigWindow : Window, IDisposable
         if (ShockOnVuln) createPickerBox("ShockOnVuln", Configuration.ShockVulnSettings);
 
         var ShockOnDamage = Configuration.ShockOnDamage;
-        if (ImGui.Checkbox("Trigger when you take damage of any kind", ref ShockOnDamage))
+        if (ImGui.Checkbox("Trigger when you take damage of any kind.", ref ShockOnDamage))
         {
             Configuration.ShockOnDamage = ShockOnDamage;
             Configuration.Save();
