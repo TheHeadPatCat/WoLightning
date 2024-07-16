@@ -30,7 +30,7 @@ public class Configuration : IPluginConfiguration, IDisposable
     public bool IsPassthroughAllowed { get; set; } = false;
 
     public string LocalPlayerNameFull = "";
-    public int globalTriggerCooldown = 10;
+    public int globalTriggerCooldown { get; set; } = 10;
 
     // Are we a Master?
     public bool IsMaster { get; set; } = false;
