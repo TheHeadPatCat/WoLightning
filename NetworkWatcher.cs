@@ -251,6 +251,7 @@ namespace WoLightning
                 if (!foundDDown) lastDDownAmount = 0;
             }
 
+            lastHP = LocalPlayer.CurrentHp;
             lastStatusCheck++;
         }
 
@@ -262,7 +263,6 @@ namespace WoLightning
                 lastMaxHP = LocalPlayer.MaxHp;
                 return;
             }
-            lastHP = LocalPlayer.CurrentHp;
             if (Plugin.Configuration.ShockOnDeath && LocalPlayer.CurrentHp == 0 && !wasDead)
             {
                 Plugin.sendNotif($"You Died!");
@@ -272,7 +272,7 @@ namespace WoLightning
             }
             if (lastHP < LocalPlayer.CurrentHp && Plugin.Configuration.ShockOnDamage)
             {
-                Plugin.sendNotif($"You took Damage!"); // possibly remove this
+                //Plugin.sendNotif($"You took Damage!"); // possibly remove this
                 Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDamageSettings);
             }
             if (lastHP > 0) wasDead = false;
