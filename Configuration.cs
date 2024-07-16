@@ -182,6 +182,9 @@ public class Configuration : IPluginConfiguration, IDisposable
             result += IsPassthroughAllowed ? 1 : 0;
             result += "#";
 
+            result += globalTriggerCooldown;
+            result += "#";
+
             result += ShockOnPat ? 1 : 0;
             result += EncodeArray(ShockPatSettings);
             result += "#";
@@ -353,45 +356,48 @@ public class Configuration : IPluginConfiguration, IDisposable
                             break;
                         }
                     case 1:
+                        globalTriggerCooldown = int.Parse(part + "");
+                        break;
+                    case 2:
                         //PluginLog.Info($"Saving Pat {part}");
                         ShockOnPat = part[0] == '1';
                         ShockPatSettings = DecodeArray(part.Substring(1));
                         break;
-                    case 2:
+                    case 3:
                         //PluginLog.Info($"Saving Deathroll {part}");
                         ShockOnDeathroll = part[0] == '1';
                         ShockDeathrollSettings = DecodeArray(part.Substring(1));
                         break;
-                    case 3:
+                    case 4:
                         ShockOnFirstPerson = part[0] == '1';
                         ShockFirstPersonSettings = DecodeArray(part.Substring(1));
                         break;
-                    case 4:
+                    case 5:
                         //PluginLog.Info($"Saving Damage {part}");
                         ShockOnDamage = part[0] == '1';
                         ShockDamageSettings = DecodeArray(part.Substring(1));
                         break;
-                    case 5:
+                    case 6:
                         //PluginLog.Info($"Saving Vuln {part}");
                         ShockOnVuln = part[0] == '1';
                         ShockVulnSettings = DecodeArray(part.Substring(1));
                         break;
-                    case 6:
+                    case 7:
                         //PluginLog.Info($"Saving Rescue {part}");
                         ShockOnRescue = part[0] == '1';
                         ShockRescueSettings = DecodeArray(part.Substring(1));
                         break;
-                    case 7:
+                    case 8:
                         //PluginLog.Info($"Saving Death {part}");
                         ShockOnDeath = part[0] == '1';
                         ShockDeathSettings = DecodeArray(part.Substring(1));
                         break;
-                    case 8:
+                    case 9:
                         //PluginLog.Info($"Saving Wipe {part}");
                         ShockOnWipe = part[0] == '1';
                         ShockWipeSettings = DecodeArray(part.Substring(1));
                         break;
-                    case 9:
+                    case 10:
                         //PluginLog.Info($"Saving Wipe {part}");
                         DeathMode = part[0] == '1';
                         DeathModeSettings = DecodeArray(part.Substring(1));
