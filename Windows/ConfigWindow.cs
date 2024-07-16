@@ -819,14 +819,14 @@ public class ConfigWindow : Window, IDisposable
         if (DeathMode) createPickerBox("DeathMode", Configuration.DeathModeSettings);
 
         var ShockOnVuln = Configuration.ShockOnVuln;
-        if (ImGui.Checkbox("Trigger when you get a [Vulnerability Up] debuff", ref ShockOnVuln))
+        if (ImGui.Checkbox("Trigger when you fail a mechanic.", ref ShockOnVuln))
         {
             Configuration.ShockOnVuln = ShockOnVuln;
             Configuration.Save();
         }
         ImGui.SameLine();
         ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will trigger whenever you fail a mechanic - so some sort of dodgeable damage"); }
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will trigger whenever you get a [Vulnerability Up] or [Damage Down] debuff."); }
 
         if (ShockOnVuln) createPickerBox("ShockOnVuln", Configuration.ShockVulnSettings);
 
