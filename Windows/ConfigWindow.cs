@@ -1060,6 +1060,11 @@ public class ConfigWindow : Window, IDisposable
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
         ImGui.SliderInt("##Duration" + Name, ref Settings[2], 1, 10);
         ImGui.EndGroup();
+
+        ImGui.Separator();
+        ImGui.Spacing();
+        ImGui.Spacing();
+
     }
 }
 

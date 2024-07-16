@@ -58,7 +58,7 @@ namespace WoLightning
 
             handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, error) =>{ return (cert != null) && handler.ClientCertificates.Contains(cert); };
             Client = new(handler){Timeout = TimeSpan.FromSeconds(10)};
-            Plugin.PluginLog.Info("Created Client!");
+            Plugin.PluginLog.Verbose("HttpClient successfully created!");
             UpdateTimer.Interval = normal;
             UpdateTimer.Elapsed += (sender, e) => sendServerRequest();
             sendServerLogin();
@@ -68,18 +68,19 @@ namespace WoLightning
 
         public async void sendRequestShock(int[] settings) // todo redo this
         {
-            Plugin.PluginLog.Verbose($"(WebClient) Sending Request from {Plugin.Authentification.PishockName} with Mode {settings[0]} and Intensity/Duration: {settings[1]}|{settings[2]}");
+            Plugin.PluginLog.Verbose($"Sending Pishock Request: Mode {settings[0]} Intensity/Duration: {settings[1]}|{settings[2]}");
             if (failsafe)
             {
-                Plugin.PluginLog.Info("Blocked request due to failsafe mode!");
+                Plugin.PluginLog.Verbose(" -> Blocked request due to failsafe mode!");
                 return;
             }
             if (settings.Length < 3 || settings[0] < 0 || settings[0] > 2 || settings[1] < 1 || settings[2] < 1) return; // dont send bad data
             if (Plugin.Authentification.PishockName.Length < 3 || Plugin.Authentification.PishockShareCode.Length < 3 || Plugin.Authentification.PishockApiKey.Length < 16) return;
 
-            if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000  > DateTime.Now.Ticks && lastShock.Ticks + 7500000 < DateTime.Now.Ticks)
+            if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000  > DateTime.Now.Ticks // Cooldown
+                && lastShock.Ticks + 7500000 < DateTime.Now.Ticks) // 0.75 Second leniancy to allow passthrough
             {
-                Plugin.PluginLog.Verbose("Cooldown hit!");
+                Plugin.PluginLog.Verbose(" -> Blocked due to Cooldown!");
                 return;
             }
             lastShock = DateTime.Now;
@@ -100,10 +101,11 @@ namespace WoLightning
 
             try
             {
+                Plugin.PluginLog.Verbose(" -> Sent!");
                 Stopwatch timeTaken = Stopwatch.StartNew();
                 await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 timeTaken.Stop();
-                Plugin.PluginLog.Info("Took " + timeTaken.ElapsedMilliseconds + "ms for the request.");
+                Plugin.PluginLog.Verbose(" -> Response Time: " + timeTaken.ElapsedMilliseconds + "ms.");
                 
             }
             catch (Exception ex)
@@ -131,7 +133,7 @@ namespace WoLightning
             Plugin.PluginLog.Info(packet.ToString());
             if (ConnectionStatus != "connected")
             {
-                Plugin.PluginLog.Info("Attempted to send a Request, while we arent connected to the Server!");
+                Plugin.PluginLog.Warning("Attempted to send a Request, while we arent connected to the Server!");
                 sendServerLogin();
                 return;
             }
@@ -179,7 +181,7 @@ namespace WoLightning
 
                     case HttpStatusCode.UpgradeRequired:
                         ConnectionStatus = "outdated";
-                        Plugin.PluginLog.Info("We are running a outdated Version.");
+                        Plugin.PluginLog.Warning("We are running a outdated Version.");
                         UpdateTimer.Stop();
                         break;
 
@@ -200,7 +202,7 @@ namespace WoLightning
                         break;
 
                     case HttpStatusCode.Accepted:
-                        Plugin.PluginLog.Info($"The Server Accepted our Request.");
+                        Plugin.PluginLog.Verbose($"The Server Accepted our Request.");
                         break;
 
                     default:
@@ -255,7 +257,7 @@ namespace WoLightning
         {
             if (ConnectionStatus != "connected")
             {
-                Plugin.PluginLog.Info("Attempted to send a Request, while we arent connected to the Server!");
+                Plugin.PluginLog.Warning("Attempted to send a Request, while we arent connected to the Server!");
                 sendServerLogin();
                 return;
             }
@@ -326,7 +328,7 @@ namespace WoLightning
 
                     case HttpStatusCode.UpgradeRequired:
                         ConnectionStatus = "outdated";
-                        Plugin.PluginLog.Error("We are running a outdated version.");
+                        Plugin.PluginLog.Warning("We are running a outdated version.");
                         UpdateTimer.Stop();
                         break;
 
