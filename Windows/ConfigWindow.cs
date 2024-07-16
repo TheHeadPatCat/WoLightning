@@ -172,6 +172,11 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
+        if (Plugin.WebClient.ConnectionStatus != "connected")
+        {
+            ImGui.TextColored(new Vector4(1, 0, 0, 1), "You are currently not connected to the Webserver.\nYou can find more Information in the Main Menu.");
+        }
+
 
         if (Configuration.HasMaster)
         {
