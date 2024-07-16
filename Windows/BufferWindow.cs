@@ -6,9 +6,10 @@ namespace WoLightning.Windows;
 public class BufferWindow : Window, IDisposable
 {
 
-    // We give this window a hidden ID using ##
-    // So that the user will see "My Amazing Window" as window title,
-    // but for ImGui the ID is "My Amazing Window##With a hidden ID"
+    // This window only exists to get registered right at launch.
+    // If we do not do this, the plugin will crash and not load,
+    // As we do not register a Window right on launch otherwise.
+    // Yes this is silly.
     public BufferWindow()
         : base("BufferWindow")
     {
