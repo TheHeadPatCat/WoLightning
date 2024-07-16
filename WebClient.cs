@@ -17,6 +17,7 @@ namespace WoLightning
         private readonly Plugin Plugin;
         public long Ping { get; set; } = -1;
         private DateTime lastShock = DateTime.MinValue;
+        private DateTime passThroughLeniancy = DateTime.MinValue;
         public string ConnectionStatus { get; set; } = "not started";
         public readonly TimerPlus UpdateTimer = new TimerPlus();
         private readonly double fast = new TimeSpan(0, 0, 2).TotalMilliseconds;
@@ -67,7 +68,7 @@ namespace WoLightning
 
         public async void sendRequestShock(int[] settings) // todo redo this
         {
-            Plugin.PluginLog.Info($"(WebClient) Sending Request from {Plugin.Authentification.PishockName} with Mode {settings[0]} and Intensity/Duration: {settings[1]}|{settings[2]}");
+            Plugin.PluginLog.Verbose($"(WebClient) Sending Request from {Plugin.Authentification.PishockName} with Mode {settings[0]} and Intensity/Duration: {settings[1]}|{settings[2]}");
             if (failsafe)
             {
                 Plugin.PluginLog.Info("Blocked request due to failsafe mode!");
@@ -76,13 +77,12 @@ namespace WoLightning
             if (settings.Length < 3 || settings[0] < 0 || settings[0] > 2 || settings[1] < 1 || settings[2] < 1) return; // dont send bad data
             if (Plugin.Authentification.PishockName.Length < 3 || Plugin.Authentification.PishockShareCode.Length < 3 || Plugin.Authentification.PishockApiKey.Length < 16) return;
 
-            if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000  > DateTime.Now.Ticks)
+            if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000  > DateTime.Now.Ticks && lastShock.Ticks + 7500000 < DateTime.Now.Ticks)
             {
                 Plugin.PluginLog.Verbose("Cooldown hit!");
                 return;
             }
             lastShock = DateTime.Now;
-
 
             using StringContent jsonContent = new(
             JsonSerializer.Serialize(new

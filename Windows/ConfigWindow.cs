@@ -329,7 +329,7 @@ public class ConfigWindow : Window, IDisposable
             }
             ImGui.SameLine();
             ImGui.TextDisabled("(?)");
-            if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This sets a Cooldown on how often you can be shocked, in seconds."); }
+            if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This sets a Cooldown on how often you can be shocked, in seconds.\nThere is a 0.75 second delay before the cooldown triggers,\nto ensure that passthrough still works."); }
 
             ImGui.Spacing();
             ImGui.Spacing();
