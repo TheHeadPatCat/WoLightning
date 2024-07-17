@@ -37,7 +37,7 @@ namespace WoLightning
         private int lastStatusCheck = 0;
         private int lastPartyCheck = 0;
         private int lastCheckedIndex;
-        private bool[] deadIndexes = [false,false,false,false,false,false,false,false]; //how do i polyfill
+        private bool[] deadIndexes = [false, false, false, false, false, false, false, false]; //how do i polyfill
         private int amountDead = 0;
 
         IPlayerCharacter? IPlayerCharacter;
@@ -149,7 +149,7 @@ namespace WoLightning
         }
         public IPlayerCharacter? scanForPlayerCharacter(uint GameObjectId)
         {
-            var f = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.ObjectKind == 1 && (ulong)x.GameObjectId == GameObjectId); //player character
+            var f = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.ObjectKind == 1 && x.GameObjectId == GameObjectId); //player character
             if (f != null) return (IPlayerCharacter)f;
             else return null;
         }
@@ -204,7 +204,7 @@ namespace WoLightning
                 lastMaxHP = LocalPlayer.MaxHp;
                 lastMP = LocalPlayer.CurrentMp;
             }
-            
+
             if (lastHP != LocalPlayer.CurrentHp) HandleHPChange(); //check maxhp due to synching and such
             if (lastMP != LocalPlayer.CurrentMp) HandleMPChange();
 
@@ -260,7 +260,7 @@ namespace WoLightning
 
             if (Plugin.Configuration.DeathMode && Plugin.PartyList.Length > 0 && lastPartyCheck >= 60) // DeathMode
             {
-                if(lastCheckedIndex >= Plugin.PartyList.Length) lastCheckedIndex = 0;
+                if (lastCheckedIndex >= Plugin.PartyList.Length) lastCheckedIndex = 0;
                 if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP == 0 && !deadIndexes[lastCheckedIndex])
                 {
                     deadIndexes[lastCheckedIndex] = true;
@@ -289,7 +289,7 @@ namespace WoLightning
         private void HandleHPChange()
         {
             //Plugin.PluginLog.Verbose("HP Changed from " + lastHP + "/" + lastMaxHP + " to " + LocalPlayer.CurrentHp + "/" + LocalPlayer.MaxHp);
-            if(lastMaxHP != LocalPlayer.MaxHp)
+            if (lastMaxHP != LocalPlayer.MaxHp)
             {
                 lastMaxHP = LocalPlayer.MaxHp;
                 return;
@@ -368,7 +368,7 @@ namespace WoLightning
                 //slightly different logic
                 if (Plugin.Configuration.ShockOnFirstPerson)
                 {
-                    foreach(var word in message.ToString().Split(' '))
+                    foreach (var word in message.ToString().Split(' '))
                     {
                         string sanWord = word.ToLower();
                         sanWord = sanWord.Replace(".", "");
@@ -400,7 +400,7 @@ namespace WoLightning
                 return;
             }*/
 
-            if (Plugin.Configuration.ShockOnDeathroll && ((int)type) == 2122)
+            if (Plugin.Configuration.ShockOnDeathroll && (int)type == 2122)
             {
                 if (message.TextValue.Contains("You roll a 1 (out of", StringComparison.Ordinal))
                 {
@@ -410,7 +410,7 @@ namespace WoLightning
                 if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
 
-            ChatType.ChatTypes? chatType = ChatType.GetChatTypeFromXivChatType(type);
+            ChatTypes? chatType = GetChatTypeFromXivChatType(type);
             if (chatType == null)
             {
                 return;
@@ -421,7 +421,7 @@ namespace WoLightning
                 foreach (Trigger trigger in triggers)
                 {
                     Plugin.PluginLog.Information(message.TextValue);
-                    if (trigger.Enabled && (trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue)))
+                    if (trigger.Enabled && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
                         Plugin.PluginLog.Information($"Trigger {trigger.Name} triggered. Zap!");
                         Plugin.WebClient.sendRequestShock([trigger.Mode, trigger.Intensity, trigger.Duration]);
@@ -511,7 +511,7 @@ namespace WoLightning
             switch (type)
             {
                 case (XivChatType)4410: //death other
-                    foreach ( IPartyMember member in Plugin.PartyList)
+                    foreach (IPartyMember member in Plugin.PartyList)
                     {
                         if (message.Contains(member.Name.TextValue))
                         {

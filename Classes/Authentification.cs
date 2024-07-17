@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 
 namespace WoLightning
 {
+
     public class Authentification : IDisposable // This class is here to make sure the data that gets received from the server, is actually from this plugin (well not entirely, but it helps)
     {
         private string? ConfigurationDirectoryPath;
@@ -28,10 +29,10 @@ namespace WoLightning
         public Authentification() { }
         public Authentification(string ConfigDirectoryPath)
         {
-            this.ConfigurationDirectoryPath = ConfigDirectoryPath;
+            ConfigurationDirectoryPath = ConfigDirectoryPath;
 
             string f = "";
-            if(File.Exists(ConfigurationDirectoryPath + "authentification.json"))f = File.ReadAllText(ConfigurationDirectoryPath + "authentification.json");
+            if (File.Exists(ConfigurationDirectoryPath + "authentification.json")) f = File.ReadAllText(ConfigurationDirectoryPath + "authentification.json");
             Authentification s = DeserializeAuthentification(f);
             foreach (PropertyInfo property in typeof(Authentification).GetProperties().Where(p => p.CanWrite)) property.SetValue(this, property.GetValue(s, null), null);
             Save();
@@ -78,8 +79,9 @@ namespace WoLightning
                     //if its 404 its a normal response
                 }
             }
-            else {
-            certificate = new X509Certificate2(File.ReadAllBytes(ConfigurationDirectoryPath + "/cert.pem")); 
+            else
+            {
+                certificate = new X509Certificate2(File.ReadAllBytes(ConfigurationDirectoryPath + "/cert.pem"));
             }
             return certificate;
         }

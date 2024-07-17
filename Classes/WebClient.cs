@@ -21,9 +21,9 @@ namespace WoLightning
         public string ConnectionStatus { get; set; } = "not started";
         public readonly TimerPlus UpdateTimer = new TimerPlus();
         private readonly double fast = new TimeSpan(0, 0, 2).TotalMilliseconds;
-        private readonly double normal = new TimeSpan(0,0,15).TotalMilliseconds;
+        private readonly double normal = new TimeSpan(0, 0, 15).TotalMilliseconds;
         private readonly double slow = new TimeSpan(0, 5, 0).TotalMilliseconds;
-        
+
         public bool failsafe { get; set; } = false;
         private bool isFirstMessage = true;
 
@@ -31,7 +31,7 @@ namespace WoLightning
         private HttpClient? ClientClean;
         public WebClient(Plugin plugin)
         {
-            this.Plugin = plugin;
+            Plugin = plugin;
         }
         public void Dispose()
         {
@@ -56,8 +56,8 @@ namespace WoLightning
             handler.AllowAutoRedirect = true;
             handler.MaxConnectionsPerServer = 2;
 
-            handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, error) =>{ return (cert != null) && handler.ClientCertificates.Contains(cert); };
-            Client = new(handler){Timeout = TimeSpan.FromSeconds(10)};
+            handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, error) => { return cert != null && handler.ClientCertificates.Contains(cert); };
+            Client = new(handler) { Timeout = TimeSpan.FromSeconds(10) };
             Plugin.PluginLog.Verbose("HttpClient successfully created!");
             UpdateTimer.Interval = normal;
             UpdateTimer.Elapsed += (sender, e) => sendServerRequest();
@@ -77,7 +77,7 @@ namespace WoLightning
             if (settings.Length < 3 || settings[0] < 0 || settings[0] > 2 || settings[1] < 1 || settings[2] < 1) return; // dont send bad data
             if (Plugin.Authentification.PishockName.Length < 3 || Plugin.Authentification.PishockShareCode.Length < 3 || Plugin.Authentification.PishockApiKey.Length < 16) return;
 
-            if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000  > DateTime.Now.Ticks // Cooldown
+            if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000 > DateTime.Now.Ticks // Cooldown
                 && lastShock.Ticks + 7500000 < DateTime.Now.Ticks) // 0.75 Second leniancy to allow passthrough
             {
                 Plugin.PluginLog.Verbose(" -> Blocked due to Cooldown!");
@@ -106,7 +106,7 @@ namespace WoLightning
                 //await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 timeTaken.Stop();
                 Plugin.PluginLog.Verbose(" -> Response Time: " + timeTaken.ElapsedMilliseconds + "ms.");
-                
+
             }
             catch (Exception ex)
             {
@@ -165,13 +165,13 @@ namespace WoLightning
 
             try
             {
-                
+
                 Stopwatch timeTaken = Stopwatch.StartNew();
                 var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/post/", jsonContent);
                 timeTaken.Stop();
                 isFirstMessage = false;
                 Ping = timeTaken.ElapsedMilliseconds;
-                if (UpdateTimer.Interval > normal){ConnectionStatus = "connected"; UpdateTimer.Interval = normal;}
+                if (UpdateTimer.Interval > normal) { ConnectionStatus = "connected"; UpdateTimer.Interval = normal; }
 
                 switch (s.StatusCode)
                 {
@@ -538,7 +538,7 @@ namespace WoLightning
                 Stopwatch timeTaken = Stopwatch.StartNew();
                 var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/resetUserdata/", jsonContent2);
                 timeTaken.Stop();
-                if(s.StatusCode == HttpStatusCode.OK)
+                if (s.StatusCode == HttpStatusCode.OK)
                 {
                     Client.CancelPendingRequests();
                     Plugin.Authentification.ServerKey = "";
@@ -556,7 +556,7 @@ namespace WoLightning
                 return;
             }
         }
-        
+
 
         public bool toggleFailsafe()
         {

@@ -9,7 +9,8 @@ namespace WoLightning
         public string encodedData = "";
 
 
-        public NetworkPacket() {
+        public NetworkPacket()
+        {
         }
         public NetworkPacket(string data) //received packet
         {
@@ -92,7 +93,7 @@ namespace WoLightning
                 Plugin.PluginLog.Info("Done resolving packet.");
             }
             Plugin.PluginLog.Info("Finished decoding.");
-            
+
         }
 
         private string encodeMessage(string type, string input)

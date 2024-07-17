@@ -5,7 +5,6 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using ImGuiNET;
 using System;
 using System.Linq;
@@ -13,9 +12,8 @@ using System.Numerics;
 using System.Text.RegularExpressions;
 using WoLightning.Types;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Timers;
-using System.Xml.Linq;
+
 
 namespace WoLightning.Windows;
 
@@ -865,9 +863,6 @@ public class ConfigWindow : Window, IDisposable
             ImGui.Spacing();
             ImGui.Spacing();
         }
-
-
-
 
 
         var ShockOnVuln = Configuration.ShockOnVuln;

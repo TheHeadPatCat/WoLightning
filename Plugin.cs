@@ -1,15 +1,12 @@
 using Dalamud.Game.Command;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Windowing;
-using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Runtime.Intrinsics.X86;
-using System.Security.Cryptography.X509Certificates;
 using WoLightning.Windows;
 
 namespace WoLightning;
@@ -18,13 +15,13 @@ public sealed class Plugin : IDalamudPlugin
 {
 
     // General stuff
-    private const string CommandName = "/wol";
-    private const string CommandNameAlias = "/wolightning";
+    private const string CommandName = "/wolightning";
+    private const string CommandNameAlias = "/wol";
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const string currentVersion = "0.2.5.8";
-    public const string randomKey = "eeffffffefeeeffeeeeeffeefefffeefefeefeeefefffeefefeefefeeeefeefeeef";
+    public const string currentVersion = "0.2.6.0";
+    public const string randomKey = "902fn09bbnx0ßx9n20230934n293094dfsgpqonsdnymqngfizwmvzuwoigmmylasj23";
     public string? ConfigurationDirectoryPath { get; set; }
 
 
