@@ -15,6 +15,7 @@ using WoLightning.Types;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Timers;
+using System.Xml.Linq;
 
 namespace WoLightning.Windows;
 
@@ -836,7 +837,38 @@ public class ConfigWindow : Window, IDisposable
         ImGui.TextDisabled("(?)");
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This delivers scaling shocks based on the amount of party members that are dead, up to the maximum with a wipe. Be warned."); }
 
-        if (DeathMode) createPickerBox("DeathMode", Configuration.DeathModeSettings);
+        if (DeathMode)
+        {
+            var Name = "Deathmode";
+            var Settings = Configuration.DeathModeSettings;
+            ImGui.BeginGroup();
+            ImGui.Text("    Mode");
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 15);
+            if (ImGui.Combo("##" + Name, ref Settings[0], ["Shock", "Vibrate", "Beep"], 3)) Configuration.updateSetting(Name, Settings);
+            ImGui.EndGroup();
+
+            ImGui.SameLine();
+            ImGui.BeginGroup();
+            ImGui.Text(" Maximum Intensity");
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+            ImGui.SliderInt("##Intensity" + Name, ref Settings[1], 1, 100);
+            ImGui.EndGroup();
+
+            ImGui.SameLine();
+            ImGui.BeginGroup();
+            ImGui.Text(" Maximum Duration");
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+            ImGui.SliderInt("##Duration" + Name, ref Settings[2], 1, 10);
+            ImGui.EndGroup();
+
+            ImGui.Separator();
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
+
+
+
+
 
         var ShockOnVuln = Configuration.ShockOnVuln;
         if (ImGui.Checkbox("Trigger when you fail a mechanic.", ref ShockOnVuln))

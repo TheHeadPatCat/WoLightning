@@ -35,6 +35,10 @@ namespace WoLightning
         private uint lastVulnAmount = 0;
         private uint lastDDownAmount = 0;
         private int lastStatusCheck = 0;
+        private int lastPartyCheck = 0;
+        private int lastCheckedIndex;
+        private bool[] deadIndexes = [false,false,false,false,false,false,false,false]; //how do i polyfill
+        private int amountDead = 0;
 
         IPlayerCharacter? IPlayerCharacter;
         IPlayerCharacter? MasterCharacter;
@@ -200,7 +204,7 @@ namespace WoLightning
                 lastMaxHP = LocalPlayer.MaxHp;
                 lastMP = LocalPlayer.CurrentMp;
             }
-
+            
             if (lastHP != LocalPlayer.CurrentHp) HandleHPChange(); //check maxhp due to synching and such
             if (lastMP != LocalPlayer.CurrentMp) HandleMPChange();
 
@@ -209,50 +213,77 @@ namespace WoLightning
                 lastStatusCheck = 0;
                 bool foundVuln = false;
                 bool foundDDown = false;
-                foreach (var status in LocalPlayer.StatusList)
+                if (LocalPlayer.StatusList != null)
                 {
-                    //Yes. We have to check for the IconId. The StatusId is different for different expansions, while the Name is different through languages.
-                    if (status.GameData.Icon >= 17101 && status.GameData.Icon <= 17116) // Vuln Up
+                    foreach (var status in LocalPlayer.StatusList)
                     {
-                        foundVuln = true;
-                        var amount = status.StackCount;
+                        //Yes. We have to check for the IconId. The StatusId is different for different expansions, while the Name is different through languages.
+                        if (status.GameData.Icon >= 17101 && status.GameData.Icon <= 17116) // Vuln Up
+                        {
+                            foundVuln = true;
+                            var amount = status.StackCount;
 
-                        Plugin.PluginLog.Verbose("Found Vuln Up - Amount: " + amount + " lastVulnCount: " + lastVulnAmount);
-                        if(amount > lastVulnAmount)
-                        {
-                            Plugin.sendNotif($"You failed a Mechanic!");
-                            Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
-                            if (!Plugin.Configuration.IsPassthroughAllowed)
+                            Plugin.PluginLog.Verbose("Found Vuln Up - Amount: " + amount + " lastVulnCount: " + lastVulnAmount);
+                            if (amount > lastVulnAmount)
                             {
-                                lastVulnAmount = amount;
-                                return;
+                                Plugin.sendNotif($"You failed a Mechanic!");
+                                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
+                                if (!Plugin.Configuration.IsPassthroughAllowed)
+                                {
+                                    lastVulnAmount = amount;
+                                    return;
+                                }
                             }
+                            lastVulnAmount = amount;
                         }
-                        lastVulnAmount = amount;
-                    }
-                    if (status.GameData.Icon >= 18441 && status.GameData.Icon <= 18456) // Damage Down
-                    {
-                        foundDDown = true;
-                        var amount = status.StackCount;
-                        if (amount > lastDDownAmount)
+                        if (status.GameData.Icon >= 18441 && status.GameData.Icon <= 18456) // Damage Down
                         {
-                            Plugin.sendNotif($"You failed a Mechanic!");
-                            Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
-                            if (!Plugin.Configuration.IsPassthroughAllowed)
+                            foundDDown = true;
+                            var amount = status.StackCount;
+                            if (amount > lastDDownAmount)
                             {
-                                lastDDownAmount = amount;
-                                return;
+                                Plugin.sendNotif($"You failed a Mechanic!");
+                                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
+                                if (!Plugin.Configuration.IsPassthroughAllowed)
+                                {
+                                    lastDDownAmount = amount;
+                                    return;
+                                }
                             }
+                            lastDDownAmount = amount;
                         }
-                        lastDDownAmount = amount;
                     }
                 }
                 if (!foundVuln) lastVulnAmount = 0;
                 if (!foundDDown) lastDDownAmount = 0;
+            } //Shock On Vuln / Damage Down
+
+            if (Plugin.Configuration.DeathMode && Plugin.PartyList.Length > 0 && lastPartyCheck >= 60) // DeathMode
+            {
+                if(lastCheckedIndex >= Plugin.PartyList.Length) lastCheckedIndex = 0;
+                if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP == 0 && !deadIndexes[lastCheckedIndex])
+                {
+                    deadIndexes[lastCheckedIndex] = true;
+                    amountDead++;
+                    Plugin.PluginLog.Information($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} Members are dead.");
+                    Plugin.WebClient.sendRequestShock([
+                        Plugin.Configuration.DeathModeSettings[0],
+                        Plugin.Configuration.DeathModeSettings[1] / amountDead / Plugin.PartyList.Length,
+                        Plugin.Configuration.DeathModeSettings[2] / amountDead / Plugin.PartyList.Length]);
+                }
+                else if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP > 0 && deadIndexes[lastCheckedIndex])
+                {
+                    deadIndexes[lastCheckedIndex] = false;
+                    amountDead--;
+                    Plugin.PluginLog.Information($"(Deathmode) - Player revived - {amountDead}/{Plugin.PartyList.Length} Members are dead.");
+                }
+                lastCheckedIndex++;
+                lastPartyCheck = 0;
             }
 
             lastHP = LocalPlayer.CurrentHp;
             lastStatusCheck++;
+            lastPartyCheck++;
         }
 
         private void HandleHPChange()
@@ -310,11 +341,11 @@ namespace WoLightning
 #pragma warning disable CS8602 // no localplayer can NOT be null here, because if it is then our game isnt even working
 
             int[] dmTypes = { 2234, 2874, 4410, 2106, 4154 };
-            if (Plugin.Configuration.DeathMode && dmTypes.Contains((int)type))
+            /*if (Plugin.Configuration.DeathMode && dmTypes.Contains((int)type))
             {
                 HandleDeathMode(type, message.TextValue);
                 if (!Plugin.Configuration.IsPassthroughAllowed) return;
-            }
+            }*/
 
 
             if ((int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString().ToLower() == sender.ToString().ToLower()) // its proooobably a social message
