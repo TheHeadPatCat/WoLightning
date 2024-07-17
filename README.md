@@ -4,7 +4,7 @@
 
 You have to use the [XIVQuicklauncher](https://goatcorp.github.io/) with Dalamud enabled for this to work.
 
-![Preview of Main Menu](preview.png)
+![Preview of Main Menu](etc/preview.png)
 
 ### Warning! This is a still in a prototype phase - Expect things to go wrong!
 
@@ -33,7 +33,7 @@ Or if you want to be fancy, open a Issue. That also works.
 - "Death mode" (Created by [Lexiconmage](https://github.com/lexiconmage))  
   Will shock you on any partymembers death - increasing in intensity with more members dead!
  
-  ![Preview of Configuration](configPreview.png)
+  ![Preview of Configuration](etc/configPreview.png)
   
 
 
