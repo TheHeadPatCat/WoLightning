@@ -126,7 +126,7 @@ public class ConfigWindow : Window, IDisposable
         // Flags must be added or removed before Draw() is being called, or they won't apply
     }
 
-    public override void Draw() // TODO make this entire thing dynamic (if performance allows it)
+    public override void Draw() 
     {
 
         DrawHeader();
@@ -546,7 +546,7 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.EndListBox();
             }
 
-            // TODO add text wrap
+            
             ImGui.TextWrapped(" - \"Privileged\" allows a player to enable/disable your Triggers through messages. [Currently Unused]");
             ImGui.TextWrapped(" - \"Whitelisted\" allows a player to activate your Triggers, when you have \"Whitelist Mode\" on.");
             ImGui.TextWrapped(" - \"Blocked\" disallows a player from interacting with this plugin in any way.");

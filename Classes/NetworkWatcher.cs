@@ -37,7 +37,7 @@ namespace WoLightning
         private int lastStatusCheck = 0;
         private int lastPartyCheck = 0;
         private int lastCheckedIndex;
-        private bool[] deadIndexes = [false, false, false, false, false, false, false, false]; //how do i polyfill
+        private readonly bool[] deadIndexes = [false, false, false, false, false, false, false, false]; //how do i polyfill
         private int amountDead = 0;
 
         IPlayerCharacter? IPlayerCharacter;
@@ -310,7 +310,7 @@ namespace WoLightning
         }
         private void HandleMPChange()
         {
-
+            // Currently Unused
         }
         private void HandleStatusChange()
         {
@@ -460,7 +460,7 @@ namespace WoLightning
 
         private void HandlePlayerTerritoryChange(ushort obj)
         {
-
+            // Currently Unused
         }
 
 

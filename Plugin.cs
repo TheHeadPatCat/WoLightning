@@ -143,19 +143,6 @@ public sealed class Plugin : IDalamudPlugin
             ConfigWindow = new ConfigWindow(this);
             MasterWindow = new MasterWindow(this);
 
-
-
-
-            /*
-             * 
-             * Todo fix up all of these initialzers // done
-             * bugtest masterwindow and maybe make it a tiny bit more useable
-             * make configuration save for different player characters // done
-             * bugtest network more
-             * add debug option to delete server data
-             * 
-             */
-
             if (Configuration.ActivateOnStart) NetworkWatcher.Start();
 
             Configuration.LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
@@ -164,8 +151,6 @@ public sealed class Plugin : IDalamudPlugin
             WindowSystem.AddWindow(ConfigWindow);
             WindowSystem.AddWindow(MainWindow);
             WindowSystem.AddWindow(MasterWindow);
-
-            // add buttons to ui
         }
         catch (Exception ex)
         {
