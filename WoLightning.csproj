@@ -3,7 +3,7 @@
   <Import Project="Dalamud.Plugin.Bootstrap.targets" />
 
   <PropertyGroup>
-    <Version>0.2.6.0</Version>
+    <Version>0.2.6.1</Version>
     <Description>A Plugin providing Pishock integration.</Description>
     <PackageProjectUrl>https://github.com/TheHeadPatCat/WoLightning</PackageProjectUrl>
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>

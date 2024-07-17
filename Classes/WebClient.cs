@@ -103,7 +103,7 @@ namespace WoLightning
             {
                 Plugin.PluginLog.Verbose(" -> Sent!");
                 Stopwatch timeTaken = Stopwatch.StartNew();
-                //await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 timeTaken.Stop();
                 Plugin.PluginLog.Verbose(" -> Response Time: " + timeTaken.ElapsedMilliseconds + "ms.");
 
