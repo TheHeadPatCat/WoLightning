@@ -14,7 +14,7 @@ public class MasterWindow : Window, IDisposable
 
 
     public string requestingSub = "";
-    private Vector4 active = new Vector4(0,1,0,1);
+    private Vector4 active = new Vector4(0, 1, 0, 1);
     private Vector4 inactive = new Vector4(0, 1, 0, 1);
     public bool updating = false;
 
@@ -26,7 +26,7 @@ public class MasterWindow : Window, IDisposable
     {
         Plugin = plugin;
         Configuration = new Configuration();
-        Configuration.Initialize(Plugin,true, Plugin.ConfigurationDirectoryPath);
+        Configuration.Initialize(Plugin, true, Plugin.ConfigurationDirectoryPath);
         Flags = ImGuiWindowFlags.AlwaysUseWindowPadding;
         SizeConstraints = new WindowSizeConstraints
         {
@@ -36,13 +36,14 @@ public class MasterWindow : Window, IDisposable
 
         ConfigWindow = new ConfigWindow(Plugin, Configuration, this);
         Plugin.WindowSystem.AddWindow(ConfigWindow);
-        if(Configuration.OwnedSubs.Count > 0) { } //setup timer
+        if (Configuration.OwnedSubs.Count > 0) { } //setup timer
     }
 
 
 
 
-    public void Dispose() {
+    public void Dispose()
+    {
         if (this.IsOpen) this.Toggle();
         Plugin.WindowSystem.RemoveWindow(ConfigWindow);
         ConfigWindow.Dispose();
@@ -67,8 +68,8 @@ public class MasterWindow : Window, IDisposable
 
 
         if (updating) ImGui.BeginDisabled();
-        if(ImGui.Button(updating ? "Requesting..." : "Request Status"))UpdateStatus();
-        if(updating) ImGui.EndDisabled();
+        if (ImGui.Button(updating ? "Requesting..." : "Request Status")) UpdateStatus();
+        if (updating) ImGui.EndDisabled();
 
         try
         {
@@ -79,15 +80,15 @@ public class MasterWindow : Window, IDisposable
 
                 if (!Configuration.SubsIsActive.ContainsKey(sub)) break;
 
-                if (ImGui.SmallButton($"O##toggle{sub}"))Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "setpluginstate"], ["ordered to toggle", sub, Configuration.SubsIsActive[sub] ? "false" : "true"]));
+                if (ImGui.SmallButton($"O##toggle{sub}")) Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "setpluginstate"], ["ordered to toggle", sub, Configuration.SubsIsActive[sub] ? "false" : "true"]));
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip("Toggle Plugin State");
                 ImGui.SameLine();
-                ImGui.TextColored(Configuration.SubsIsActive[sub] ? active : inactive,sub);
+                ImGui.TextColored(Configuration.SubsIsActive[sub] ? active : inactive, sub);
                 ImGui.SameLine();
                 ImGui.Text("  Preset:");
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(120);
-                
+
                 var p = Configuration.SubsActivePresetIndexes[sub];
                 if (ImGui.Combo($"##presetbox{sub}", ref p, [.. Configuration.Presets.Keys], Configuration.Presets.Keys.Count))
                 {
@@ -108,14 +109,15 @@ public class MasterWindow : Window, IDisposable
                 {
                     Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "unbindsub"], ["unbind request", sub, "undefined"]));
                     Configuration.SubsIsDisallowed.Remove(sub);
-                    Configuration.SubsActivePresetIndexes.Remove(sub); 
+                    Configuration.SubsActivePresetIndexes.Remove(sub);
                     Configuration.OwnedSubs.Remove(sub); // these will cause a error, but thats okay
                     Configuration.Save();
                 }
             }
         }
-        catch (Exception e) {
-            
+        catch (Exception e)
+        {
+
             Plugin.PluginLog.Error(e.ToString());
             errorEncountered = true;
         }
@@ -144,7 +146,7 @@ public class MasterWindow : Window, IDisposable
 
             if (ImGui.Button("Accept"))
             {
-                if(!Configuration.OwnedSubs.Contains(requestingSub))Configuration.OwnedSubs.Add(requestingSub);
+                if (!Configuration.OwnedSubs.Contains(requestingSub)) Configuration.OwnedSubs.Add(requestingSub);
                 Configuration.SubsActivePresetIndexes[requestingSub] = 0;
                 Configuration.SubsIsDisallowed[requestingSub] = false;
                 Configuration.SubsIsActive[requestingSub] = false;
@@ -158,7 +160,7 @@ public class MasterWindow : Window, IDisposable
             ImGui.SameLine();
             if (ImGui.Button("Refuse"))
             {
-                if(!Plugin.Configuration.IsMaster)this.Toggle();
+                if (!Plugin.Configuration.IsMaster) this.Toggle();
                 Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "false"]));
                 requestingSub = "";
             }

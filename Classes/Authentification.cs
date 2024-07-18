@@ -1,17 +1,14 @@
-﻿using Dalamud.Logging;
-using System.Net;
+﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.IO;
-using System.Net.Http;
-using System.Data;
-using System.Net.NetworkInformation;
-using System.Security.Authentication;
-using System.Linq;
-using System.Reflection;
-using Newtonsoft.Json;
 
 namespace WoLightning
 {
@@ -22,6 +19,7 @@ namespace WoLightning
         private string Hash = "";
         public string PishockName { get; set; } = string.Empty;
         public string PishockShareCode { get; set; } = string.Empty;
+        public Dictionary<String, String> PishockShockerCodes { get; set; } = new Dictionary<String, String>();
         public string PishockApiKey { get; set; } = string.Empty;
         public string ServerKey { get; set; } = string.Empty;
 

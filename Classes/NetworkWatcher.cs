@@ -1,18 +1,12 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.ClientState.Party;
-using Dalamud.Game.ClientState.Statuses;
 using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Plugin.Services;
-using Lumina.Excel.GeneratedSheets;
-using Lumina.Excel.GeneratedSheets2;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Timers;
 using WoLightning.Types;
@@ -417,8 +411,8 @@ namespace WoLightning
             }
             if (Plugin.Configuration.Channels.Contains(chatType.Value)) //If the channel can be selected and is activated by the user
             {
-                List<Trigger> triggers = Plugin.Configuration.Triggers;
-                foreach (Trigger trigger in triggers)
+                List<RegexTrigger> triggers = Plugin.Configuration.Triggers;
+                foreach (RegexTrigger trigger in triggers)
                 {
                     Plugin.PluginLog.Information(message.TextValue);
                     if (trigger.Enabled && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))

@@ -1,8 +1,4 @@
 using Dalamud.Configuration;
-using Dalamud.Logging;
-using Dalamud.Plugin;
-using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Component.Text;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -32,6 +28,7 @@ namespace WoLightning
 
         public string LocalPlayerNameFull = "";
         public int globalTriggerCooldown { get; set; } = 10;
+        public float globalTriggerCooldownGate { get; set; } = 0.75f;
 
         // Are we a Master?
         public bool IsMaster { get; set; } = false;
@@ -57,6 +54,10 @@ namespace WoLightning
         // Intensity: 1-100
         // Duration: 1-10 (seconds)
         // Social Triggers
+
+        public Trigger GetPat { get; set; } = new Trigger("GetPat");
+        public Trigger LoseDeathRoll { get; set; } = new Trigger("LoseDeathroll");
+        public Trigger SayFirstPerson { get; set; } = new Trigger("SayFirstPerson");
         public bool ShockOnPat { get; set; } = false;
         public int[] ShockPatSettings { get; set; } = [0, 1, 1];
         public bool ShockOnDeathroll { get; set; } = false;
@@ -87,7 +88,7 @@ namespace WoLightning
         public List<string> OwnedSubs { get; set; } = new List<string>();
         public Dictionary<string, int> SubsActivePresetIndexes { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, bool> SubsIsDisallowed { get; set; } = new Dictionary<string, bool>();
-        public List<Trigger> Triggers { get; set; } = new List<Trigger>();
+        public List<RegexTrigger> Triggers { get; set; } = new List<RegexTrigger>();
         public List<ChatType.ChatTypes> Channels { get; set; } = new List<ChatType.ChatTypes>();
 
 
@@ -481,12 +482,12 @@ namespace WoLightning
             {
                 Triggers.Clear();
                 var x = 0;
-                Trigger temp;
+                RegexTrigger temp;
                 foreach (var part in Sharestring.Split("#"))
                 {
                     if (part.Length <= 2) break;
                     var lParts = part.Split(".");
-                    temp = new Trigger();
+                    temp = new RegexTrigger();
                     temp.Name = DecodeWord(lParts[0]);
                     temp.RegexString = lParts[1];
                     temp.Regex = new System.Text.RegularExpressions.Regex(lParts[1]);

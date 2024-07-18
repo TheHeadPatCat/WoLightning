@@ -6,11 +6,9 @@ using Dalamud.Plugin.Services;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using WoLightning.Windows;
 
 namespace WoLightning;
-
 public sealed class Plugin : IDalamudPlugin
 {
 
@@ -38,7 +36,7 @@ public sealed class Plugin : IDalamudPlugin
     public IObjectTable ObjectTable { get; init; }
     public IGameInteropProvider GameInteropProvider { get; init; }
     public IPartyList PartyList { get; init; }
-    
+
 
     // Gui Interfaces
     public readonly WindowSystem WindowSystem = new("WoLightning");
@@ -74,20 +72,20 @@ public sealed class Plugin : IDalamudPlugin
         )
     {
         // Setup all Services
-            PluginInterface = pluginInterface;
-            CommandManager = commandManager;
-            PluginLog = pluginlog;
-            Framework = framework;
-            GameNetwork = gamenetwork;
-            ObjectTable = objectTable;
-            ChatGui = chatgui;
-            DutyState = dutystate;
-            ClientState = clientstate;
-            NotificationManager = notificationManager;
-            GameInteropProvider = gameInteropProvider;
-            PartyList = partyList;
-            NetworkWatcher = new NetworkWatcher( this ); // we need this to check for logins
-            WindowSystem.AddWindow(BufferWindow);
+        PluginInterface = pluginInterface;
+        CommandManager = commandManager;
+        PluginLog = pluginlog;
+        Framework = framework;
+        GameNetwork = gamenetwork;
+        ObjectTable = objectTable;
+        ChatGui = chatgui;
+        DutyState = dutystate;
+        ClientState = clientstate;
+        NotificationManager = notificationManager;
+        GameInteropProvider = gameInteropProvider;
+        PartyList = partyList;
+        NetworkWatcher = new NetworkWatcher(this); // we need this to check for logins
+        WindowSystem.AddWindow(BufferWindow);
 
         if (ClientState.LocalPlayer != null) onLogin();
 
@@ -121,12 +119,12 @@ public sealed class Plugin : IDalamudPlugin
         {
 
             ConfigurationDirectoryPath = PluginInterface.GetPluginConfigDirectory() + "\\" + ClientState.LocalPlayer.Name;
-            if (!Directory.Exists(ConfigurationDirectoryPath))Directory.CreateDirectory(ConfigurationDirectoryPath);
+            if (!Directory.Exists(ConfigurationDirectoryPath)) Directory.CreateDirectory(ConfigurationDirectoryPath);
             ConfigurationDirectoryPath += "\\";
 
             Configuration = new Configuration();
             Configuration.LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
-            Configuration.Initialize(this,false, ConfigurationDirectoryPath);
+            Configuration.Initialize(this, false, ConfigurationDirectoryPath);
 
             if (Configuration.DebugEnabled)
             {
@@ -188,7 +186,7 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.RemoveWindow(ConfigWindow);
         WindowSystem.RemoveWindow(MasterWindow);
         WindowSystem.RemoveWindow(BufferWindow);
-        
+
 
         EmoteReaderHooks.Dispose();
         WebClient.Dispose();
@@ -209,7 +207,7 @@ public sealed class Plugin : IDalamudPlugin
     }
     private void OnCommandAlias(string command, string args)
     {
-        OnCommand(command,args);
+        OnCommand(command, args);
     }
     private void OnFailsafe(string command, string args)
     {
@@ -249,13 +247,13 @@ public sealed class Plugin : IDalamudPlugin
 
     public void handleMasterAnswer(string answer)
     {
-        if(answer == "false")
+        if (answer == "false")
         {
             sendNotif("The other player rejected your Request!");
             Configuration.MasterNameFull = "";
             return;
         }
-        if(answer == "true")
+        if (answer == "true")
         {
             sendNotif("The other player accepted your Request!");
             Configuration.HasMaster = true;
@@ -288,9 +286,9 @@ public sealed class Plugin : IDalamudPlugin
     public string devHash()
     {
         return ConfigWindow.debugKmessage;
-        
+
     }
 
-    
+
 
 }

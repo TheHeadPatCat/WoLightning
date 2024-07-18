@@ -1,7 +1,4 @@
-﻿using System.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace WoLightning
+﻿namespace WoLightning
 {
     public class NetworkPacket
     {

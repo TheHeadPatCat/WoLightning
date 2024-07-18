@@ -1,18 +1,18 @@
 ﻿using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
-using Dalamud.Interface;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
-using WoLightning.Types;
-using System.Collections.Generic;
 using System.Timers;
+using WoLightning.Types;
 
 
 namespace WoLightning.Windows;
@@ -21,8 +21,6 @@ public class ConfigWindow : Window, IDisposable
 {
     private Configuration Configuration;
     private Plugin Plugin;
-
-
 
     // Badword List
     private String WordListInput = new String("");
@@ -126,7 +124,7 @@ public class ConfigWindow : Window, IDisposable
         // Flags must be added or removed before Draw() is being called, or they won't apply
     }
 
-    public override void Draw() 
+    public override void Draw()
     {
 
         DrawHeader();
@@ -162,7 +160,7 @@ public class ConfigWindow : Window, IDisposable
                 if (isAlternative) Plugin.ToggleMasterConfigUI();
                 else Plugin.ToggleConfigUI();
                 Configuration = new Configuration();
-                Configuration.Initialize(Plugin,isAlternative, Plugin.ConfigurationDirectoryPath, true);
+                Configuration.Initialize(Plugin, isAlternative, Plugin.ConfigurationDirectoryPath, true);
                 Plugin.sendNotif("Your configuration has been reset!");
 
                 Configuration.Save();
@@ -326,7 +324,7 @@ public class ConfigWindow : Window, IDisposable
 
             var GlobalTriggerCooldown = Configuration.globalTriggerCooldown;
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 240);
-            if(ImGui.SliderInt("Global Cooldown of Triggers (sec)", ref GlobalTriggerCooldown, 3, 300))
+            if (ImGui.SliderInt("Global Cooldown of Triggers (sec)", ref GlobalTriggerCooldown, 3, 300))
             {
                 Configuration.globalTriggerCooldown = GlobalTriggerCooldown;
                 Configuration.Save();
@@ -546,7 +544,7 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.EndListBox();
             }
 
-            
+
             ImGui.TextWrapped(" - \"Privileged\" allows a player to enable/disable your Triggers through messages. [Currently Unused]");
             ImGui.TextWrapped(" - \"Whitelisted\" allows a player to activate your Triggers, when you have \"Whitelist Mode\" on.");
             ImGui.TextWrapped(" - \"Blocked\" disallows a player from interacting with this plugin in any way.");
@@ -747,14 +745,24 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
-        var ShockOnPat = Configuration.ShockOnPat;
-        if (ImGui.Checkbox("Trigger when you get /pet", ref ShockOnPat))
+        var GetPat = Configuration.GetPat.Enabled;
+        if (ImGui.Checkbox("Trigger when you get /pet", ref GetPat))
         {
-            Configuration.ShockOnPat = ShockOnPat;
+            Configuration.GetPat.Enabled = GetPat;
             Configuration.Save();
         }
 
-        if (ShockOnPat)createPickerBox("ShockOnPat", Configuration.ShockPatSettings);
+        if (GetPat) {
+            int[] res = createPickerBox(Configuration.GetPat);
+            if (res[3] == 1)
+            {
+                Configuration.GetPat.OpMode = (OpType)res[0];
+                Configuration.GetPat.Intensity = res[1];
+                Configuration.GetPat.Duration = res[2];
+                Configuration.Save();
+            }
+        }
+
 
 
         var ShockOnDeathroll = Configuration.ShockOnDeathroll;
@@ -930,7 +938,7 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
-        List<Trigger> triggers = Configuration.Triggers;
+        List<RegexTrigger> triggers = Configuration.Triggers;
         ImGui.PushFont(UiBuilder.IconFont);
         if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
         {
@@ -1076,7 +1084,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.BeginGroup();
         ImGui.Text("    Mode");
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 15);
-        if (ImGui.Combo("##" + Name, ref Settings[0], ["Shock", "Vibrate", "Beep"], 3))Configuration.updateSetting(Name, Settings);
+        if (ImGui.Combo("##" + Name, ref Settings[0], ["Shock", "Vibrate", "Beep"], 3)) Configuration.updateSetting(Name, Settings);
         ImGui.EndGroup();
 
         ImGui.SameLine();
@@ -1084,7 +1092,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.Text("    Intensity");
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
         ImGui.SliderInt("##Intensity" + Name, ref Settings[1], 1, 100);
-        ImGui.EndGroup() ;
+        ImGui.EndGroup();
 
         ImGui.SameLine();
         ImGui.BeginGroup();
@@ -1097,6 +1105,34 @@ public class ConfigWindow : Window, IDisposable
         ImGui.Spacing();
         ImGui.Spacing();
 
+    }
+    private int[] createPickerBox(Trigger TriggerObject)
+    {
+        int[] settings = [(int)TriggerObject.OpMode,TriggerObject.Intensity, TriggerObject.Duration,0];
+        ImGui.BeginGroup();
+        ImGui.Text("    Mode");
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 15);
+        if(ImGui.Combo("##" + TriggerObject.Name, ref settings[0], ["Shock", "Vibrate", "Beep"], 3))settings[3] = 1;
+        ImGui.EndGroup();
+
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        ImGui.Text("    Intensity");
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+        if(ImGui.SliderInt("##Intensity" + TriggerObject.Name, ref settings[1], 1, 100))settings[3] = 1;
+        ImGui.EndGroup();
+
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        ImGui.Text("    Duration");
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+        if(ImGui.SliderInt("##Duration" + TriggerObject.Name, ref settings[2], 1, 10))settings[3] = 1;
+        ImGui.EndGroup();
+
+        ImGui.Separator();
+        ImGui.Spacing();
+        ImGui.Spacing();
+        return settings;
     }
 }
 

@@ -1,14 +1,12 @@
-using Dalamud.Logging;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using WoLightning.Types;
 
 namespace WoLightning
 {
@@ -113,6 +111,65 @@ namespace WoLightning
                 Plugin.PluginLog.Error(ex.ToString());
                 Plugin.PluginLog.Error("Error when sending post request to pishock api");
             }
+        }
+
+
+        public async Task sendPishockRequest(Trigger TriggerObject)
+        {
+
+            Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Length} shockers.");
+
+
+            //Validation of Data
+            if (Plugin.Authentification.PishockName.Length < 3
+                || Plugin.Authentification.PishockApiKey.Length < 16)
+            {
+                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                return;
+            }
+
+            if (failsafe)
+            {
+                Plugin.PluginLog.Verbose(" -> Blocked request due to failsafe mode!");
+                return;
+            }
+
+            if (!TriggerObject.Validate())
+            {
+                Plugin.PluginLog.Verbose(" -> Blocked due to invalid TriggerObject!");
+                return;
+            }
+
+
+            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+
+            foreach (var shocker in TriggerObject.Shockers)
+            {
+                using StringContent jsonContent = new(
+            JsonSerializer.Serialize(new
+            {
+                Username = Plugin.Authentification.PishockName,
+                Name = "WoLPlugin",
+                Code = shocker,
+                Intensity = TriggerObject.Intensity,
+                Duration = TriggerObject.Duration,
+                Apikey = Plugin.Authentification.PishockApiKey,
+                Op = (int)TriggerObject.OpMode,
+            }),
+            Encoding.UTF8,
+            "application/json");
+
+                try
+                {
+                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                }
+                catch (Exception ex)
+                {
+                    Plugin.PluginLog.Error(ex.ToString());
+                    Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                }
+            }
+            Plugin.PluginLog.Verbose($" -> Requests sent!");
         }
 
 
