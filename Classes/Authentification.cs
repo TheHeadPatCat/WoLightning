@@ -16,12 +16,29 @@ namespace WoLightning
     public class Authentification : IDisposable // This class is here to make sure the data that gets received from the server, is actually from this plugin (well not entirely, but it helps)
     {
         private string? ConfigurationDirectoryPath;
+
+        // Webserver things
         private string Hash = "";
+        public string ServerKey { get; set; } = string.Empty;
+
+        // Pishock things
         public string PishockName { get; set; } = string.Empty;
         public string PishockShareCode { get; set; } = string.Empty;
         public Dictionary<String, String> PishockShockerCodes { get; set; } = new Dictionary<String, String>();
         public string PishockApiKey { get; set; } = string.Empty;
-        public string ServerKey { get; set; } = string.Empty;
+        
+
+
+        // Mastermode - Master Settings
+        public bool IsMaster { get; set; } = false;
+        public int LeashEmoteIdMaster { get; set; } = 0;
+        [NonSerialized] public string isLeashedTo = "";
+
+
+        // Mastermode - Sub Settings
+        public bool HasMaster { get; set; } = false;
+        public string MasterNameFull { get; set; } = string.Empty;
+        public bool isDisallowed { get; set; } = false; //locks the interface
 
 
         public Authentification() { }

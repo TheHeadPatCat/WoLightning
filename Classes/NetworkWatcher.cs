@@ -202,7 +202,7 @@ namespace WoLightning
             if (lastHP != LocalPlayer.CurrentHp) HandleHPChange(); //check maxhp due to synching and such
             if (lastMP != LocalPlayer.CurrentMp) HandleMPChange();
 
-            if (lastStatusCheck >= 60 && Plugin.Configuration.ShockOnVuln)
+            if (lastStatusCheck >= 60 && Plugin.Configuration.FailMechanic.IsEnabled())
             {
                 lastStatusCheck = 0;
                 bool foundVuln = false;
@@ -221,7 +221,7 @@ namespace WoLightning
                             if (amount > lastVulnAmount)
                             {
                                 Plugin.sendNotif($"You failed a Mechanic!");
-                                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
+                                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.FailMechanic);
                                 if (!Plugin.Configuration.IsPassthroughAllowed)
                                 {
                                     lastVulnAmount = amount;
@@ -237,7 +237,7 @@ namespace WoLightning
                             if (amount > lastDDownAmount)
                             {
                                 Plugin.sendNotif($"You failed a Mechanic!");
-                                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockVulnSettings);
+                                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.FailMechanic);
                                 if (!Plugin.Configuration.IsPassthroughAllowed)
                                 {
                                     lastDDownAmount = amount;
@@ -252,7 +252,7 @@ namespace WoLightning
                 if (!foundDDown) lastDDownAmount = 0;
             } //Shock On Vuln / Damage Down
 
-            if (Plugin.Configuration.DeathMode && Plugin.PartyList.Length > 0 && lastPartyCheck >= 60) // DeathMode
+            if (Plugin.Configuration.PartymemberDies.IsEnabled() && Plugin.PartyList.Length > 0 && lastPartyCheck >= 60) // DeathMode
             {
                 if (lastCheckedIndex >= Plugin.PartyList.Length) lastCheckedIndex = 0;
                 if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP == 0 && !deadIndexes[lastCheckedIndex])
@@ -260,10 +260,7 @@ namespace WoLightning
                     deadIndexes[lastCheckedIndex] = true;
                     amountDead++;
                     Plugin.PluginLog.Information($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} Members are dead.");
-                    Plugin.WebClient.sendRequestShock([
-                        Plugin.Configuration.DeathModeSettings[0],
-                        Plugin.Configuration.DeathModeSettings[1] / amountDead / Plugin.PartyList.Length,
-                        Plugin.Configuration.DeathModeSettings[2] / amountDead / Plugin.PartyList.Length]);
+                    Plugin.WebClient.sendPishockRequest(Plugin.Configuration.PartymemberDies);
                 }
                 else if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP > 0 && deadIndexes[lastCheckedIndex])
                 {
@@ -288,17 +285,17 @@ namespace WoLightning
                 lastMaxHP = LocalPlayer.MaxHp;
                 return;
             }
-            if (Plugin.Configuration.ShockOnDeath && LocalPlayer.CurrentHp == 0 && !wasDead)
+            if (Plugin.Configuration.Die.IsEnabled() && LocalPlayer.CurrentHp == 0 && !wasDead)
             {
                 Plugin.sendNotif($"You Died!");
-                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathSettings);
+                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.Die);
                 wasDead = false;
                 if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
-            if (lastHP < LocalPlayer.CurrentHp && Plugin.Configuration.ShockOnDamage)
+            if (lastHP < LocalPlayer.CurrentHp && Plugin.Configuration.Die.IsEnabled())
             {
                 //Plugin.sendNotif($"You took Damage!"); // possibly remove this
-                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDamageSettings);
+                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.Die);
             }
             if (lastHP > 0) wasDead = false;
         }
@@ -360,7 +357,7 @@ namespace WoLightning
                 }
 
                 //slightly different logic
-                if (Plugin.Configuration.ShockOnFirstPerson)
+                if (Plugin.Configuration.SayFirstPerson.IsEnabled())
                 {
                     foreach (var word in message.ToString().Split(' '))
                     {
@@ -374,7 +371,7 @@ namespace WoLightning
                         if (FirstPersonWords.Contains(sanWord))
                         {
                             Plugin.sendNotif($"You referred to yourself wrongly!");
-                            Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockFirstPersonSettings);
+                            Plugin.WebClient.sendPishockRequest(Plugin.Configuration.SayFirstPerson);
                             if (!Plugin.Configuration.IsPassthroughAllowed) return;
                         }
                     }
@@ -394,6 +391,8 @@ namespace WoLightning
                 return;
             }*/
 
+            //todo - remake this
+            /*
             if (Plugin.Configuration.ShockOnDeathroll && (int)type == 2122)
             {
                 if (message.TextValue.Contains("You roll a 1 (out of", StringComparison.Ordinal))
@@ -403,6 +402,7 @@ namespace WoLightning
                 }
                 if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
+            */
 
             ChatTypes? chatType = GetChatTypeFromXivChatType(type);
             if (chatType == null)
@@ -411,7 +411,7 @@ namespace WoLightning
             }
             if (Plugin.Configuration.Channels.Contains(chatType.Value)) //If the channel can be selected and is activated by the user
             {
-                List<RegexTrigger> triggers = Plugin.Configuration.Triggers;
+                List<RegexTrigger> triggers = Plugin.Configuration.CustomMessageTriggers;
                 foreach (RegexTrigger trigger in triggers)
                 {
                     Plugin.PluginLog.Information(message.TextValue);
@@ -422,16 +422,6 @@ namespace WoLightning
                         if (!Plugin.Configuration.IsPassthroughAllowed) return;
                     }
                 }
-            }
-        }
-
-        private void HandleWipe(object? e, ushort i)
-        {
-            if (Plugin.Configuration.ShockOnWipe)
-            {
-                Plugin.sendNotif($"Your party wiped!");
-                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockWipeSettings);
-                if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
         }
 
@@ -467,10 +457,10 @@ namespace WoLightning
                 return;
             }
 
-            if (Plugin.Configuration.ShockOnPat && emoteId == 105)
+            if (Plugin.Configuration.GetPat.IsEnabled() && emoteId == 105)
             {
                 Plugin.sendNotif($"You got headpatted by {sourceObj.Name}!");
-                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockPatSettings);
+                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.GetPat);
             }
 
         }
@@ -496,61 +486,7 @@ namespace WoLightning
 
         }
 
-        private void HandleDeathMode(XivChatType type, string message)
-        {
-            Plugin.PluginLog.Error(((int)type).ToString());
-            Plugin.PluginLog.Error(message);
-            int partysize, intensity, duration;
-            int[] settings;
-            switch (type)
-            {
-                case (XivChatType)4410: //death other
-                    foreach (IPartyMember member in Plugin.PartyList)
-                    {
-                        if (message.Contains(member.Name.TextValue))
-                        {
-                            DeathModeCount++;
-                            settings = Plugin.Configuration.DeathModeSettings;
-                            partysize = Plugin.PartyList.Count;
-                            intensity = settings[1] * DeathModeCount / partysize;
-                            duration = settings[2] * DeathModeCount / partysize;
-                            Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
-                            Plugin.WebClient.sendRequestShock([0, intensity, duration]);
-                            return;
-                        }
-                    }
-                    break;
-                case (XivChatType)2234:
-                case (XivChatType)2874:  //death self
-                    if (!message.Contains("You are defeated", StringComparison.Ordinal))
-                    {
-                        return;
-                    }
-                    DeathModeCount++;
-                    settings = Plugin.Configuration.DeathModeSettings;
-                    partysize = Plugin.PartyList.Count;
-                    intensity = settings[1] * DeathModeCount / partysize;
-                    duration = settings[2] * DeathModeCount / partysize;
-                    Plugin.PluginLog.Information($"Duration: {duration}, Intensity: {intensity}.");
-                    Plugin.WebClient.sendRequestShock([0, intensity, duration]);
-                    return;
-                case (XivChatType)4154: //revive other
-                    foreach (IPartyMember member in Plugin.PartyList)
-                    {
-                        if (message.Contains(member.Name.TextValue))
-                        {
-                            DeathModeCount--;
-                            return;
-                        }
-                    }
-                    break;
-                case (XivChatType)2106: //revive self
-                    DeathModeCount--;
-                    return;
-                default:
-                    break;
-            }
-        }
+        
 
     }
 }

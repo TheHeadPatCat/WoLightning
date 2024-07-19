@@ -18,81 +18,22 @@ namespace WoLightning
         public int Version { get; set; } = 21;
         public bool DebugEnabled { get; set; } = false;
 
+        // Preset Settings
+        public string ActivePreset { get; set; } = "default";
+        [NonSerialized] public Dictionary<string, Preset> Presets;
+
         // General Settings
-        public string ActivePreset = "default";
-        public int ActivePresetIndex = 0;
-        public string PresetCreatorNameFull = "";
         public bool ActivateOnStart { get; set; } = false;
-        public bool IsWhitelistEnforced { get; set; } = false;
-        public bool IsPassthroughAllowed { get; set; } = false;
-
-        public string LocalPlayerNameFull = "";
-        public int globalTriggerCooldown { get; set; } = 10;
-        public float globalTriggerCooldownGate { get; set; } = 0.75f;
-
-        // Are we a Master?
-        public bool IsMaster { get; set; } = false;
-        public int LeashEmoteIdMaster { get; set; } = 0;
-        [NonSerialized] public string isLeashedTo = "";
-
-
-        // Are we controlled by a Master?
-        public bool HasMaster { get; set; } = false;
-        public string MasterNameFull { get; set; } = string.Empty;
-        public bool isDisallowed { get; set; } = false; //locks the interface
-        public int LeashEmoteIdSub { get; set; } = 0;
-        public bool isLeashed { get; set; } = false;
-        public bool CommandActionsEnabled { get; set; } = false;
-
-        // Section Badword
-        public bool ShockOnBadWord { get; set; } = false;
-
-
-
-        // Settings are : [Mode, Intensity, Duration]
-        // Mode: 0 Shock, 1 Vibrate, 2 Beep
-        // Intensity: 1-100
-        // Duration: 1-10 (seconds)
-        // Social Triggers
-
-        public Trigger GetPat { get; set; } = new Trigger("GetPat");
-        public Trigger LoseDeathRoll { get; set; } = new Trigger("LoseDeathroll");
-        public Trigger SayFirstPerson { get; set; } = new Trigger("SayFirstPerson");
-        public bool ShockOnPat { get; set; } = false;
-        public int[] ShockPatSettings { get; set; } = [0, 1, 1];
-        public bool ShockOnDeathroll { get; set; } = false;
-        public int[] ShockDeathrollSettings { get; set; } = [0, 1, 1];
-        public bool ShockOnFirstPerson { get; set; } = false;
-        public int[] ShockFirstPersonSettings { get; set; } = [0, 1, 1];
-
-
-        // Combat Triggers
-        public bool ShockOnDamage { get; set; } = false;
-        public int[] ShockDamageSettings { get; set; } = [0, 1, 1];
-        public bool ShockOnVuln { get; set; } = false;
-        public int[] ShockVulnSettings { get; set; } = [0, 1, 1];
-        public bool ShockOnRescue { get; set; } = false; // TODO
-        public int[] ShockRescueSettings { get; set; } = [0, 1, 1];
-        public bool ShockOnDeath { get; set; } = false;
-        public int[] ShockDeathSettings { get; set; } = [0, 1, 1];
-        public bool ShockOnWipe { get; set; } = false;
-        public int[] ShockWipeSettings { get; set; } = [0, 1, 1];
-        public bool DeathMode { get; set; } = false;
-        public int[] DeathModeSettings { get; set; } = [0, 100, 15];
-
-        // Lists
+       
+        // Generic Lists
         public Dictionary<string, int> PermissionList { get; set; } = new Dictionary<string, int>();
-        public Dictionary<string, string[]> Presets { get; set; } = new Dictionary<string, string[]>();
-        public Dictionary<string, int[]> ShockBadWordSettings { get; set; } = new Dictionary<string, int[]>();
-        public Dictionary<string, int[]> CommandActionSettings { get; set; } = new Dictionary<string, int[]>();
         public List<string> OwnedSubs { get; set; } = new List<string>();
         public Dictionary<string, int> SubsActivePresetIndexes { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, bool> SubsIsDisallowed { get; set; } = new Dictionary<string, bool>();
-        public List<RegexTrigger> Triggers { get; set; } = new List<RegexTrigger>();
-        public List<ChatType.ChatTypes> Channels { get; set; } = new List<ChatType.ChatTypes>();
 
+        
 
-        // Instance-Only things
+        // Instance-Only things - Not Saved
         [NonSerialized] public bool isAlternative = false;
         [NonSerialized] public string ConfigurationDirectoryPath;
         [NonSerialized] public Dictionary<string, bool> SubsIsActive = new Dictionary<string, bool>();
@@ -103,7 +44,6 @@ namespace WoLightning
             this.plugin = plugin;
             this.isAlternative = isAlternative;
             this.ConfigurationDirectoryPath = ConfigurationDirectoryPath;
-            isLeashed = false;
 
             string f = "";
             if (!isAlternative && File.Exists(ConfigurationDirectoryPath + "Config.json")) f = File.ReadAllText(ConfigurationDirectoryPath + "Config.json");
@@ -112,8 +52,6 @@ namespace WoLightning
             Configuration s = DeserializeConfig(f);
             foreach (PropertyInfo property in typeof(Configuration).GetProperties().Where(p => p.CanWrite)) property.SetValue(this, property.GetValue(s, null), null);
 
-            if (!HasMaster && MasterNameFull != "") MasterNameFull = "";
-            if (PresetCreatorNameFull == "") PresetCreatorNameFull = LocalPlayerNameFull;
             if (Presets.Count == 0) savePreset("default");
             Save();
         }
@@ -122,7 +60,6 @@ namespace WoLightning
         {
             this.isAlternative = isAlternative;
             this.ConfigurationDirectoryPath = ConfigurationDirectoryPath;
-            isLeashed = false;
 
             savePreset("default");
 
@@ -137,29 +74,6 @@ namespace WoLightning
                 return;
             }
             File.WriteAllText(ConfigurationDirectoryPath + "Config.json", SerializeConfig(this));
-        }
-
-        public bool checkPermission(string name, int neededLevel) // 0 for no perms needed, 1 for whitelist needed, 2 for privileged needed
-        {
-            name = name.ToLower();
-            if (name == MasterNameFull) return true;
-            bool found = false;
-            bool pass = false;
-            if (IsWhitelistEnforced && neededLevel == 0) neededLevel = 1;
-            foreach (var (Name, permission) in PermissionList)
-            {
-                if (Name.Contains(name) || name.Contains(Name))
-                {
-                    if (permission == 0) pass = false;
-                    if (permission == 1) pass = neededLevel <= permission; // wtf
-                    if (permission == 2) pass = true;
-                    return pass;
-                }
-            }
-
-            if (!found) return neededLevel <= 0;
-            return pass;
-
         }
 
         public string EncodeConfiguration(string section)
@@ -285,7 +199,7 @@ namespace WoLightning
             {
                 result += "T";
 
-                foreach (var Trigger in Triggers)
+                foreach (var Trigger in CustomMessageTriggers)
                 {
                     result += EncodeWord(Trigger.Name);
                     result += ".";
@@ -480,7 +394,7 @@ namespace WoLightning
 
             if (Sharestring[0] == 't')
             {
-                Triggers.Clear();
+                CustomMessageTriggers.Clear();
                 var x = 0;
                 RegexTrigger temp;
                 foreach (var part in Sharestring.Split("#"))
@@ -494,7 +408,7 @@ namespace WoLightning
                     temp.Enabled = lParts[2] == "1";
                     temp.Intensity = int.Parse(lParts[3]);
                     temp.Duration = int.Parse(lParts[4]);
-                    Triggers.Add(temp);
+                    CustomMessageTriggers.Add(temp);
                     x++;
 
                 }

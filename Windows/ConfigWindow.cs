@@ -129,6 +129,8 @@ public class ConfigWindow : Window, IDisposable
 
         DrawHeader();
 
+        //if (Configuration.Version < 30) return; //safety check for old configs
+
         if (ImGui.BeginTabBar("Tab Bar##tabbarmain", ImGuiTabBarFlags.None))
         {
             DrawGeneralTab();
@@ -745,52 +747,18 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
-        var GetPat = Configuration.GetPat.Enabled;
-        if (ImGui.Checkbox("Trigger when you get /pet", ref GetPat))
-        {
-            Configuration.GetPat.Enabled = GetPat;
-            Configuration.Save();
-        }
 
-        if (GetPat) {
-            int[] res = createPickerBox(Configuration.GetPat);
-            if (res[3] == 1)
-            {
-                Configuration.GetPat.OpMode = (OpType)res[0];
-                Configuration.GetPat.Intensity = res[1];
-                Configuration.GetPat.Duration = res[2];
-                Configuration.Save();
-            }
-        }
-
-
-
-        var ShockOnDeathroll = Configuration.ShockOnDeathroll;
-        if (ImGui.Checkbox("Trigger when you lose a Deathroll.", ref ShockOnDeathroll))
-        {
-            Configuration.ShockOnDeathroll = ShockOnDeathroll;
-            Configuration.Save();
-        }
+        createEntry(Configuration.GetPat, "Trigger whenever you get /pet.");
+        createEntry(Configuration.LoseDeathRoll, "Trigger whenever you lose a Deathroll.");
         ImGui.SameLine();
         ImGui.TextDisabled("(?)");
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Deathroll is when you use /random against another player to see who reaches 1 first."); }
 
-        if (ShockOnDeathroll) createPickerBox("ShockOnDeathroll", Configuration.ShockDeathrollSettings);
 
-
-        var ShockOnFirstPerson = Configuration.ShockOnFirstPerson;
-        if (ImGui.Checkbox("Trigger when you refer to yourself in the First Person.", ref ShockOnFirstPerson))
-        {
-            Configuration.ShockOnFirstPerson = ShockOnFirstPerson;
-            Configuration.Save();
-        }
+        createEntry(Configuration.SayFirstPerson, "Trigger whenever you refer to yourself in the First Person.");
         ImGui.SameLine();
         ImGui.TextDisabled("(?)");
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("First-Person refers to basically any way you can say 'me'. So saying 'I','I'll','Me','Myself' and so on.\nThis currently only works when writing in English."); }
-
-        if (ShockOnFirstPerson) createPickerBox("ShockOnFirstPerson ", Configuration.ShockFirstPersonSettings);
-
-
 
         var ShockOnBadWord = Configuration.ShockOnBadWord;
         if (ImGui.Checkbox("Trigger when you say a specific word from a list.", ref ShockOnBadWord))
@@ -815,7 +783,7 @@ public class ConfigWindow : Window, IDisposable
             return;
         }
 
-        var ShockOnWipe = Configuration.ShockOnWipe;
+        /*var ShockOnWipe = Configuration.ShockOnWipe;
         if (ImGui.Checkbox("Trigger whenever everyone dies. (Wipe)", ref ShockOnWipe))
         {
             Configuration.ShockOnWipe = ShockOnWipe;
@@ -896,6 +864,7 @@ public class ConfigWindow : Window, IDisposable
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will go off alot, so be warned! It does mean literally any damage, from Mobs to Dots and even Fall Damage!\nIf it ever gets too much, remember to set the Cooldown higher in General Settings!"); }
 
         if (ShockOnDamage) createPickerBox("ShockOnDamage", Configuration.ShockDamageSettings);
+        */
 
     }
     private void DrawCustomChats()
@@ -938,11 +907,11 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
-        List<RegexTrigger> triggers = Configuration.Triggers;
+        List<RegexTrigger> triggers = Configuration.CustomMessageTriggers;
         ImGui.PushFont(UiBuilder.IconFont);
         if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
         {
-            Configuration.Triggers.Add(new());
+            Configuration.CustomMessageTriggers.Add(new());
             Configuration.Save();
         }
         ImGui.PopFont();
@@ -1042,7 +1011,7 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.PushFont(UiBuilder.IconFont);
                 if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
                 {
-                    Configuration.Triggers.Remove(trigger);
+                    Configuration.CustomMessageTriggers.Remove(trigger);
                     Configuration.Save();
                 }
                 ImGui.PopFont();
@@ -1106,33 +1075,78 @@ public class ConfigWindow : Window, IDisposable
         ImGui.Spacing();
 
     }
-    private int[] createPickerBox(Trigger TriggerObject)
+    
+    
+    private void createEntry(Trigger TriggerObject, string Description)
     {
-        int[] settings = [(int)TriggerObject.OpMode,TriggerObject.Intensity, TriggerObject.Duration,0];
+        if (ImGui.Button($"[{TriggerObject.Shockers.Length}]Select Shockers##selectorButton{TriggerObject.Name}")) openShockerSelector(TriggerObject);
+        ImGui.SameLine();
+        ImGui.Text($"{Description}");
+        if (TriggerObject.Shockers.Length > 0) createPickerBox(TriggerObject);
+    }
+    private void createPickerBox(Trigger TriggerObject)
+    {
+        bool changed = false;
+
+        ImGui.Button($"{TriggerObject.Shockers.Length}##shockerButton{TriggerObject.Name}",new Vector2(35,35));
+        ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Mode");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 15);
-        if(ImGui.Combo("##" + TriggerObject.Name, ref settings[0], ["Shock", "Vibrate", "Beep"], 3))settings[3] = 1;
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 50);
+        int OpMode = (int)TriggerObject.OpMode;
+        if (ImGui.Combo("##" + TriggerObject.Name, ref OpMode, ["Shock", "Vibrate", "Beep"], 3))
+        {
+            TriggerObject.OpMode = (OpType)OpMode;
+            changed = true;
+        }
         ImGui.EndGroup();
 
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Intensity");
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-        if(ImGui.SliderInt("##Intensity" + TriggerObject.Name, ref settings[1], 1, 100))settings[3] = 1;
+        int Intensity = TriggerObject.Intensity;
+        if(ImGui.SliderInt("##Intensity" + TriggerObject.Name, ref Intensity, 1, 100))
+        {
+            TriggerObject.Intensity = Intensity;
+            changed = true;
+        }
         ImGui.EndGroup();
 
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Duration");
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-        if(ImGui.SliderInt("##Duration" + TriggerObject.Name, ref settings[2], 1, 10))settings[3] = 1;
+        int Duration = TriggerObject.Duration;
+        if(ImGui.SliderInt("##Duration" + TriggerObject.Name, ref Duration, 1, 10))
+        {
+            TriggerObject.Duration = Duration;
+            changed = true;
+        }
         ImGui.EndGroup();
 
         ImGui.Separator();
         ImGui.Spacing();
         ImGui.Spacing();
-        return settings;
+        if (changed) Configuration.Save();
+    }
+
+    private void openShockerSelector(Trigger TriggerObject)
+    {
+        ImGui.OpenPopup($"##shockerSelector{TriggerObject.Name}");
+        if (ImGui.BeginPopup($"##shockerSelector{TriggerObject.Name}"))
+        {
+            foreach(var (Name,Code) in Plugin.Authentification.PishockShockerCodes)
+            {
+                bool en = TriggerObject.Shockers.Contains(Code);
+                if (ImGui.MenuItem(Name, en))
+                {
+                    if (en) TriggerObject.Shockers.Append(Code);
+                    else TriggerObject.Shockers = TriggerObject.Shockers.Where(t => t != Code).ToArray();
+                    Configuration.Save();
+                }
+            }
+        }
     }
 }
 

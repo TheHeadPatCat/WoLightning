@@ -114,7 +114,7 @@ namespace WoLightning
         }
 
 
-        public async Task sendPishockRequest(Trigger TriggerObject)
+        public async void sendPishockRequest(Trigger TriggerObject)
         {
 
             Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Length} shockers.");
