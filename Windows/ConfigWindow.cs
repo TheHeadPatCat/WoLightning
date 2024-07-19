@@ -22,6 +22,8 @@ public class ConfigWindow : Window, IDisposable
     private Configuration Configuration;
     private Plugin Plugin;
 
+    private int presetIndex = 0;
+
     // Badword List
     private String WordListInput = new String("");
     private int[] WordListSetting = new int[3];
@@ -61,6 +63,9 @@ public class ConfigWindow : Window, IDisposable
     public string debugKmessage = "";
     private string debugRmessage = "";
     private string debugCstring = "";
+
+
+
 
 
     // We give this window a constant ID using ###
@@ -115,13 +120,14 @@ public class ConfigWindow : Window, IDisposable
     private void resetRequest(object sender, ElapsedEventArgs e)
     {
         timeOutRequest.Stop();
-        Configuration.MasterNameFull = "";
+        Plugin.Authentification.MasterNameFull = "";
 
     }
 
     public override void PreDraw()
     {
         // Flags must be added or removed before Draw() is being called, or they won't apply
+        presetIndex = Configuration.Presets.IndexOf(Configuration.ActivePreset);
     }
 
     public override void Draw()
@@ -129,27 +135,23 @@ public class ConfigWindow : Window, IDisposable
 
         DrawHeader();
 
-        //if (Configuration.Version < 30) return; //safety check for old configs
+        if (Configuration.Version < 30) return; //safety check for old configs
 
         if (ImGui.BeginTabBar("Tab Bar##tabbarmain", ImGuiTabBarFlags.None))
         {
             DrawGeneralTab();
             DrawDefaultTriggerTab();
-            if (Configuration.ShockOnBadWord)
+            if (Configuration.ActivePreset.SayBadWord.IsEnabled())
             {
                 DrawWordlistTab();
             }
             DrawCustomTriggerTab();
             DrawPermissionsTab();
-            DrawCommandTab();
+            // DrawCommandTab(); todo not implemented
             DrawDebugTab();
 
             ImGui.EndTabBar();
         }
-
-
-
-
     }
 
     private void DrawHeader()
@@ -177,12 +179,12 @@ public class ConfigWindow : Window, IDisposable
         }
 
 
-        if (Configuration.HasMaster)
+        if (Plugin.Authentification.HasMaster)
         {
-            ImGui.Text("Your Master is currently " + Configuration.MasterNameFull);
+            ImGui.Text("Your Master is currently " + Plugin.Authentification.MasterNameFull);
         }
 
-        if (Configuration.isDisallowed)
+        if (Plugin.Authentification.isDisallowed)
         {
             ImGui.TextColored(redCol, $"They do not allow you to change your Settings.");
             ImGui.BeginDisabled();
@@ -193,12 +195,13 @@ public class ConfigWindow : Window, IDisposable
 
     private void DrawPresetHeader()
     {
-        var presetIndex = Configuration.ActivePresetIndex;
+        
         ImGui.PushItemWidth(ImGui.GetWindowSize().X - 90);
 
-        if (ImGui.Combo("", ref presetIndex, [.. Configuration.Presets.Keys], Configuration.Presets.Keys.Count, 3))
+        if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
+        if (ImGui.Combo("", ref presetIndex, [.. Configuration.PresetNames], Configuration.Presets.Count, 3))
         {
-            Configuration.swapPreset(Configuration.Presets.Keys.ToArray()[presetIndex]);
+            Configuration.loadPreset(Configuration.PresetNames[presetIndex]);
         }
         ImGui.SameLine();
         if (ImGui.SmallButton("+"))
@@ -206,23 +209,23 @@ public class ConfigWindow : Window, IDisposable
             importInput = "";
             addInput = "";
             ImGui.OpenPopup("Add Preset##addPreMod");
-        };
+        }
 
-        if (Configuration.isDisallowed) ImGui.EndDisabled();
+        if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
         ImGui.SameLine();
         if (ImGui.SmallButton(">>"))
         {
             exportInput = "";
             ImGui.OpenPopup("Share Preset##shaPreMod");
-        };
+        }
 
-        if (Configuration.isDisallowed) ImGui.BeginDisabled();
+        if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
         ImGui.SameLine();
         if (ImGui.SmallButton("X"))
         {
             ImGui.OpenPopup("Delete Preset##delPreMod");
-        };
-        if (Configuration.isDisallowed) ImGui.EndDisabled();
+        }
+        if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
 
 
 
@@ -251,13 +254,11 @@ public class ConfigWindow : Window, IDisposable
                 if (addInput.Length > 0)
                 {
                     string[] codes;
-                    Configuration.Presets.TryGetValue(Configuration.ActivePreset, out codes);
-                    Configuration.savePreset(addInput, codes);
-                    Configuration.swapPreset(addInput);
+                    //Configuration.Presets.TryGetValue(Configuration.ActivePreset, out codes);
                 }
                 if (importInput.Length > 0)
                 {
-                    Configuration.importPreset(importInput);
+                    //Configuration.importPreset(importInput);
                 }
 
                 ImGui.CloseCurrentPopup();
@@ -275,7 +276,7 @@ public class ConfigWindow : Window, IDisposable
             ImGui.TextWrapped("Use this String to share your current Preset!");
             ImGui.PushItemWidth(ImGui.GetWindowSize().X - 10);
             ImGui.InputText("", ref exportInput, 256, ImGuiInputTextFlags.ReadOnly | ImGuiInputTextFlags.AutoSelectAll);
-            if (ImGui.Button("Generate##shaGen", new Vector2(ImGui.GetWindowSize().X - 10, 25))) exportInput = Configuration.sharePreset(Configuration.ActivePreset);
+            //if (ImGui.Button("Generate##shaGen", new Vector2(ImGui.GetWindowSize().X - 10, 25))) exportInput = Configuration.sharePreset(Configuration.ActivePreset);
             if (ImGui.Button("Close##shaClo", new Vector2(ImGui.GetWindowSize().X - 10, 25))) ImGui.CloseCurrentPopup();
             ImGui.EndPopup();
         }
@@ -290,14 +291,13 @@ public class ConfigWindow : Window, IDisposable
             ImGui.PushItemWidth(ImGui.GetWindowSize().X - 10);
             if (ImGui.Button("Confirm##conRem", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
             {
-                if (Configuration.ActivePreset == "Default")
+                if (Configuration.ActivePreset.Name == "Default")
                 {
                     ImGui.CloseCurrentPopup();
                 }
                 else
                 {
-                    Configuration.Presets.Remove(Configuration.ActivePreset);
-                    Configuration.swapPreset("Default", true);
+                    Configuration.Presets.Remove(Configuration.ActivePreset); // todo reimplement
                     ImGui.CloseCurrentPopup();
                 }
             }
@@ -312,23 +312,23 @@ public class ConfigWindow : Window, IDisposable
     {
         if (ImGui.BeginTabItem("General"))
         {
-            if (Configuration.isDisallowed) ImGui.BeginDisabled();
-            var IsPassthroughAllowed = Configuration.IsPassthroughAllowed;
+            if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
+            var IsPassthroughAllowed = Configuration.ActivePreset.IsPassthroughAllowed;
 
             if (ImGui.Checkbox("Allow passthrough of triggers?", ref IsPassthroughAllowed))
             {
-                Configuration.IsPassthroughAllowed = IsPassthroughAllowed;
+                Configuration.ActivePreset.IsPassthroughAllowed = IsPassthroughAllowed;
                 Configuration.Save();
             }
             ImGui.SameLine();
             ImGui.TextDisabled("(?)");
             if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Will make it possible for multiple Triggers to happen at once (ex. Damage and Death)"); }
 
-            var GlobalTriggerCooldown = Configuration.globalTriggerCooldown;
+            var GlobalTriggerCooldown = Configuration.ActivePreset.globalTriggerCooldown;
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 240);
             if (ImGui.SliderInt("Global Cooldown of Triggers (sec)", ref GlobalTriggerCooldown, 3, 300))
             {
-                Configuration.globalTriggerCooldown = GlobalTriggerCooldown;
+                Configuration.ActivePreset.globalTriggerCooldown = GlobalTriggerCooldown;
                 Configuration.Save();
             }
             ImGui.SameLine();
@@ -341,7 +341,7 @@ public class ConfigWindow : Window, IDisposable
             ImGui.Spacing();
             ImGui.Spacing();
 
-            if (!isAlternative && !Configuration.HasMaster)
+            /*if (!isAlternative && !Configuration.HasMaster)
             {
                 ImGui.Text($"Assign a Master\nCurrently targeted:");
 
@@ -369,8 +369,8 @@ public class ConfigWindow : Window, IDisposable
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Waiting for response from {Configuration.MasterNameFull}...\n{(int)TimeSpan.FromMilliseconds(timeOutRequest.TimeLeft).TotalSeconds} seconds until timeout...");
                 }
             }
-
-            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            */
+            if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
             ImGui.EndTabItem();
         }
     }
@@ -378,8 +378,8 @@ public class ConfigWindow : Window, IDisposable
     {
         if (ImGui.BeginTabItem("Word List"))
         {
-            if (Configuration.isDisallowed) ImGui.BeginDisabled();
-            var SavedWordSettings = Configuration.ShockBadWordSettings;
+            if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
+            var SavedWordSettings = Configuration.ActivePreset.SayBadWord.CustomData;
 
             if (ImGui.InputTextWithHint("Word to add", "Click on a Entry to edit it.", ref WordListInput, 48))
             {
@@ -400,7 +400,7 @@ public class ConfigWindow : Window, IDisposable
             {
                 if (SavedWordSettings.ContainsKey(WordListInput)) SavedWordSettings.Remove(WordListInput);
                 SavedWordSettings.Add(WordListInput, WordListSetting);
-                Configuration.ShockBadWordSettings = SavedWordSettings;
+                Configuration.ActivePreset.SayBadWord.CustomData = SavedWordSettings;
                 Configuration.Save();
                 currentWordIndex = -1;
                 WordListInput = new String("");
@@ -411,7 +411,7 @@ public class ConfigWindow : Window, IDisposable
             if (ImGui.Button("Remove Word"))
             {
                 if (SavedWordSettings.ContainsKey(WordListInput)) SavedWordSettings.Remove(WordListInput);
-                Configuration.ShockBadWordSettings = SavedWordSettings;
+                Configuration.ActivePreset.SayBadWord.CustomData = SavedWordSettings;
                 Configuration.Save();
                 currentWordIndex = -1;
                 WordListInput = new String("");
@@ -422,7 +422,7 @@ public class ConfigWindow : Window, IDisposable
             ImGui.Spacing();
             ImGui.Spacing();
 
-            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
 
             if (ImGui.BeginListBox("Active Words"))
             {
@@ -455,10 +455,10 @@ public class ConfigWindow : Window, IDisposable
         if (ImGui.BeginTabItem("Default Triggers"))
         {
             ImGui.Text("Default triggers will always be prioritized over custom triggers, if passthrough is not enabled.");
-            if (Configuration.isDisallowed) ImGui.BeginDisabled();
+            if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
             DrawSocial();
             DrawCombat();
-            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
             ImGui.EndTabItem();
         }
     }
@@ -480,16 +480,9 @@ public class ConfigWindow : Window, IDisposable
         if (ImGui.BeginTabItem("Permissions"))
         {
 
-            if (Configuration.isDisallowed) ImGui.BeginDisabled();
-            var IsWhitelistEnforced = Configuration.IsWhitelistEnforced;
-            if (ImGui.Checkbox("Activate Whitelist mode.", ref IsWhitelistEnforced))
-            {
-                Configuration.IsWhitelistEnforced = IsWhitelistEnforced;
-                Configuration.Save();
-            }
+            if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
 
             var PermissionList = Configuration.PermissionList;
-
             if (ImGui.InputTextWithHint("##PlayerAddPerm", "Enter a playername or click on a entry", ref PermissionListInput, 48))
             {
                 if (currentPermissionIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
@@ -525,7 +518,7 @@ public class ConfigWindow : Window, IDisposable
             }
 
 
-            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
             if (ImGui.BeginListBox("##PlayerPermissions"))
             {
                 int index = 0;
@@ -554,14 +547,14 @@ public class ConfigWindow : Window, IDisposable
             ImGui.EndTabItem();
         }
     }
-    private void DrawCommandTab()
+    /*private void DrawCommandTab()
     {
         if (isAlternative && ImGui.BeginTabItem("Commands") || Configuration.CommandActionsEnabled && ImGui.BeginTabItem("Commands"))
         {
 
             ImGui.Text("Not finished yet.");
             /*
-            if (Configuration.isDisallowed) ImGui.BeginDisabled();
+            if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
             var IsWhitelistEnforced = Configuration.IsWhitelistEnforced;
             if (ImGui.Checkbox("Activate Commands", ref IsWhitelistEnforced))
             {
@@ -606,7 +599,7 @@ public class ConfigWindow : Window, IDisposable
             }
 
 
-            if (Configuration.isDisallowed) ImGui.EndDisabled();
+            if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
             if (ImGui.BeginListBox("##PlayerPermissions"))
             {
                 int index = 0;
@@ -631,10 +624,10 @@ public class ConfigWindow : Window, IDisposable
             ImGui.TextWrapped(" - \"Privileged\" allows a player to enable/disable your Triggers through messages. [Currently Unused]");
             ImGui.TextWrapped(" - \"Whitelisted\" allows a player to activate your Triggers, when you have \"Whitelist Mode\" on.");
             ImGui.TextWrapped(" - \"Blocked\" disallows a player from interacting with this plugin in any way.");
-            */
+            
             ImGui.EndTabItem();
         }
-    }
+    }*/
     private void DrawDebugTab()
     {
         if (ImGui.BeginTabItem("Debug"))
@@ -658,22 +651,11 @@ public class ConfigWindow : Window, IDisposable
             }
 
 
-            ImGui.InputText("Sharestring Export", ref debugCstring, 256);
-            if (ImGui.Button("generate", new Vector2(200, 60)))
-            {
-                debugCstring = Configuration.EncodeConfiguration("Permissions");
-            }
-
-            ImGui.InputText("Sharestring Import", ref debugCstring, 256);
-            if (ImGui.Button("import", new Vector2(200, 60)))
-            {
-                Configuration.DecodeConfiguration(debugCstring);
-            }
 
 
             if (ImGui.Button("toggle master mode", new Vector2(200, 60)))
             {
-                Plugin.Configuration.isDisallowed = !Plugin.Configuration.isDisallowed;
+                Plugin.Authentification.isDisallowed = !Plugin.Authentification.isDisallowed;
             }
 
             if (ImGui.Button("Test Update", new Vector2(200, 60)))
@@ -702,7 +684,7 @@ public class ConfigWindow : Window, IDisposable
                 Plugin.WebClient.sendUpdateHash();
             }
 
-            if (ImGui.Button("Toggle isMaster", new Vector2(200, 60)))
+            /*if (ImGui.Button("Toggle isMaster", new Vector2(200, 60)))
             {
                 Configuration.IsMaster = !Configuration.IsMaster;
                 Configuration.Save();
@@ -718,7 +700,7 @@ public class ConfigWindow : Window, IDisposable
             {
                 Configuration.MasterNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id;
                 Configuration.Save();
-            }
+            }*/
 
 
 
@@ -748,29 +730,23 @@ public class ConfigWindow : Window, IDisposable
             return;
         }
 
-        createEntry(Configuration.GetPat, "Trigger whenever you get /pet.");
-        createEntry(Configuration.LoseDeathRoll, "Trigger whenever you lose a Deathroll.");
+        createEntry(Configuration.ActivePreset.GetPat, "Trigger whenever you get /pet.");
+        createEntry(Configuration.ActivePreset.LoseDeathRoll, "Trigger whenever you lose a Deathroll.");
         ImGui.SameLine();
         ImGui.TextDisabled("(?)");
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Deathroll is when you use /random against another player to see who reaches 1 first."); }
 
 
-        createEntry(Configuration.SayFirstPerson, "Trigger whenever you refer to yourself in the First Person.");
+        createEntry(Configuration.ActivePreset.SayFirstPerson, "Trigger whenever you refer to yourself in the First Person.");
         ImGui.SameLine();
         ImGui.TextDisabled("(?)");
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("First-Person refers to basically any way you can say 'me'. So saying 'I','I'll','Me','Myself' and so on.\nThis currently only works when writing in English."); }
 
-        var ShockOnBadWord = Configuration.ShockOnBadWord;
-        if (ImGui.Checkbox("Trigger when you say a specific word from a list.", ref ShockOnBadWord))
-        {
-            Configuration.ShockOnBadWord = ShockOnBadWord;
-            Configuration.Save();
-        }
+        createEntry(Configuration.ActivePreset.SayBadWord, "Triggers whenever you say a word from a list.");
         ImGui.SameLine();
         ImGui.TextDisabled("(?)");
         if (ImGui.IsItemHovered()) { ImGui.SetTooltip("You can configure these words, once the setting is enabled."); }
-
-        if (ShockOnBadWord)
+        if (Configuration.ActivePreset.SayBadWord.IsEnabled())
         {
             ImGui.Text("You can find the Settings for this option in the tab \"Word List\"");
         }
@@ -783,89 +759,19 @@ public class ConfigWindow : Window, IDisposable
             return;
         }
 
-        /*var ShockOnWipe = Configuration.ShockOnWipe;
-        if (ImGui.Checkbox("Trigger whenever everyone dies. (Wipe)", ref ShockOnWipe))
-        {
-            Configuration.ShockOnWipe = ShockOnWipe;
-            Configuration.Save();
-        }
+        createEntry(Configuration.ActivePreset.Wipe, "Triggers whenever all Partymembers die.");
 
-        if (ShockOnWipe) createPickerBox("ShockOnWipe", Configuration.ShockWipeSettings);
+        createEntry(Configuration.ActivePreset.Die, "Triggers whenever you die.");
 
-        var ShockOnDeath = Configuration.ShockOnDeath;
-        if (ImGui.Checkbox("Trigger whenever you die.", ref ShockOnDeath))
-        {
-            Configuration.ShockOnDeath = ShockOnDeath;
-            Configuration.Save();
-        }
+        createEntry(Configuration.ActivePreset.PartymemberDies, "Triggers whenever any partymember dies.", 
+            "This delivers scaling shocks based on the amount of party members that are dead, up to your selected Maximum.");
 
-        if (ShockOnDeath) createPickerBox("ShockOnDeath", Configuration.ShockDeathSettings);
+        createEntry(Configuration.ActivePreset.FailMechanic, "Triggers whenever you fail a Mechanic.",
+            "This will trigger whenever you get a [Vulnerability Up] or [Damage Down] debuff.");
 
-        var DeathMode = Configuration.DeathMode;
-        if (ImGui.Checkbox("Death Mode", ref DeathMode))
-        {
-            Configuration.DeathMode = DeathMode;
-            Configuration.Save();
-        }
-        ImGui.SameLine();
-        ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This delivers scaling shocks based on the amount of party members that are dead, up to the maximum with a wipe. Be warned."); }
-
-        if (DeathMode)
-        {
-            var Name = "Deathmode";
-            var Settings = Configuration.DeathModeSettings;
-            ImGui.BeginGroup();
-            ImGui.Text("    Mode");
-            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 15);
-            if (ImGui.Combo("##" + Name, ref Settings[0], ["Shock", "Vibrate", "Beep"], 3)) Configuration.updateSetting(Name, Settings);
-            ImGui.EndGroup();
-
-            ImGui.SameLine();
-            ImGui.BeginGroup();
-            ImGui.Text(" Maximum Intensity");
-            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-            ImGui.SliderInt("##Intensity" + Name, ref Settings[1], 1, 100);
-            ImGui.EndGroup();
-
-            ImGui.SameLine();
-            ImGui.BeginGroup();
-            ImGui.Text(" Maximum Duration");
-            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-            ImGui.SliderInt("##Duration" + Name, ref Settings[2], 1, 10);
-            ImGui.EndGroup();
-
-            ImGui.Separator();
-            ImGui.Spacing();
-            ImGui.Spacing();
-        }
-
-
-        var ShockOnVuln = Configuration.ShockOnVuln;
-        if (ImGui.Checkbox("Trigger when you fail a mechanic.", ref ShockOnVuln))
-        {
-            Configuration.ShockOnVuln = ShockOnVuln;
-            Configuration.Save();
-        }
-        ImGui.SameLine();
-        ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will trigger whenever you get a [Vulnerability Up] or [Damage Down] debuff."); }
-
-        if (ShockOnVuln) createPickerBox("ShockOnVuln", Configuration.ShockVulnSettings);
-
-        var ShockOnDamage = Configuration.ShockOnDamage;
-        if (ImGui.Checkbox("Trigger when you take damage of any kind.", ref ShockOnDamage))
-        {
-            Configuration.ShockOnDamage = ShockOnDamage;
-            Configuration.Save();
-        }
-        ImGui.SameLine();
-        ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will go off alot, so be warned! It does mean literally any damage, from Mobs to Dots and even Fall Damage!\nIf it ever gets too much, remember to set the Cooldown higher in General Settings!"); }
-
-        if (ShockOnDamage) createPickerBox("ShockOnDamage", Configuration.ShockDamageSettings);
-        */
-
+        createEntry(Configuration.ActivePreset.TakeDamage, "Triggers whenever you take damage of any kind.",
+            "This will go off alot, so be warned! It does mean literally any damage, from Mobs to Dots and even Fall Damage!\nIf it ever gets too much, remember to set the Cooldown higher in General Settings!");
+        
     }
     private void DrawCustomChats()
     {
@@ -877,7 +783,7 @@ public class ConfigWindow : Window, IDisposable
         foreach (var e in ChatType.GetOrderedChannels())
         {
             // See if it is already enabled by default
-            var enabled = Configuration.Channels.Contains(e);
+            var enabled = Configuration.ActivePreset.Channels.Contains(e);
             // Create a new line after every 4 columns
             if (i != 0 && (i == 4 || i == 7 || i == 11 || i == 15 || i == 19 || i == 23))
             {
@@ -891,8 +797,8 @@ public class ConfigWindow : Window, IDisposable
             if (ImGui.Checkbox($"{e}", ref enabled))
             {
                 // See If the UIHelpers.Checkbox is clicked, If not, add to the list of enabled channels, otherwise, remove it.
-                if (enabled) Configuration.Channels.Add(e);
-                else Configuration.Channels.Remove(e);
+                if (enabled) Configuration.ActivePreset.Channels.Add(e);
+                else Configuration.ActivePreset.Channels.Remove(e);
                 Configuration.Save();
             }
 
@@ -907,11 +813,11 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
-        List<RegexTrigger> triggers = Configuration.CustomMessageTriggers;
+        List<RegexTrigger> triggers = Configuration.ActivePreset.CustomMessageTriggers;
         ImGui.PushFont(UiBuilder.IconFont);
         if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
         {
-            Configuration.CustomMessageTriggers.Add(new());
+            Configuration.ActivePreset.CustomMessageTriggers.Add(new());
             Configuration.Save();
         }
         ImGui.PopFont();
@@ -1011,7 +917,7 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.PushFont(UiBuilder.IconFont);
                 if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
                 {
-                    Configuration.CustomMessageTriggers.Remove(trigger);
+                    Configuration.ActivePreset.CustomMessageTriggers.Remove(trigger);
                     Configuration.Save();
                 }
                 ImGui.PopFont();
@@ -1028,9 +934,9 @@ public class ConfigWindow : Window, IDisposable
         {
             return duration = 1;
         }
-        else if (duration > 15)
+        else if (duration > 10)
         {
-            return duration = 15;
+            return duration = 10;
         }
         return duration;
     }
@@ -1048,42 +954,28 @@ public class ConfigWindow : Window, IDisposable
         return intensity;
     }
 
-    private void createPickerBox(String Name, int[] Settings)
-    {
-        ImGui.BeginGroup();
-        ImGui.Text("    Mode");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 15);
-        if (ImGui.Combo("##" + Name, ref Settings[0], ["Shock", "Vibrate", "Beep"], 3)) Configuration.updateSetting(Name, Settings);
-        ImGui.EndGroup();
-
-        ImGui.SameLine();
-        ImGui.BeginGroup();
-        ImGui.Text("    Intensity");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-        ImGui.SliderInt("##Intensity" + Name, ref Settings[1], 1, 100);
-        ImGui.EndGroup();
-
-        ImGui.SameLine();
-        ImGui.BeginGroup();
-        ImGui.Text("    Duration");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-        ImGui.SliderInt("##Duration" + Name, ref Settings[2], 1, 10);
-        ImGui.EndGroup();
-
-        ImGui.Separator();
-        ImGui.Spacing();
-        ImGui.Spacing();
-
-    }
-    
     
     private void createEntry(Trigger TriggerObject, string Description)
     {
-        if (ImGui.Button($"[{TriggerObject.Shockers.Length}]Select Shockers##selectorButton{TriggerObject.Name}")) openShockerSelector(TriggerObject);
+        bool enabled = TriggerObject.IsEnabled();
+        if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled)) openShockerSelector(TriggerObject);
         ImGui.SameLine();
         ImGui.Text($"{Description}");
-        if (TriggerObject.Shockers.Length > 0) createPickerBox(TriggerObject);
+        if (enabled) createPickerBox(TriggerObject);
     }
+
+    private void createEntry(Trigger TriggerObject, string Description, string Hint)
+    {
+        bool enabled = TriggerObject.IsEnabled();
+        if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled)) openShockerSelector(TriggerObject);
+        ImGui.SameLine();
+        ImGui.Text($"{Description}");
+        ImGui.SameLine();
+        ImGui.TextDisabled("(?)");
+        if (ImGui.IsItemHovered()) { ImGui.SetTooltip(Hint); }
+        if (enabled) createPickerBox(TriggerObject);
+    }
+
     private void createPickerBox(Trigger TriggerObject)
     {
         bool changed = false;
@@ -1133,44 +1025,6 @@ public class ConfigWindow : Window, IDisposable
 
     private void openShockerSelector(Trigger TriggerObject)
     {
-        ImGui.OpenPopup($"##shockerSelector{TriggerObject.Name}");
-        if (ImGui.BeginPopup($"##shockerSelector{TriggerObject.Name}"))
-        {
-            foreach(var (Name,Code) in Plugin.Authentification.PishockShockerCodes)
-            {
-                bool en = TriggerObject.Shockers.Contains(Code);
-                if (ImGui.MenuItem(Name, en))
-                {
-                    if (en) TriggerObject.Shockers.Append(Code);
-                    else TriggerObject.Shockers = TriggerObject.Shockers.Where(t => t != Code).ToArray();
-                    Configuration.Save();
-                }
-            }
-        }
+        
     }
 }
-
-
-/*
- * 
- * 
- * 
- * ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 5);
-            var ShockPatSettings = Configuration.ShockPatSettings;
-            if (ImGui.Combo("##pat", ref ShockPatSettings[0], ["Shock", "Vibrate", "Beep"], 3))
-            {
-                Configuration.ShockPatSettings = ShockPatSettings;
-                Configuration.Save();
-            }
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-            ImGui.SliderInt("##patInt", ref ShockPatSettings[1], 1, 100);
-            ImGui.SameLine();
-            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-            ImGui.SliderInt("##patDur", ref ShockPatSettings[2], 1, 10);
-            ImGui.Spacing();
-            ImGui.Spacing();
- *
- * 
- * 
- */

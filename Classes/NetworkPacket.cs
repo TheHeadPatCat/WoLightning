@@ -70,7 +70,7 @@
                 Plugin.PluginLog.Info("Passed Validation.");
                 switch (dis[0])
                 {
-                    case "packet": Plugin.PluginLog.Info("Name of Packet: " + packet); refPlayer = ""; break;
+                    /*case "packet": Plugin.PluginLog.Info("Name of Packet: " + packet); refPlayer = ""; break;
                     case "serverkey": Plugin.Authentification.ServerKey = dis[1]; Plugin.Authentification.Save(); break;
                     case "refplayer": refPlayer = dis[1]; break;
 
@@ -84,7 +84,7 @@
                     case "updatesetting": Plugin.Configuration.updateBoolSetting(dis[1]); break;
                     case "updatesubstatus": Plugin.updateMasterWindow(refPlayer, bool.Parse(dis[1])); break;
                     case "setpluginstate": if (bool.Parse(dis[1])) Plugin.NetworkWatcher.Start(); else Plugin.NetworkWatcher.Stop(); break;
-
+                    */
                     default: Plugin.PluginLog.Error("Received Packet that has an Invalid type!", dis); break;
                 }
                 Plugin.PluginLog.Info("Done resolving packet.");

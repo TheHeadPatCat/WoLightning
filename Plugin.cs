@@ -18,9 +18,11 @@ public sealed class Plugin : IDalamudPlugin
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const string currentVersion = "0.2.6.1";
+    public const string currentVersion = "0.3.0.0";
     public const string randomKey = "902fn09bbnx0ßx9n20230934n293094dfsgpqonsdnymqngfizwmvzuwoigmmylasj2341xxsw1";
     public string? ConfigurationDirectoryPath { get; set; }
+
+    public string? LocalPlayerNameFull;
 
 
     // Services
@@ -119,11 +121,16 @@ public sealed class Plugin : IDalamudPlugin
         {
 
             ConfigurationDirectoryPath = PluginInterface.GetPluginConfigDirectory() + "\\" + ClientState.LocalPlayer.Name;
-            if (!Directory.Exists(ConfigurationDirectoryPath)) Directory.CreateDirectory(ConfigurationDirectoryPath);
+            if (!Directory.Exists(ConfigurationDirectoryPath))
+            {
+                Directory.CreateDirectory(ConfigurationDirectoryPath);
+                Directory.CreateDirectory(ConfigurationDirectoryPath + "\\Presets");
+                Directory.CreateDirectory(ConfigurationDirectoryPath + "\\MasterPresets");
+            }
             ConfigurationDirectoryPath += "\\";
 
             Configuration = new Configuration();
-            Configuration.LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
+            LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
             Configuration.Initialize(this, false, ConfigurationDirectoryPath);
 
             if (Configuration.DebugEnabled)
@@ -143,7 +150,7 @@ public sealed class Plugin : IDalamudPlugin
 
             if (Configuration.ActivateOnStart) NetworkWatcher.Start();
 
-            Configuration.LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
+            LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
             WebClient.createHttpClient();
 
             WindowSystem.AddWindow(ConfigWindow);
@@ -250,13 +257,13 @@ public sealed class Plugin : IDalamudPlugin
         if (answer == "false")
         {
             sendNotif("The other player rejected your Request!");
-            Configuration.MasterNameFull = "";
+            //Configuration.MasterNameFull = "";
             return;
         }
         if (answer == "true")
         {
             sendNotif("The other player accepted your Request!");
-            Configuration.HasMaster = true;
+            //.HasMaster = true;
             Configuration.Save();
         }
     }
@@ -270,9 +277,9 @@ public sealed class Plugin : IDalamudPlugin
     public void handleSubUnbind()
     {
         sendNotif("Your Master unbound you!");
-        Configuration.HasMaster = false;
-        Configuration.MasterNameFull = "";
-        Configuration.isDisallowed = false;
+       // Configuration.HasMaster = false;
+       // Configuration.MasterNameFull = "";
+       // Plugin.Authentification.isDisallowed = false;
         Configuration.Save();
     }
 

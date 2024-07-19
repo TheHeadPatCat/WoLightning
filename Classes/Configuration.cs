@@ -15,19 +15,19 @@ namespace WoLightning
     public class Configuration : IPluginConfiguration, IDisposable
     {
         // wipes the entire thing (except the above) or if version number is higher than found one
-        public int Version { get; set; } = 21;
+        public int Version { get; set; } = 30;
         public bool DebugEnabled { get; set; } = false;
 
         // Preset Settings
-        public string ActivePreset { get; set; } = "default";
-        [NonSerialized] public Dictionary<string, Preset> Presets;
+        public Preset ActivePreset { get; set; }
+        [NonSerialized] public List<Preset> Presets = new();
+        [NonSerialized] public List<String> PresetNames = new(); // used for comboBoxes
 
         // General Settings
         public bool ActivateOnStart { get; set; } = false;
-       
+
         // Generic Lists
         public Dictionary<string, int> PermissionList { get; set; } = new Dictionary<string, int>();
-        public List<string> OwnedSubs { get; set; } = new List<string>();
         public Dictionary<string, int> SubsActivePresetIndexes { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, bool> SubsIsDisallowed { get; set; } = new Dictionary<string, bool>();
 
@@ -52,7 +52,7 @@ namespace WoLightning
             Configuration s = DeserializeConfig(f);
             foreach (PropertyInfo property in typeof(Configuration).GetProperties().Where(p => p.CanWrite)) property.SetValue(this, property.GetValue(s, null), null);
 
-            if (Presets.Count == 0) savePreset("default");
+            if (ActivePreset == null) ActivePreset = new Preset("Default");
             Save();
         }
 
@@ -61,21 +61,28 @@ namespace WoLightning
             this.isAlternative = isAlternative;
             this.ConfigurationDirectoryPath = ConfigurationDirectoryPath;
 
-            savePreset("default");
-
             Save();
         }
 
         public void Save()
         {
+            PresetNames.Clear();
+            foreach(var preset in Presets) {PresetNames.Add(preset.Name);}
+
             if (isAlternative)
             {
+                savePreset(ActivePreset, true);
                 File.WriteAllText(ConfigurationDirectoryPath + "masterConfig.json", SerializeConfig(this));
                 return;
             }
+            savePreset(ActivePreset);
             File.WriteAllText(ConfigurationDirectoryPath + "Config.json", SerializeConfig(this));
         }
 
+
+
+        // old de-en-code stuffs
+        /*
         public string EncodeConfiguration(string section)
         {
             string result = new string("");
@@ -254,7 +261,7 @@ namespace WoLightning
                 result += "#";
                 return result;
             }
-            */
+            
 
             if (Sharestring[0] == 'm')
             {
@@ -372,7 +379,7 @@ namespace WoLightning
                 return;
             }
 
-            /*if (Sharestring[0] == 'c')
+            if (Sharestring[0] == 'c')
             {
                 if (PresetCreatorNameFull != LocalPlayerNameFull || PresetCreatorNameFull == MasterNameFull) return;
                 CommandActionSettings.Clear();
@@ -390,7 +397,7 @@ namespace WoLightning
 
                 }
                 Save();
-            }*/
+            }
 
             if (Sharestring[0] == 't')
             {
@@ -485,178 +492,24 @@ namespace WoLightning
             return result;
         }
 
-        public bool loadPreset(string preset)
-        {
-            //PluginLog.Info("Load Preset got called");
-            string[] codes = new string[4];
+        */
 
-            var x = 0;
-            var found = false;
-            foreach (var key in Presets.Keys)
-            {
-                if (key == preset)
-                {
-                    //PluginLog.Info($"Preset found at x: {x} - {Presets.Values.ToArray()[x][0]}");
-                    codes = Presets.Values.ToArray()[x];
-                    found = true;
-                    break;
-                }
-                x++;
-            }
-            if (!found) return false;
-            foreach (var code in codes)
-            {
-                DecodeConfiguration(code.ToLower());
-            }
-            Save();
+        public bool loadPreset(string Name)
+        {
+            if (!Presets.Exists(preset => preset.Name == Name)) return false;
+            ActivePreset = Presets.Find(preset => preset.Name == Name);
             return true;
         }
 
-        public void importPreset(string code)
+        public void savePreset(Preset target)
         {
-            string[] codes = code.Split("*");
-
-            ActivePreset = DecodeWord(codes[0].Split("#")[2]);
-            if (Presets.ContainsKey(ActivePreset)) Presets.Remove(ActivePreset);
-            foreach (var c in codes)
-            {
-
-                DecodeConfiguration(c);
-            }
-
-            Presets.Add(ActivePreset, codes);
-            ActivePresetIndex = Presets.Count - 1;
-
-            swapPreset(ActivePreset);
-
-            Save();
+            File.WriteAllText($"{ConfigurationDirectoryPath}\\Presets\\{target.Name}.json", SerializePreset(target));
+        }
+        public void savePreset(Preset target, bool isAlternative)
+        {
+            File.WriteAllText($"{ConfigurationDirectoryPath}\\MasterPresets\\{target.Name}.json", SerializePreset(target));
         }
 
-        public void savePreset(string name, string[] codes)
-        {
-            name = name.ToLower();
-            if (Presets.ContainsKey(name)) Presets.Remove(name);
-            string[] encoded = new string[codes.Length];
-            int x = 0;
-            foreach (var code in codes)
-            {
-                encoded[x] = EncodeConfiguration(code);
-                x++;
-            }
-            Presets.Add(name, encoded);
-            Save();
-        }
-
-        public void savePreset(string name)
-        {
-            name = name.ToLower();
-            string[] codes =
-            [
-                EncodeConfiguration("Preset"),
-            EncodeConfiguration("Main"),
-            EncodeConfiguration("Badword"),
-            EncodeConfiguration("Permissions"),
-            EncodeConfiguration("Master"),
-            EncodeConfiguration("Triggers")
-            ];
-            if (Presets.ContainsKey(name)) Presets.Remove(name);
-            string[] encoded = new string[codes.Length];
-            int x = 0;
-            foreach (var code in codes)
-            {
-                encoded[x] = code;
-                x++;
-            }
-            Presets.Add(name, encoded);
-            Save();
-        }
-
-        public void swapPreset(string name)
-        {
-            name = name.ToLower();
-            savePreset(ActivePreset);
-            if (!loadPreset(name))
-            {
-                return;
-            }
-            ActivePreset = name;
-            int x = 0;
-            foreach (var key in Presets.Keys)
-            {
-                if (key.Equals(name)) ActivePresetIndex = x;
-                x++;
-            }
-        }
-
-        public void swapPreset(string name, bool rem)
-        {
-            name = name.ToLower();
-            if (!rem) savePreset(ActivePreset);
-            loadPreset(name);
-            ActivePreset = name;
-            ActivePresetIndex = 0;
-        }
-
-        public string sharePreset(string preset)
-        {
-            savePreset(ActivePreset);
-            string result = "";
-            var x = 0;
-            foreach (var key in Presets.Keys)
-            {
-                //PluginLog.Info($"Checking Preset x: {x} - {key}");
-                if (key == preset)
-                {
-                    //PluginLog.Info($"Preset found at x: {x} - {Presets.Values.ToArray()[x][0]}");
-                    string[] codes = new string[4];
-                    codes = Presets.Values.ToArray()[x];
-                    foreach (var code in codes)
-                    {
-                        //PluginLog.Info($"Patching String: {code}");
-                        result += code;
-                        result += "*";
-                    }
-                    return result;
-                }
-                x++;
-            }
-
-            //PluginLog.Info($"Preset wasnt found");
-            return result;
-        }
-
-        public string sharePreset()
-        {
-            savePreset(ActivePreset);
-            string result = "";
-            var x = 0;
-            foreach (var key in Presets.Keys)
-            {
-                //PluginLog.Info($"Checking Preset x: {x} - {key}");
-                if (key == ActivePreset)
-                {
-                    //PluginLog.Info($"Preset found at x: {x} - {Presets.Values.ToArray()[x][0]}");
-                    string[] codes = new string[4];
-                    codes = Presets.Values.ToArray()[x];
-                    foreach (var code in codes)
-                    {
-                        //PluginLog.Info($"Patching String: {code}");
-                        result += code;
-                        result += "*";
-                    }
-                    return result;
-                }
-                x++;
-            }
-
-            //PluginLog.Info($"Preset wasnt found");
-            return result;
-        }
-
-        public char[] shareCypher()
-        {
-            return ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', ' ', '\'', '+', '!', '=', '?', '%'];
-        }
 
 
         internal static string SerializeConfig(object? config)
@@ -674,25 +527,19 @@ namespace WoLightning
             return JsonConvert.DeserializeObject<Configuration>(input);
         }
 
-        public void updateBoolSetting(string input)
-        { // todo possibly remove this?
-            string[] keyValue = input.Split("#");
-            foreach (PropertyInfo prop in GetType().GetProperties())
+        internal static string SerializePreset(object? preset)
+        {
+            return JsonConvert.SerializeObject(preset, Formatting.Indented, new JsonSerializerSettings
             {
+                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+                TypeNameHandling = TypeNameHandling.Objects
+            });
+        }
 
-                if (prop.PropertyType == typeof(bool) && prop.Name.ToLower() == keyValue[0].ToLower())
-                {
-                    try
-                    {
-                        prop.SetValue(this, bool.Parse(keyValue[1]));
-                        return;
-                    }
-                    catch
-                    {
-                        // tried to set invalid setting
-                    }
-                }
-            }
+        internal static Preset DeserializePreset(string input, string name)
+        {
+            if (input == "") return new Preset(name);
+            return JsonConvert.DeserializeObject<Preset>(input);
         }
 
         public void updateSetting(string PropertyName, int Value)

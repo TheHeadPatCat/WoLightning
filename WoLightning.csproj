@@ -9,4 +9,8 @@
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Specialized" Version="4.3.0" />
+  </ItemGroup>
 </Project>

@@ -36,7 +36,7 @@ public class MasterWindow : Window, IDisposable
 
         ConfigWindow = new ConfigWindow(Plugin, Configuration, this);
         Plugin.WindowSystem.AddWindow(ConfigWindow);
-        if (Configuration.OwnedSubs.Count > 0) { } //setup timer
+        //if (Configuration.OwnedSubs.Count > 0) { } //setup timer
     }
 
 
@@ -74,7 +74,7 @@ public class MasterWindow : Window, IDisposable
         try
         {
             ImGui.Text("You currently own:");
-            foreach (var sub in Configuration.OwnedSubs)
+            foreach (var sub in Plugin.Authentification.OwnedSubs)
             {
                 ImGui.Bullet();
 
@@ -90,10 +90,10 @@ public class MasterWindow : Window, IDisposable
                 ImGui.SetNextItemWidth(120);
 
                 var p = Configuration.SubsActivePresetIndexes[sub];
-                if (ImGui.Combo($"##presetbox{sub}", ref p, [.. Configuration.Presets.Keys], Configuration.Presets.Keys.Count))
+                if (ImGui.Combo($"##presetbox{sub}", ref p, [.. Configuration.PresetNames], Configuration.Presets.Count))
                 {
                     Configuration.SubsActivePresetIndexes[sub] = p;
-                    Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "importpreset"], ["ordered to swap", sub, Configuration.sharePreset(Configuration.Presets.Keys.ToArray()[p])]));
+                    //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "importpreset"], ["ordered to swap", sub, Configuration.sharePreset(Configuration.Presets.Keys.ToArray()[p])]));
                     Configuration.Save();
                 }
                 var c = Configuration.SubsIsDisallowed[sub];
@@ -110,7 +110,7 @@ public class MasterWindow : Window, IDisposable
                     Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "unbindsub"], ["unbind request", sub, "undefined"]));
                     Configuration.SubsIsDisallowed.Remove(sub);
                     Configuration.SubsActivePresetIndexes.Remove(sub);
-                    Configuration.OwnedSubs.Remove(sub); // these will cause a error, but thats okay
+                    Plugin.Authentification.OwnedSubs.Remove(sub); // these will cause a error, but thats okay
                     Configuration.Save();
                 }
             }
@@ -146,11 +146,11 @@ public class MasterWindow : Window, IDisposable
 
             if (ImGui.Button("Accept"))
             {
-                if (!Configuration.OwnedSubs.Contains(requestingSub)) Configuration.OwnedSubs.Add(requestingSub);
+                if (!Plugin.Authentification.OwnedSubs.Contains(requestingSub)) Plugin.Authentification.OwnedSubs.Add(requestingSub);
                 Configuration.SubsActivePresetIndexes[requestingSub] = 0;
                 Configuration.SubsIsDisallowed[requestingSub] = false;
                 Configuration.SubsIsActive[requestingSub] = false;
-                Plugin.Configuration.IsMaster = true;
+                Plugin.Authentification.IsMaster = true;
                 Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "true"]));
                 requestingSub = "";
                 UpdateStatus();
@@ -160,7 +160,7 @@ public class MasterWindow : Window, IDisposable
             ImGui.SameLine();
             if (ImGui.Button("Refuse"))
             {
-                if (!Plugin.Configuration.IsMaster) this.Toggle();
+                if (!Plugin.Authentification.IsMaster) this.Toggle();
                 Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "false"]));
                 requestingSub = "";
             }
@@ -173,7 +173,7 @@ public class MasterWindow : Window, IDisposable
     {
         updating = true;
         NetworkPacket output = new NetworkPacket();
-        foreach (var sub in Configuration.OwnedSubs)
+        foreach (var sub in Plugin.Authentification.OwnedSubs)
         {
             output.append(new NetworkPacket(["packet", "refplayer", "requestsubstatus"], ["request", sub, "undefined"]));
         }

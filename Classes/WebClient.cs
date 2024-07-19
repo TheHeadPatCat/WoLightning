@@ -75,12 +75,12 @@ namespace WoLightning
             if (settings.Length < 3 || settings[0] < 0 || settings[0] > 2 || settings[1] < 1 || settings[2] < 1) return; // dont send bad data
             if (Plugin.Authentification.PishockName.Length < 3 || Plugin.Authentification.PishockShareCode.Length < 3 || Plugin.Authentification.PishockApiKey.Length < 16) return;
 
-            if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000 > DateTime.Now.Ticks // Cooldown
+            /*if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000 > DateTime.Now.Ticks // Cooldown
                 && lastShock.Ticks + 7500000 < DateTime.Now.Ticks) // 0.75 Second leniancy to allow passthrough
             {
                 Plugin.PluginLog.Verbose(" -> Blocked due to Cooldown!");
                 return;
-            }
+            }*/
             lastShock = DateTime.Now;
 
             using StringContent jsonContent = new(
@@ -172,7 +172,63 @@ namespace WoLightning
             Plugin.PluginLog.Verbose($" -> Requests sent!");
         }
 
+        public async void sendPishockRequest(Trigger TriggerObject, int[] overrideSettings)
+        {
 
+            Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Length} shockers.");
+
+
+            //Validation of Data
+            if (Plugin.Authentification.PishockName.Length < 3
+                || Plugin.Authentification.PishockApiKey.Length < 16)
+            {
+                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                return;
+            }
+
+            if (failsafe)
+            {
+                Plugin.PluginLog.Verbose(" -> Blocked request due to failsafe mode!");
+                return;
+            }
+
+            if (!TriggerObject.Validate())
+            {
+                Plugin.PluginLog.Verbose(" -> Blocked due to invalid TriggerObject!");
+                return;
+            }
+
+
+            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+
+            foreach (var shocker in TriggerObject.Shockers)
+            {
+                using StringContent jsonContent = new(
+            JsonSerializer.Serialize(new
+            {
+                Username = Plugin.Authentification.PishockName,
+                Name = "WoLPlugin",
+                Code = shocker,
+                Intensity = overrideSettings[0],
+                Duration = overrideSettings[1],
+                Apikey = Plugin.Authentification.PishockApiKey,
+                Op = (int)TriggerObject.OpMode,
+            }),
+            Encoding.UTF8,
+            "application/json");
+
+                try
+                {
+                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                }
+                catch (Exception ex)
+                {
+                    Plugin.PluginLog.Error(ex.ToString());
+                    Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                }
+            }
+            Plugin.PluginLog.Verbose($" -> Requests sent!");
+        }
 
 
         public void sendServerData(string type, string data)
@@ -213,7 +269,7 @@ namespace WoLightning
                     hash = Plugin.Authentification.getHash(),
                     key = Plugin.Authentification.ServerKey,
                     playerNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id,
-                    masterNameFull = Plugin.Configuration.MasterNameFull,
+                    masterNameFull = Plugin.Authentification.MasterNameFull,
                     data = packet.ToString(),
                     isFirstMessage
                 }),
@@ -337,7 +393,7 @@ namespace WoLightning
                     hash = Plugin.Authentification.getHash(),
                     key = Plugin.Authentification.ServerKey,
                     playerNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id,
-                    masterNameFull = Plugin.Configuration.MasterNameFull,
+                    masterNameFull = Plugin.Authentification.MasterNameFull,
                     pStatus = Plugin.NetworkWatcher.running
                 }),
             Encoding.UTF8,
@@ -458,7 +514,7 @@ namespace WoLightning
                     hash = Plugin.Authentification.getHash(),
                     key = Plugin.Authentification.ServerKey,
                     playerNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id,
-                    masterNameFull = Plugin.Configuration.MasterNameFull,
+                    masterNameFull = Plugin.Authentification.MasterNameFull,
                     pStatus = Plugin.NetworkWatcher.running
                 }),
             Encoding.UTF8,
@@ -585,7 +641,7 @@ namespace WoLightning
                    {
                        hash = Plugin.Authentification.getHash(),
                        key = input,
-                       playerNameFull = Plugin.Configuration.LocalPlayerNameFull
+                       playerNameFull = Plugin.LocalPlayerNameFull
                    }),
                Encoding.UTF8,
                "application/json");

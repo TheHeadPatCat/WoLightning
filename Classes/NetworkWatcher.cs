@@ -19,6 +19,7 @@ namespace WoLightning
     {
         public bool running = false;
         Plugin Plugin;
+        Preset ActivePreset;
 
 
         private IPlayerCharacter? LocalPlayer;
@@ -56,14 +57,12 @@ namespace WoLightning
         public void Start() //Todo only start specific services, when respective trigger is on
         {
             running = true;
-            //Plugin.GameNetwork.NetworkMessage += HandleNetworkMessage;
             LeashTimer.Elapsed += (sender, e) => CheckLeashDistance();
             //LeashTimer.Start(); 650 // 305
 
             Plugin.Framework.Update += checkLocalPlayerState;
 
             Plugin.ChatGui.ChatMessage += HandleChatMessage;
-            Plugin.DutyState.DutyWiped += HandleWipe;
             Plugin.ClientState.TerritoryChanged += HandlePlayerTerritoryChange;
             Plugin.EmoteReaderHooks.OnEmoteIncoming += OnEmoteIncoming;
             Plugin.EmoteReaderHooks.OnEmoteOutgoing += OnEmoteOutgoing;
@@ -81,7 +80,6 @@ namespace WoLightning
             Plugin.Framework.Update -= checkLocalPlayerState;
 
             Plugin.ChatGui.ChatMessage -= HandleChatMessage;
-            Plugin.DutyState.DutyWiped -= HandleWipe;
             Plugin.ClientState.TerritoryChanged -= HandlePlayerTerritoryChange;
             Plugin.EmoteReaderHooks.OnEmoteIncoming -= OnEmoteIncoming;
             Plugin.EmoteReaderHooks.OnEmoteOutgoing -= OnEmoteOutgoing;
@@ -102,7 +100,6 @@ namespace WoLightning
             Plugin.Framework.Update -= checkLocalPlayerState;
 
             Plugin.ChatGui.ChatMessage -= HandleChatMessage;
-            Plugin.DutyState.DutyWiped -= HandleWipe;
             Plugin.ClientState.Login -= HandleLogin;
             Plugin.ClientState.Logout -= HandleLogout;
             Plugin.ClientState.TerritoryChanged -= HandlePlayerTerritoryChange;
@@ -113,27 +110,7 @@ namespace WoLightning
             running = false;
         }
 
-        // Unused currently
-        private void HandleNetworkMessage(nint dataPtr, ushort OpCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
-        {
-            Plugin.PluginLog.Info($"(Net) dataPtr: {dataPtr} - OpCode: {OpCode} - ActorId: {sourceActorId} - TargetId: {targetActorId} - direction: ${direction.ToString()}");
-
-            //if (MasterCharacter != null && MasterCharacter.IsValid() && MasterCharacter.Name + "#" + MasterCharacter.HomeWorld.Id == Plugin.Configuration.MasterNameFull) return;
-
-            /*var targetOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.GameObjectId == targetActorId);
-            if (targetOb != null && targetOb.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
-            {
-                if (((IPlayerCharacter)targetOb).Name + "#" + ((IPlayerCharacter)targetOb).HomeWorld.Id == Plugin.Configuration.MasterNameFull)
-                {
-                    MasterCharacter = (IPlayerCharacter)targetOb;
-                    Plugin.PluginLog.Info("Found Master Signature!");
-                    Plugin.PluginLog.Info(MasterCharacter.ToString());
-                    Plugin.GameNetwork.NetworkMessage -= HandleNetworkMessage;
-                    return;
-                }
-                //Plugin.PluginLog.Info(targetOb.ToString());
-            }*/
-        }
+        
 
         public IPlayerCharacter? scanForPlayerCharacter(string playerNameFull)
         {
@@ -150,7 +127,7 @@ namespace WoLightning
 
         public void scanForMasterCharacter()
         {
-            MasterCharacter = scanForPlayerCharacter(Plugin.Configuration.MasterNameFull);
+            MasterCharacter = scanForPlayerCharacter(Plugin.Authentification.MasterNameFull);
             if (MasterCharacter != null)
             {
                 if (lookingForMaster.Enabled)
@@ -202,7 +179,7 @@ namespace WoLightning
             if (lastHP != LocalPlayer.CurrentHp) HandleHPChange(); //check maxhp due to synching and such
             if (lastMP != LocalPlayer.CurrentMp) HandleMPChange();
 
-            if (lastStatusCheck >= 60 && Plugin.Configuration.FailMechanic.IsEnabled())
+            if (lastStatusCheck >= 60 && ActivePreset.FailMechanic.IsEnabled())
             {
                 lastStatusCheck = 0;
                 bool foundVuln = false;
@@ -221,12 +198,7 @@ namespace WoLightning
                             if (amount > lastVulnAmount)
                             {
                                 Plugin.sendNotif($"You failed a Mechanic!");
-                                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.FailMechanic);
-                                if (!Plugin.Configuration.IsPassthroughAllowed)
-                                {
-                                    lastVulnAmount = amount;
-                                    return;
-                                }
+                                Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic);
                             }
                             lastVulnAmount = amount;
                         }
@@ -237,12 +209,7 @@ namespace WoLightning
                             if (amount > lastDDownAmount)
                             {
                                 Plugin.sendNotif($"You failed a Mechanic!");
-                                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.FailMechanic);
-                                if (!Plugin.Configuration.IsPassthroughAllowed)
-                                {
-                                    lastDDownAmount = amount;
-                                    return;
-                                }
+                                Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic);
                             }
                             lastDDownAmount = amount;
                         }
@@ -252,7 +219,7 @@ namespace WoLightning
                 if (!foundDDown) lastDDownAmount = 0;
             } //Shock On Vuln / Damage Down
 
-            if (Plugin.Configuration.PartymemberDies.IsEnabled() && Plugin.PartyList.Length > 0 && lastPartyCheck >= 60) // DeathMode
+            if (ActivePreset.PartymemberDies.IsEnabled() && Plugin.PartyList.Length > 0 && lastPartyCheck >= 60) // DeathMode
             {
                 if (lastCheckedIndex >= Plugin.PartyList.Length) lastCheckedIndex = 0;
                 if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP == 0 && !deadIndexes[lastCheckedIndex])
@@ -260,7 +227,7 @@ namespace WoLightning
                     deadIndexes[lastCheckedIndex] = true;
                     amountDead++;
                     Plugin.PluginLog.Information($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} Members are dead.");
-                    Plugin.WebClient.sendPishockRequest(Plugin.Configuration.PartymemberDies);
+                    Plugin.WebClient.sendPishockRequest(ActivePreset.PartymemberDies, [ActivePreset.PartymemberDies.Intensity * (amountDead / Plugin.PartyList.Length), ActivePreset.PartymemberDies.Duration * (amountDead / Plugin.PartyList.Length)]);
                 }
                 else if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP > 0 && deadIndexes[lastCheckedIndex])
                 {
@@ -279,23 +246,20 @@ namespace WoLightning
 
         private void HandleHPChange()
         {
-            //Plugin.PluginLog.Verbose("HP Changed from " + lastHP + "/" + lastMaxHP + " to " + LocalPlayer.CurrentHp + "/" + LocalPlayer.MaxHp);
             if (lastMaxHP != LocalPlayer.MaxHp)
             {
                 lastMaxHP = LocalPlayer.MaxHp;
                 return;
             }
-            if (Plugin.Configuration.Die.IsEnabled() && LocalPlayer.CurrentHp == 0 && !wasDead)
+            if (ActivePreset.Die.IsEnabled() && LocalPlayer.CurrentHp == 0 && !wasDead)
             {
                 Plugin.sendNotif($"You Died!");
-                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.Die);
+                Plugin.WebClient.sendPishockRequest(ActivePreset.Die);
                 wasDead = false;
-                if (!Plugin.Configuration.IsPassthroughAllowed) return;
             }
-            if (lastHP < LocalPlayer.CurrentHp && Plugin.Configuration.Die.IsEnabled())
+            if (lastHP < LocalPlayer.CurrentHp && ActivePreset.Die.IsEnabled())
             {
-                //Plugin.sendNotif($"You took Damage!"); // possibly remove this
-                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.Die);
+                Plugin.WebClient.sendPishockRequest(ActivePreset.Die);
             }
             if (lastHP > 0) wasDead = false;
         }
@@ -317,47 +281,28 @@ namespace WoLightning
                 Plugin.PluginLog.Error("Wtf, LocalPlayer is null?");
                 return;
             }
-
-            //Plugin.PluginLog.Info($"(Chat) type: {type} - Sender SE: {senderE} - Message: {message} - isHandled: ${isHandled}");
             if (message == null) return; //sanity check in case we get sent bad data
 
             string sender = senderE.ToString().ToLower();
-            if (sender.Length != 0 && !Plugin.Configuration.shareCypher().Contains(sender.ToString()[0]))
-            {
-                //Plugin.PluginLog.Info($"Illegal character found on {sender} - removing...");
-                sender = sender.Substring(1);
-            }
 
-
-#pragma warning disable CS8602 // no localplayer can NOT be null here, because if it is then our game isnt even working
-
-            int[] dmTypes = { 2234, 2874, 4410, 2106, 4154 };
-            /*if (Plugin.Configuration.DeathMode && dmTypes.Contains((int)type))
-            {
-                HandleDeathMode(type, message.TextValue);
-                if (!Plugin.Configuration.IsPassthroughAllowed) return;
-            }*/
-
-
-            if ((int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString().ToLower() == sender.ToString().ToLower()) // its proooobably a social message
+            if ((int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString().ToLower() == sender) // its proooobably a social message
             {
 
-                if (Plugin.Configuration.ShockOnBadWord)
+                if (ActivePreset.SayBadWord.IsEnabled())
                 {
-                    foreach (var (word, settings) in Plugin.Configuration.ShockBadWordSettings)
+                    foreach (var (word, settings) in ActivePreset.SayBadWord.CustomData)
                     {
 
                         if (message.ToString().ToLower().Contains(word.ToLower()))
                         {
                             Plugin.sendNotif($"You said the bad word: {word}!");
                             Plugin.WebClient.sendRequestShock(settings);
-                            if (!Plugin.Configuration.IsPassthroughAllowed) return;
                         }
                     }
                 }
 
                 //slightly different logic
-                if (Plugin.Configuration.SayFirstPerson.IsEnabled())
+                if (ActivePreset.SayFirstPerson.IsEnabled())
                 {
                     foreach (var word in message.ToString().Split(' '))
                     {
@@ -371,47 +316,21 @@ namespace WoLightning
                         if (FirstPersonWords.Contains(sanWord))
                         {
                             Plugin.sendNotif($"You referred to yourself wrongly!");
-                            Plugin.WebClient.sendPishockRequest(Plugin.Configuration.SayFirstPerson);
-                            if (!Plugin.Configuration.IsPassthroughAllowed) return;
+                            Plugin.WebClient.sendPishockRequest(ActivePreset.SayFirstPerson);
                         }
                     }
                 }
             }
-#pragma warning restore CS8602
 
-            /*if (Plugin.Configuration.ShockOnPat && type == XivChatType.StandardEmote && message.TextValue.Contains("gently pats you.", StringComparison.Ordinal))
-            {
-                if (!Plugin.Configuration.checkPermission(sender.ToString(), 0))
-                {
-                    Plugin.PluginLog.Info("Aborting call because target does not have enough permission");
-                    return;
-                }
-                Plugin.sendNotif($"You got headpatted by {sender.ToString()}!");
-                Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockPatSettings);
-                return;
-            }*/
-
-            //todo - remake this
-            /*
-            if (Plugin.Configuration.ShockOnDeathroll && (int)type == 2122)
-            {
-                if (message.TextValue.Contains("You roll a 1 (out of", StringComparison.Ordinal))
-                {
-                    Plugin.sendNotif($"You lost a Deathroll!");
-                    Plugin.WebClient.sendRequestShock(Plugin.Configuration.ShockDeathrollSettings);
-                }
-                if (!Plugin.Configuration.IsPassthroughAllowed) return;
-            }
-            */
 
             ChatTypes? chatType = GetChatTypeFromXivChatType(type);
             if (chatType == null)
             {
                 return;
             }
-            if (Plugin.Configuration.Channels.Contains(chatType.Value)) //If the channel can be selected and is activated by the user
+            if (ActivePreset.Channels.Contains(chatType.Value)) //If the channel can be selected and is activated by the user
             {
-                List<RegexTrigger> triggers = Plugin.Configuration.CustomMessageTriggers;
+                List<RegexTrigger> triggers = ActivePreset.CustomMessageTriggers;
                 foreach (RegexTrigger trigger in triggers)
                 {
                     Plugin.PluginLog.Information(message.TextValue);
@@ -419,7 +338,6 @@ namespace WoLightning
                     {
                         Plugin.PluginLog.Information($"Trigger {trigger.Name} triggered. Zap!");
                         Plugin.WebClient.sendRequestShock([trigger.Mode, trigger.Intensity, trigger.Duration]);
-                        if (!Plugin.Configuration.IsPassthroughAllowed) return;
                     }
                 }
             }
@@ -450,43 +368,56 @@ namespace WoLightning
 
         private void OnEmoteIncoming(IPlayerCharacter sourceObj, ushort emoteId)
         {
-            Plugin.PluginLog.Info("[INCOMING EMOTE] Source: " + sourceObj.ToString() + " EmoteId: " + emoteId);
-            if (!Plugin.Configuration.checkPermission(sourceObj.Name + "#" + sourceObj.HomeWorld.Id, 0))
-            {
-                Plugin.PluginLog.Info("Aborting call because target does not have enough permission");
-                return;
-            }
+            //Plugin.PluginLog.Info("[INCOMING EMOTE] Source: " + sourceObj.ToString() + " EmoteId: " + emoteId);
 
-            if (Plugin.Configuration.GetPat.IsEnabled() && emoteId == 105)
+            if (ActivePreset.GetPat.IsEnabled() && emoteId == 105)
             {
                 Plugin.sendNotif($"You got headpatted by {sourceObj.Name}!");
-                Plugin.WebClient.sendPishockRequest(Plugin.Configuration.GetPat);
+                Plugin.WebClient.sendPishockRequest(ActivePreset.GetPat);
             }
 
         }
 
         private void OnEmoteUnrelated(IPlayerCharacter sourceObj, IGameObject targetObj, ushort emoteId)
         {
-            Plugin.PluginLog.Info("[Unrelated Emote] Source: " + sourceObj.ToString() + " Target:" + targetObj + " EmoteId: " + emoteId);
-
+            //Plugin.PluginLog.Info("[Unrelated Emote] Source: " + sourceObj.ToString() + " Target:" + targetObj + " EmoteId: " + emoteId);
+            // Currently Unused
         }
 
         private void OnEmoteOutgoing(IGameObject targetObj, ushort emoteId)
         {
-            Plugin.PluginLog.Info("[OUTGOING EMOTE] Target: " + targetObj.ToString() + " EmoteId: " + emoteId);
-            //Plugin.Configuration.MasterNameFull = ((IPlayerCharacter)targetObj).Name + "#" + ((IPlayerCharacter)targetObj).HomeWorld.Id;
-            //Plugin.Configuration.Save();
+            //Plugin.PluginLog.Info("[OUTGOING EMOTE] Target: " + targetObj.ToString() + " EmoteId: " + emoteId);
+            // Currently Unused.
         }
 
         private void OnEmoteSelf(ushort emoteId)
         {
-            Plugin.PluginLog.Info("[SELF EMOTE] EmoteId: " + emoteId);
-            //Plugin.Configuration.MasterNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id;
-            //Plugin.Configuration.Save();
-
+            //Plugin.PluginLog.Info("[SELF EMOTE] EmoteId: " + emoteId);
+            // Currently Unused.
         }
 
-        
+
+        /* Unused Debug stuff
+        private void HandleNetworkMessage(nint dataPtr, ushort OpCode, uint sourceActorId, uint targetActorId, NetworkMessageDirection direction)
+        {
+            Plugin.PluginLog.Info($"(Net) dataPtr: {dataPtr} - OpCode: {OpCode} - ActorId: {sourceActorId} - TargetId: {targetActorId} - direction: ${direction.ToString()}");
+
+            //if (MasterCharacter != null && MasterCharacter.IsValid() && MasterCharacter.Name + "#" + MasterCharacter.HomeWorld.Id == Plugin.Configuration.MasterNameFull) return;
+
+            var targetOb = Plugin.ObjectTable.FirstOrDefault(x => (ulong)x.GameObjectId == targetActorId);
+            if (targetOb != null && targetOb.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+            {
+                if (((IPlayerCharacter)targetOb).Name + "#" + ((IPlayerCharacter)targetOb).HomeWorld.Id == Plugin.Configuration.MasterNameFull)
+                {
+                    MasterCharacter = (IPlayerCharacter)targetOb;
+                    Plugin.PluginLog.Info("Found Master Signature!");
+                    Plugin.PluginLog.Info(MasterCharacter.ToString());
+                    Plugin.GameNetwork.NetworkMessage -= HandleNetworkMessage;
+                    return;
+                }
+                //Plugin.PluginLog.Info(targetOb.ToString());
+            }
+        }*/
 
     }
 }

@@ -15,6 +15,8 @@ namespace WoLightning
 
     public class Authentification : IDisposable // This class is here to make sure the data that gets received from the server, is actually from this plugin (well not entirely, but it helps)
     {
+
+        public int Version { get; set; } = 1;
         private string? ConfigurationDirectoryPath;
 
         // Webserver things
@@ -31,9 +33,7 @@ namespace WoLightning
 
         // Mastermode - Master Settings
         public bool IsMaster { get; set; } = false;
-        public int LeashEmoteIdMaster { get; set; } = 0;
-        [NonSerialized] public string isLeashedTo = "";
-
+        public List<string> OwnedSubs { get; set; } = new List<string>();
 
         // Mastermode - Sub Settings
         public bool HasMaster { get; set; } = false;
