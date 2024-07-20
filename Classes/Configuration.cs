@@ -31,7 +31,7 @@ namespace WoLightning
         public Dictionary<string, int> SubsActivePresetIndexes { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, bool> SubsIsDisallowed { get; set; } = new Dictionary<string, bool>();
 
-        
+
 
         // Instance-Only things - Not Saved
         [NonSerialized] public bool isAlternative = false;
@@ -67,7 +67,7 @@ namespace WoLightning
         public void Save()
         {
             PresetNames.Clear();
-            foreach(var preset in Presets) {PresetNames.Add(preset.Name);}
+            foreach (var preset in Presets) { PresetNames.Add(preset.Name); }
 
             if (isAlternative)
             {

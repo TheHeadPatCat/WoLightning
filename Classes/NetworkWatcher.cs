@@ -1,7 +1,5 @@
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Game.ClientState.Party;
-using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
@@ -110,7 +108,7 @@ namespace WoLightning
             running = false;
         }
 
-        
+
 
         public IPlayerCharacter? scanForPlayerCharacter(string playerNameFull)
         {

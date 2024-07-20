@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.Text;
+﻿using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
@@ -128,6 +127,7 @@ public class ConfigWindow : Window, IDisposable
     {
         // Flags must be added or removed before Draw() is being called, or they won't apply
         presetIndex = Configuration.Presets.IndexOf(Configuration.ActivePreset);
+
     }
 
     public override void Draw()
@@ -195,7 +195,7 @@ public class ConfigWindow : Window, IDisposable
 
     private void DrawPresetHeader()
     {
-        
+
         ImGui.PushItemWidth(ImGui.GetWindowSize().X - 90);
 
         if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
@@ -730,26 +730,19 @@ public class ConfigWindow : Window, IDisposable
             return;
         }
 
-        createEntry(Configuration.ActivePreset.GetPat, "Trigger whenever you get /pet.");
-        createEntry(Configuration.ActivePreset.LoseDeathRoll, "Trigger whenever you lose a Deathroll.");
-        ImGui.SameLine();
-        ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Deathroll is when you use /random against another player to see who reaches 1 first."); }
+        createEntry(Configuration.ActivePreset.GetPat, "Triggers whenever you get /pet.");
+        createEntry(Configuration.ActivePreset.LoseDeathRoll, "Trigger whenever you lose a Deathroll.",
+            "Deathroll is when you use /random against another player to see who reaches 1 first.");
 
 
-        createEntry(Configuration.ActivePreset.SayFirstPerson, "Trigger whenever you refer to yourself in the First Person.");
-        ImGui.SameLine();
-        ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("First-Person refers to basically any way you can say 'me'. So saying 'I','I'll','Me','Myself' and so on.\nThis currently only works when writing in English."); }
+        createEntry(Configuration.ActivePreset.SayFirstPerson, "Triggers whenever you refer to yourself in the First Person.",
+            "First-Person refers to basically any way you can say 'me'. So saying 'I','I'll','Me','Myself' and so on.\nThis currently only works when writing in English.");
 
-        createEntry(Configuration.ActivePreset.SayBadWord, "Triggers whenever you say a word from a list.");
-        ImGui.SameLine();
-        ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip("You can configure these words, once the setting is enabled."); }
+
+        createEntry(Configuration.ActivePreset.SayBadWord, "Triggers whenever you say a word from a list.",
+            "You can configure these words, once the setting is enabled.");
         if (Configuration.ActivePreset.SayBadWord.IsEnabled())
-        {
             ImGui.Text("You can find the Settings for this option in the tab \"Word List\"");
-        }
 
     }
     private void DrawCombat()
@@ -763,7 +756,7 @@ public class ConfigWindow : Window, IDisposable
 
         createEntry(Configuration.ActivePreset.Die, "Triggers whenever you die.");
 
-        createEntry(Configuration.ActivePreset.PartymemberDies, "Triggers whenever any partymember dies.", 
+        createEntry(Configuration.ActivePreset.PartymemberDies, "Triggers whenever any partymember dies.",
             "This delivers scaling shocks based on the amount of party members that are dead, up to your selected Maximum.");
 
         createEntry(Configuration.ActivePreset.FailMechanic, "Triggers whenever you fail a Mechanic.",
@@ -771,7 +764,7 @@ public class ConfigWindow : Window, IDisposable
 
         createEntry(Configuration.ActivePreset.TakeDamage, "Triggers whenever you take damage of any kind.",
             "This will go off alot, so be warned! It does mean literally any damage, from Mobs to Dots and even Fall Damage!\nIf it ever gets too much, remember to set the Cooldown higher in General Settings!");
-        
+
     }
     private void DrawCustomChats()
     {
@@ -954,11 +947,24 @@ public class ConfigWindow : Window, IDisposable
         return intensity;
     }
 
-    
+
     private void createEntry(Trigger TriggerObject, string Description)
     {
+        createShockerSelector(TriggerObject);
         bool enabled = TriggerObject.IsEnabled();
-        if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled)) openShockerSelector(TriggerObject);
+        if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
+        {
+            if (Plugin.Authentification.PishockShockerCodes.Count > 1) ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
+            else if (Plugin.Authentification.PishockShockerCodes.Count == 1)
+            { // this could probably be solved more elegantly
+                if (enabled) TriggerObject.Shockers = TriggerObject.Shockers.Append(Plugin.Authentification.PishockShockerCodes.ElementAt(0).Key).ToArray();
+                else TriggerObject.Shockers = TriggerObject.Shockers.Where(code => code != Plugin.Authentification.PishockShockerCodes.ElementAt(0).Key).ToArray();
+            }
+            else if (Plugin.Authentification.PishockShockerCodes.Count == 0)
+            {
+                // todo show message to add shocker first
+            }
+        }
         ImGui.SameLine();
         ImGui.Text($"{Description}");
         if (enabled) createPickerBox(TriggerObject);
@@ -966,8 +972,21 @@ public class ConfigWindow : Window, IDisposable
 
     private void createEntry(Trigger TriggerObject, string Description, string Hint)
     {
+        createShockerSelector(TriggerObject);
         bool enabled = TriggerObject.IsEnabled();
-        if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled)) openShockerSelector(TriggerObject);
+        if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
+        {
+            if (Plugin.Authentification.PishockShockerCodes.Count > 1) ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
+            else if (Plugin.Authentification.PishockShockerCodes.Count == 1)
+            { // this could probably be solved more elegantly
+                if (enabled) TriggerObject.Shockers = TriggerObject.Shockers.Append(Plugin.Authentification.PishockShockerCodes.ElementAt(0).Key).ToArray();
+                else TriggerObject.Shockers = TriggerObject.Shockers.Where(code => code != Plugin.Authentification.PishockShockerCodes.ElementAt(0).Key).ToArray();
+            }
+            else if (Plugin.Authentification.PishockShockerCodes.Count == 0)
+            {
+                // todo show message to add shocker first
+            }
+        }
         ImGui.SameLine();
         ImGui.Text($"{Description}");
         ImGui.SameLine();
@@ -980,7 +999,7 @@ public class ConfigWindow : Window, IDisposable
     {
         bool changed = false;
 
-        ImGui.Button($"{TriggerObject.Shockers.Length}##shockerButton{TriggerObject.Name}",new Vector2(35,35));
+        ImGui.Button($"{TriggerObject.Shockers.Length}##shockerButton{TriggerObject.Name}", new Vector2(35, 35));
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Mode");
@@ -998,7 +1017,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.Text("    Intensity");
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
         int Intensity = TriggerObject.Intensity;
-        if(ImGui.SliderInt("##Intensity" + TriggerObject.Name, ref Intensity, 1, 100))
+        if (ImGui.SliderInt("##Intensity" + TriggerObject.Name, ref Intensity, 1, 100))
         {
             TriggerObject.Intensity = Intensity;
             changed = true;
@@ -1010,7 +1029,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.Text("    Duration");
         ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
         int Duration = TriggerObject.Duration;
-        if(ImGui.SliderInt("##Duration" + TriggerObject.Name, ref Duration, 1, 10))
+        if (ImGui.SliderInt("##Duration" + TriggerObject.Name, ref Duration, 1, 10))
         {
             TriggerObject.Duration = Duration;
             changed = true;
@@ -1023,8 +1042,34 @@ public class ConfigWindow : Window, IDisposable
         if (changed) Configuration.Save();
     }
 
-    private void openShockerSelector(Trigger TriggerObject)
+    private void createShockerSelector(Trigger TriggerObject)
     {
-        
+
+        Vector2 center = ImGui.GetMainViewport().GetCenter();
+        ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+        ImGui.SetNextWindowSize(new Vector2(400, 250));
+        bool isModalOpen = TriggerObject.isModalOpen;
+        if (ImGui.BeginPopupModal($"Select Shockers##selectShockers{TriggerObject.Name}", ref isModalOpen, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.Popup | ImGuiWindowFlags.NoTitleBar))
+        {
+            ImGui.TextWrapped("Please select all Shockers that should activate for this setting:");
+
+            foreach (var (Name, Code) in Plugin.Authentification.PishockShockerCodes)
+            {
+                bool isEnabled = TriggerObject.Shockers.Contains(Code);
+                if (ImGui.Checkbox($"{Name}##shockerbox{Code}", ref isEnabled))
+                { // this could probably be solved more elegantly
+                    if (isEnabled) TriggerObject.Shockers = TriggerObject.Shockers.Append(Code).ToArray();
+                    else TriggerObject.Shockers = TriggerObject.Shockers.Where(code => code != Code).ToArray();
+                }
+            }
+
+            if (ImGui.Button($"Apply##apply{TriggerObject.Name}", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
+            {
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+
+
     }
 }

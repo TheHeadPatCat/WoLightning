@@ -28,7 +28,7 @@ namespace WoLightning
         public string PishockShareCode { get; set; } = string.Empty;
         public Dictionary<String, String> PishockShockerCodes { get; set; } = new Dictionary<String, String>();
         public string PishockApiKey { get; set; } = string.Empty;
-        
+
 
 
         // Mastermode - Master Settings

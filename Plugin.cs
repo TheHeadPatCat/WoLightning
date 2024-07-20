@@ -277,9 +277,9 @@ public sealed class Plugin : IDalamudPlugin
     public void handleSubUnbind()
     {
         sendNotif("Your Master unbound you!");
-       // Configuration.HasMaster = false;
-       // Configuration.MasterNameFull = "";
-       // Plugin.Authentification.isDisallowed = false;
+        // Configuration.HasMaster = false;
+        // Configuration.MasterNameFull = "";
+        // Plugin.Authentification.isDisallowed = false;
         Configuration.Save();
     }
 

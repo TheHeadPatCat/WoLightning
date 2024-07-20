@@ -32,5 +32,9 @@ namespace WoLightning.Types
         // Custom Triggers
         public List<RegexTrigger> CustomMessageTriggers { get; set; } = new List<RegexTrigger>();
         public List<ChatType.ChatTypes> Channels { get; set; } = new List<ChatType.ChatTypes>();
+
+
+
+
     }
 }
