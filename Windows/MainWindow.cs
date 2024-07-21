@@ -71,8 +71,8 @@ public class MainWindow : Window, IDisposable
 
 
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
-
-            if (ImGui.Combo("", ref presetIndex, [.. Plugin.Configuration.PresetNames], Plugin.Configuration.Presets.Count, 3))
+            presetIndex = Plugin.Configuration.PresetIndex;
+            if (ImGui.Combo("", ref presetIndex, [.. Plugin.Configuration.PresetNames], Plugin.Configuration.Presets.Count, 6))
             {
                 Plugin.Configuration.loadPreset(Plugin.Configuration.PresetNames[presetIndex]);
             }
@@ -113,12 +113,13 @@ public class MainWindow : Window, IDisposable
 
 
             ImGui.BeginDisabled();
-            if (ImGui.Button("Master Mode - Unavailable", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
+            if (ImGui.Button("Master Mode", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
             {
                Plugin.ToggleMasterUI();
             }
             ImGui.EndDisabled();
-                
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip($"Temporarily Disabled until i have reworked the Server."); }
+
 
 
 

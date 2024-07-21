@@ -126,7 +126,7 @@ public class ConfigWindow : Window, IDisposable
     public override void PreDraw()
     {
         // Flags must be added or removed before Draw() is being called, or they won't apply
-        presetIndex = Configuration.Presets.IndexOf(Configuration.ActivePreset);
+        //presetIndex = Configuration.Presets.IndexOf(Configuration.ActivePreset);
 
     }
 
@@ -141,12 +141,9 @@ public class ConfigWindow : Window, IDisposable
         {
             DrawGeneralTab();
             DrawDefaultTriggerTab();
-            if (Configuration.ActivePreset.SayBadWord.IsEnabled())
-            {
-                DrawWordlistTab();
-            }
+            if (Configuration.ActivePreset.SayBadWord.IsEnabled()) DrawWordlistTab();
             DrawCustomTriggerTab();
-            DrawPermissionsTab();
+            //DrawPermissionsTab(); todo make work again
             // DrawCommandTab(); todo not implemented
             DrawDebugTab();
 
@@ -192,8 +189,8 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.PushItemWidth(ImGui.GetWindowSize().X - 90);
 
-        if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
-        if (ImGui.Combo("", ref presetIndex, [.. Configuration.PresetNames], Configuration.Presets.Count, 3))
+        presetIndex = Configuration.PresetIndex;
+        if (ImGui.Combo("", ref presetIndex, [.. Configuration.PresetNames], Configuration.Presets.Count, 6))
         {
             Configuration.loadPreset(Configuration.PresetNames[presetIndex]);
         }
@@ -204,25 +201,11 @@ public class ConfigWindow : Window, IDisposable
             addInput = "";
             ImGui.OpenPopup("Add Preset##addPreMod");
         }
-
-        if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
-        ImGui.SameLine();
-        if (ImGui.SmallButton(">>"))
-        {
-            exportInput = "";
-            ImGui.OpenPopup("Share Preset##shaPreMod");
-        }
-
-        if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
         ImGui.SameLine();
         if (ImGui.SmallButton("X"))
         {
             ImGui.OpenPopup("Delete Preset##delPreMod");
         }
-        if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
-
-
-
 
         Vector2 center = ImGui.GetMainViewport().GetCenter();
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
@@ -236,19 +219,23 @@ public class ConfigWindow : Window, IDisposable
             ImGui.InputText("##addInput", ref addInput, 32, ImGuiInputTextFlags.CharsNoBlank);
             if (importInput.Length != 0) ImGui.EndDisabled();
 
+            /*
             ImGui.Text("Or enter a Sharestring to import.");
             ImGui.PushItemWidth(ImGui.GetWindowSize().X - 10);
             if (addInput.Length != 0) ImGui.BeginDisabled();
             ImGui.InputText("##importInput", ref importInput, 256, ImGuiInputTextFlags.CharsNoBlank);
             if (addInput.Length != 0) ImGui.EndDisabled();
+            */
 
             ImGui.PushItemWidth(ImGui.GetWindowSize().X / 2);
             if (ImGui.Button("Add##addPre", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
             {
                 if (addInput.Length > 0)
                 {
-                    string[] codes;
-                    //Configuration.Presets.TryGetValue(Configuration.ActivePreset, out codes);
+                    Preset tPreset = new Preset(addInput);
+                    Configuration.Presets.Add(tPreset);
+                    Configuration.Save();
+                    Configuration.loadPreset(addInput);
                 }
                 if (importInput.Length > 0)
                 {
@@ -285,15 +272,9 @@ public class ConfigWindow : Window, IDisposable
             ImGui.PushItemWidth(ImGui.GetWindowSize().X - 10);
             if (ImGui.Button("Confirm##conRem", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
             {
-                if (Configuration.ActivePreset.Name == "Default")
-                {
+
+                    Configuration.deletePreset(Configuration.ActivePreset);
                     ImGui.CloseCurrentPopup();
-                }
-                else
-                {
-                    Configuration.Presets.Remove(Configuration.ActivePreset); // todo reimplement
-                    ImGui.CloseCurrentPopup();
-                }
             }
             ImGui.SameLine();
             if (ImGui.Button("Cancel##canRem", new Vector2(ImGui.GetWindowSize().X / 2 - 10, 25))) ImGui.CloseCurrentPopup();

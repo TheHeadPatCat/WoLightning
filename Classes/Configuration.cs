@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Linq;
 using WoLightning.Types;
 
 
@@ -19,10 +20,12 @@ namespace WoLightning
         public bool DebugEnabled { get; set; } = false;
 
         // Preset Settings
-        public Preset ActivePreset { get; set; }
+        [NonSerialized] public Preset ActivePreset;
         [NonSerialized] public List<Preset> Presets = new();
         [NonSerialized] public List<String> PresetNames = new(); // used for comboBoxes
+        [NonSerialized] public int PresetIndex = 0;
 
+        public string LastPresetName { get; set; } = "Default";
         // General Settings
         public bool ActivateOnStart { get; set; } = false;
 
@@ -52,7 +55,19 @@ namespace WoLightning
             Configuration s = DeserializeConfig(f);
             foreach (PropertyInfo property in typeof(Configuration).GetProperties().Where(p => p.CanWrite)) property.SetValue(this, property.GetValue(s, null), null);
 
+            
+            if(Directory.Exists(ConfigurationDirectoryPath + "\\Presets"))
+            {
+                foreach (var file in Directory.EnumerateFiles(ConfigurationDirectoryPath + "\\Presets"))
+                {
+                    string p = File.ReadAllText(file);
+                    Preset tPreset = DeserializePreset(p);
+                    Presets.Add(tPreset);
+                }
+            }
+            if (!loadPreset(LastPresetName)) loadPreset("Default");
             if (ActivePreset == null) ActivePreset = new Preset("Default");
+            PresetIndex = Presets.IndexOf(ActivePreset);
             Save();
         }
 
@@ -66,16 +81,24 @@ namespace WoLightning
 
         public void Save()
         {
-            PresetNames.Clear();
-            foreach (var preset in Presets) { PresetNames.Add(preset.Name); }
-
+            LastPresetName = ActivePreset.Name;
+            PresetNames = new();
             if (isAlternative)
             {
-                savePreset(ActivePreset, true);
+                foreach (var preset in Presets)
+                {
+                    PresetNames.Add(preset.Name);
+                    savePreset(preset, true);
+                }
                 File.WriteAllText(ConfigurationDirectoryPath + "masterConfig.json", SerializeConfig(this));
                 return;
             }
-            savePreset(ActivePreset);
+
+            foreach (var preset in Presets)
+            {
+                PresetNames.Add(preset.Name);
+                savePreset(preset);
+            }
             File.WriteAllText(ConfigurationDirectoryPath + "Config.json", SerializeConfig(this));
         }
 
@@ -498,6 +521,8 @@ namespace WoLightning
         {
             if (!Presets.Exists(preset => preset.Name == Name)) return false;
             ActivePreset = Presets.Find(preset => preset.Name == Name);
+            PresetIndex = Presets.IndexOf(ActivePreset);
+            LastPresetName = ActivePreset.Name;
             return true;
         }
 
@@ -510,6 +535,17 @@ namespace WoLightning
             File.WriteAllText($"{ConfigurationDirectoryPath}\\MasterPresets\\{target.Name}.json", SerializePreset(target));
         }
 
+        public void deletePreset(Preset target)
+        {
+            if (!Presets.Exists(preset => preset.Name == target.Name)) return;
+            if (!File.Exists(ConfigurationDirectoryPath + "\\Presets\\" + target.Name + ".json")) return;
+
+            File.Delete(ConfigurationDirectoryPath + "\\Presets\\" + target.Name + ".json");
+            Presets.Remove(target);
+            if (!Presets.Exists(preset => preset.Name == "Default")) Presets.Add(new Preset("Default"));
+            loadPreset("Default");
+            Save();
+        }
 
 
         internal static string SerializeConfig(object? config)
@@ -536,9 +572,9 @@ namespace WoLightning
             });
         }
 
-        internal static Preset DeserializePreset(string input, string name)
+        internal static Preset DeserializePreset(string input)
         {
-            if (input == "") return new Preset(name);
+            if (input == "") ; // cry
             return JsonConvert.DeserializeObject<Preset>(input);
         }
 

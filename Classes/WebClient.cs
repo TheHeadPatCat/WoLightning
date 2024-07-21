@@ -86,6 +86,7 @@ namespace WoLightning
             */
 
             ClientClean = new HttpClient();
+            requestPishockInfoAll();
         }
 
 
@@ -173,6 +174,17 @@ namespace WoLightning
                 return;
             }
 
+            if(overrideSettings.Length != 3 || overrideSettings[0] < 0 || overrideSettings[0] > 2)
+            {
+                Plugin.PluginLog.Verbose(" -> Blocked due to invalid OverrideSettings!");
+                return;
+            }
+
+            // Clamp Settings
+            if (overrideSettings[1] < 1) overrideSettings[1] = 1;
+            if (overrideSettings[1] > 100) overrideSettings[1] = 100;
+            if (overrideSettings[2] < 1) overrideSettings[2] = 1;
+            if (overrideSettings[2] > 10)overrideSettings[2] = 10;
 
             Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
 
@@ -207,6 +219,9 @@ namespace WoLightning
 
         public async void sendPishockTestAll()
         {
+
+            Plugin.PluginLog.Verbose($"Sending Test request for {Plugin.Authentification.PishockShockers.Count} shockers.");
+
             if (Plugin.Authentification.PishockName.Length < 3
                 || Plugin.Authentification.PishockApiKey.Length < 16)
             {
@@ -248,6 +263,8 @@ namespace WoLightning
         public async void requestPishockInfo(string ShareCode)
         {
 
+            Plugin.PluginLog.Verbose($"Requesting Information for {ShareCode}...");
+
             if (Plugin.Authentification.PishockName.Length < 3
                || Plugin.Authentification.PishockApiKey.Length < 16)
             {
@@ -287,6 +304,8 @@ namespace WoLightning
 
         public async void requestPishockInfoAll()
         {
+            Plugin.PluginLog.Verbose($"Requesting Information for all Shockers.");
+
             if (Plugin.Authentification.PishockName.Length < 3
                 || Plugin.Authentification.PishockApiKey.Length < 16)
             {
@@ -298,6 +317,7 @@ namespace WoLightning
 
             foreach (var shocker in Plugin.Authentification.PishockShockers)
             {
+                Plugin.PluginLog.Verbose($" -> Requesting Information for {shocker.Code}...");
                 shocker.Status = ShockerStatus.Unchecked;
                 using StringContent jsonContent = new(
                 JsonSerializer.Serialize(new
@@ -457,7 +477,7 @@ namespace WoLightning
             using (var reader = new StreamReader(response.ReadAsStream()))
             {
                 string message = reader.ReadToEnd();
-                Plugin.PluginLog.Verbose(message);
+                //Plugin.PluginLog.Verbose(message);
                 message = message.Replace("\"", "");
                 message = message.Replace("{", "");
                 message = message.Replace("}", "");
@@ -465,7 +485,7 @@ namespace WoLightning
                 Dictionary<String, String> headers = new Dictionary<String, String>();
                 foreach (var part in partsRaw) headers.Add(part.Split(':')[0], part.Split(':')[1]);
 
-                foreach (var (key, value) in headers) Plugin.PluginLog.Verbose($"{key}:{value}");
+                //foreach (var (key, value) in headers) Plugin.PluginLog.Verbose($"{key}:{value}");
 
 
                 if (headers.ContainsKey("name")) shocker.Name = headers["name"];

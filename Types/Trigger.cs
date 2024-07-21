@@ -25,7 +25,12 @@ namespace WoLightning.Types
 
         public bool Validate()
         {
-            return !(Intensity < 1 || Intensity > 100 || Duration < 1 || Duration > 10 || Shockers.Count < 1 || Shockers.Count > 5);
+            if ((int)OpMode < 0 || (int)OpMode > 2) return false;
+            if (Intensity < 1) Intensity = 1;
+            if (Intensity > 100) Intensity = 100;
+            if (Duration < 1) Duration = 1;
+            if (Duration > 10) Duration = 10;
+            return !(Shockers.Count < 1 || Shockers.Count > 5);
         }
         public bool IsEnabled()
         {
