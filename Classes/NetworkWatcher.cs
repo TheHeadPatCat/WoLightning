@@ -55,6 +55,7 @@ namespace WoLightning
         public void Start() //Todo only start specific services, when respective trigger is on
         {
             running = true;
+            ActivePreset = Plugin.Configuration.ActivePreset;
             LeashTimer.Elapsed += (sender, e) => CheckLeashDistance();
             //LeashTimer.Start(); 650 // 305
 
@@ -166,80 +167,126 @@ namespace WoLightning
 
         private void checkLocalPlayerState(IFramework Framework)
         {
-            if (LocalPlayer == null)
+            try
             {
-                LocalPlayer = Plugin.ClientState.LocalPlayer;
-                lastHP = LocalPlayer.CurrentHp;
-                lastMaxHP = LocalPlayer.MaxHp;
-                lastMP = LocalPlayer.CurrentMp;
-            }
-
-            if (lastHP != LocalPlayer.CurrentHp) HandleHPChange(); //check maxhp due to synching and such
-            if (lastMP != LocalPlayer.CurrentMp) HandleMPChange();
-
-            if (lastStatusCheck >= 60 && ActivePreset.FailMechanic.IsEnabled())
-            {
-                lastStatusCheck = 0;
-                bool foundVuln = false;
-                bool foundDDown = false;
-                if (LocalPlayer.StatusList != null)
+                if (LocalPlayer == null)
                 {
-                    foreach (var status in LocalPlayer.StatusList)
-                    {
-                        //Yes. We have to check for the IconId. The StatusId is different for different expansions, while the Name is different through languages.
-                        if (status.GameData.Icon >= 17101 && status.GameData.Icon <= 17116) // Vuln Up
-                        {
-                            foundVuln = true;
-                            var amount = status.StackCount;
+                    LocalPlayer = Plugin.ClientState.LocalPlayer;
+                    lastHP = LocalPlayer.CurrentHp;
+                    lastMaxHP = LocalPlayer.MaxHp;
+                    lastMP = LocalPlayer.CurrentMp;
+                }
 
-                            Plugin.PluginLog.Verbose("Found Vuln Up - Amount: " + amount + " lastVulnCount: " + lastVulnAmount);
-                            if (amount > lastVulnAmount)
-                            {
-                                Plugin.sendNotif($"You failed a Mechanic!");
-                                Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic);
-                            }
-                            lastVulnAmount = amount;
-                        }
-                        if (status.GameData.Icon >= 18441 && status.GameData.Icon <= 18456) // Damage Down
+                
+
+                if (lastHP != LocalPlayer.CurrentHp)
+                {
+                    if (lastMaxHP != LocalPlayer.MaxHp)
+                    {
+                        lastHP = LocalPlayer.CurrentHp;
+                        lastMaxHP = LocalPlayer.MaxHp;
+                    }
+                    if (ActivePreset.Die.IsEnabled() && LocalPlayer.CurrentHp == 0 && !wasDead)
+                    {
+                        Plugin.sendNotif($"You Died!");
+                        Plugin.WebClient.sendPishockRequest(ActivePreset.Die);
+                        wasDead = false;
+                    }
+                    
+                    if (lastHP > LocalPlayer.CurrentHp && ActivePreset.TakeDamage.IsEnabled())
+                    {
+                        int amount = (int)lastHP - (int)LocalPlayer.CurrentHp;
+                        int amountPercent = (int)((double)amount / lastMaxHP * 100);
+                        //Plugin.PluginLog.Verbose($"Cur: {LocalPlayer.CurrentHp} Last: {lastHP} diff: {amount}|{amountPercent}%");
+                        if (ActivePreset.TakeDamage.CustomData == null) ActivePreset.TakeDamage.setupCustomData(); //failsafe
+                        if (ActivePreset.TakeDamage.CustomData["Proportional"][0] == 1)
                         {
-                            foundDDown = true;
-                            var amount = status.StackCount;
-                            if (amount > lastDDownAmount)
+                            int calcdIntensity = (int)((double)ActivePreset.TakeDamage.Intensity * ((double)amountPercent / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
+                            int calcdDuration = (int)((double)ActivePreset.TakeDamage.Duration * ((double)amountPercent / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
+                            Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
+                        }
+                        else Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage);
+                    }
+                    if (lastHP > 0) wasDead = false;
+                }
+                lastHP = LocalPlayer.CurrentHp;
+                if (lastMP != LocalPlayer.CurrentMp) HandleMPChange();
+
+                if (lastStatusCheck >= 60 && ActivePreset.FailMechanic.IsEnabled())
+                {
+                    lastStatusCheck = 0;
+                    bool foundVuln = false;
+                    bool foundDDown = false;
+                    if (LocalPlayer.StatusList != null)
+                    {
+                        foreach (var status in LocalPlayer.StatusList)
+                        {
+                            //Yes. We have to check for the IconId. The StatusId is different for different expansions, while the Name is different through languages.
+                            if (status.GameData.Icon >= 17101 && status.GameData.Icon <= 17116) // Vuln Up
                             {
-                                Plugin.sendNotif($"You failed a Mechanic!");
-                                Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic);
+                                foundVuln = true;
+                                var amount = status.StackCount;
+
+                                Plugin.PluginLog.Verbose("Found Vuln Up - Amount: " + amount + " lastVulnCount: " + lastVulnAmount);
+                                if (amount > lastVulnAmount)
+                                {
+                                    Plugin.sendNotif($"You failed a Mechanic!");
+                                    if (ActivePreset.FailMechanic.CustomData == null) ActivePreset.FailMechanic.setupCustomData(); //failsafe
+                                    if (ActivePreset.FailMechanic.CustomData["Proportional"][0] == 1)
+                                    {
+                                        int calcdIntensity = ActivePreset.FailMechanic.Intensity * (amount / ActivePreset.FailMechanic.CustomData["Proportional"][1]);
+                                        int calcdDuration = ActivePreset.FailMechanic.Duration * (amount / ActivePreset.FailMechanic.CustomData["Proportional"][1]);
+                                        Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic, [(int)ActivePreset.FailMechanic.OpMode, calcdIntensity, calcdDuration]);
+                                    }
+                                    else Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic);
+                                }
+                                lastVulnAmount = amount;
                             }
-                            lastDDownAmount = amount;
+                            if (status.GameData.Icon >= 18441 && status.GameData.Icon <= 18456) // Damage Down
+                            {
+                                foundDDown = true;
+                                var amount = status.StackCount;
+                                if (amount > lastDDownAmount)
+                                {
+                                    Plugin.sendNotif($"You failed a Mechanic!");
+                                    Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic);
+                                }
+                                lastDDownAmount = amount;
+                            }
                         }
                     }
-                }
-                if (!foundVuln) lastVulnAmount = 0;
-                if (!foundDDown) lastDDownAmount = 0;
-            } //Shock On Vuln / Damage Down
+                    if (!foundVuln) lastVulnAmount = 0;
+                    if (!foundDDown) lastDDownAmount = 0;
+                } //Shock On Vuln / Damage Down
 
-            if (ActivePreset.PartymemberDies.IsEnabled() && Plugin.PartyList.Length > 0 && lastPartyCheck >= 60) // DeathMode
-            {
-                if (lastCheckedIndex >= Plugin.PartyList.Length) lastCheckedIndex = 0;
-                if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP == 0 && !deadIndexes[lastCheckedIndex])
+                if (lastPartyCheck >= 60 && ActivePreset.PartymemberDies.IsEnabled() && Plugin.PartyList.Length > 0) // DeathMode
                 {
-                    deadIndexes[lastCheckedIndex] = true;
-                    amountDead++;
-                    Plugin.PluginLog.Information($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} Members are dead.");
-                    Plugin.WebClient.sendPishockRequest(ActivePreset.PartymemberDies, [ActivePreset.PartymemberDies.Intensity * (amountDead / Plugin.PartyList.Length), ActivePreset.PartymemberDies.Duration * (amountDead / Plugin.PartyList.Length)]);
+                    if (lastCheckedIndex >= Plugin.PartyList.Length) lastCheckedIndex = 0;
+                    if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP == 0 && !deadIndexes[lastCheckedIndex])
+                    {
+                        deadIndexes[lastCheckedIndex] = true;
+                        amountDead++;
+                        Plugin.PluginLog.Information($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} Members are dead.");
+                        Plugin.WebClient.sendPishockRequest(ActivePreset.PartymemberDies, [ActivePreset.PartymemberDies.Intensity * (amountDead / Plugin.PartyList.Length), ActivePreset.PartymemberDies.Duration * (amountDead / Plugin.PartyList.Length)]);
+                    }
+                    else if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP > 0 && deadIndexes[lastCheckedIndex])
+                    {
+                        deadIndexes[lastCheckedIndex] = false;
+                        amountDead--;
+                        Plugin.PluginLog.Information($"(Deathmode) - Player revived - {amountDead}/{Plugin.PartyList.Length} Members are dead.");
+                    }
+                    lastCheckedIndex++;
+                    lastPartyCheck = 0;
                 }
-                else if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP > 0 && deadIndexes[lastCheckedIndex])
-                {
-                    deadIndexes[lastCheckedIndex] = false;
-                    amountDead--;
-                    Plugin.PluginLog.Information($"(Deathmode) - Player revived - {amountDead}/{Plugin.PartyList.Length} Members are dead.");
-                }
-                lastCheckedIndex++;
-                lastPartyCheck = 0;
+
+                
+                lastStatusCheck++;
+                lastPartyCheck++;
             }
-
-            lastHP = LocalPlayer.CurrentHp;
-            lastStatusCheck++;
-            lastPartyCheck++;
+            catch (Exception e)
+            {
+                Plugin.PluginLog.Error(e.ToString());
+            }
         }
 
         private void HandleHPChange()
@@ -255,9 +302,18 @@ namespace WoLightning
                 Plugin.WebClient.sendPishockRequest(ActivePreset.Die);
                 wasDead = false;
             }
-            if (lastHP < LocalPlayer.CurrentHp && ActivePreset.Die.IsEnabled())
+            if (lastHP < LocalPlayer.CurrentHp && ActivePreset.TakeDamage.IsEnabled())
             {
-                Plugin.WebClient.sendPishockRequest(ActivePreset.Die);
+                uint amount = LocalPlayer.CurrentHp - lastHP;
+                Plugin.PluginLog.Verbose($"Cur: {LocalPlayer.CurrentHp} Last: {lastHP} diff: {LocalPlayer.CurrentHp - lastHP}");
+                if (ActivePreset.TakeDamage.CustomData == null) ActivePreset.TakeDamage.setupCustomData(); //failsafe
+                if (ActivePreset.TakeDamage.CustomData["Proportional"][0] == 1)
+                {
+                    //int calcdIntensity = ActivePreset.TakeDamage.Intensity * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]);
+                    //int calcdDuration = ActivePreset.TakeDamage.Duration * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]);
+                    //Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
+                }
+                Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage);
             }
             if (lastHP > 0) wasDead = false;
         }
@@ -294,7 +350,7 @@ namespace WoLightning
                         if (message.ToString().ToLower().Contains(word.ToLower()))
                         {
                             Plugin.sendNotif($"You said the bad word: {word}!");
-                            Plugin.WebClient.sendRequestShock(settings);
+                            Plugin.WebClient.sendPishockRequest(ActivePreset.SayBadWord, settings);
                         }
                     }
                 }
@@ -335,7 +391,7 @@ namespace WoLightning
                     if (trigger.Enabled && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
                         Plugin.PluginLog.Information($"Trigger {trigger.Name} triggered. Zap!");
-                        Plugin.WebClient.sendRequestShock([trigger.Mode, trigger.Intensity, trigger.Duration]);
+                        //Plugin.WebClient.sendPishockRequest(ActivePreset.) todo rework
                     }
                 }
             }

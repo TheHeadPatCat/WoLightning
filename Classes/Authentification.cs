@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using WoLightning.Types;
 
 namespace WoLightning
 {
@@ -20,13 +21,13 @@ namespace WoLightning
         private string? ConfigurationDirectoryPath;
 
         // Webserver things
-        private string Hash = "";
+        private string Hash = string.Empty;
         public string ServerKey { get; set; } = string.Empty;
 
         // Pishock things
         public string PishockName { get; set; } = string.Empty;
         public string PishockShareCode { get; set; } = string.Empty;
-        public Dictionary<String, String> PishockShockerCodes { get; set; } = new Dictionary<String, String>();
+        public List<Shocker> PishockShockers { get; set; } = new();
         public string PishockApiKey { get; set; } = string.Empty;
 
 
@@ -39,6 +40,9 @@ namespace WoLightning
         public bool HasMaster { get; set; } = false;
         public string MasterNameFull { get; set; } = string.Empty;
         public bool isDisallowed { get; set; } = false; //locks the interface
+
+
+        public string DevKey {  get; set; } = string.Empty;
 
 
         public Authentification() { }

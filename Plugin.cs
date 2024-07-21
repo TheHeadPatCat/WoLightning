@@ -133,11 +133,6 @@ public sealed class Plugin : IDalamudPlugin
             LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
             Configuration.Initialize(this, false, ConfigurationDirectoryPath);
 
-            if (Configuration.DebugEnabled)
-            {
-                PluginInterface.OpenDeveloperMenu();
-            }
-
             Authentification = new Authentification(ConfigurationDirectoryPath);
 
 

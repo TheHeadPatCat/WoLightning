@@ -1,29 +1,50 @@
+
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using WoLightning.Types;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace WoLightning
 {
+    public enum ConnectionStatus
+    {
+        NotStarted = 0,
+        NotConnected = 1,
+        Unavailable = 2, // temporarily used as server isnt active
+        
+        WontRespond = 101,
+        Outdated = 102,
+        UnknownUser = 103,
+        InvalidKey = 104,
+        FatalError = 105,
+        DevMode = 106,
+
+        Connecting = 199,
+        Connected = 200,
+    }
+
     public class WebClient : IDisposable
     {
         private readonly Plugin Plugin;
+        public string ServerVersion = string.Empty;
         public long Ping { get; set; } = -1;
-        private DateTime lastShock = DateTime.MinValue;
-        private DateTime passThroughLeniancy = DateTime.MinValue;
-        public string ConnectionStatus { get; set; } = "not started";
+        public ConnectionStatus Status { get; set; } = ConnectionStatus.Unavailable;
         public readonly TimerPlus UpdateTimer = new TimerPlus();
         private readonly double fast = new TimeSpan(0, 0, 2).TotalMilliseconds;
         private readonly double normal = new TimeSpan(0, 0, 15).TotalMilliseconds;
         private readonly double slow = new TimeSpan(0, 5, 0).TotalMilliseconds;
 
         public bool failsafe { get; set; } = false;
-        private bool isFirstMessage = true;
 
         private HttpClient? Client;
         private HttpClient? ClientClean;
@@ -47,6 +68,7 @@ namespace WoLightning
         {
             if (Client != null) return;
 
+            /* Temporarily Disabled
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             handler.SslProtocols = SslProtocols.Tls12;
@@ -58,67 +80,20 @@ namespace WoLightning
             Client = new(handler) { Timeout = TimeSpan.FromSeconds(10) };
             Plugin.PluginLog.Verbose("HttpClient successfully created!");
             UpdateTimer.Interval = normal;
-            UpdateTimer.Elapsed += (sender, e) => sendServerRequest();
-            sendServerLogin();
+
+            //UpdateTimer.Elapsed += (sender, e) => sendServerRequest();
+            //sendServerLogin();
+            */
+
             ClientClean = new HttpClient();
-        }
-
-
-        public async void sendRequestShock(int[] settings) // todo redo this
-        {
-            Plugin.PluginLog.Verbose($"Sending Pishock Request: Mode {settings[0]} Intensity/Duration: {settings[1]}|{settings[2]}");
-            if (failsafe)
-            {
-                Plugin.PluginLog.Verbose(" -> Blocked request due to failsafe mode!");
-                return;
-            }
-            if (settings.Length < 3 || settings[0] < 0 || settings[0] > 2 || settings[1] < 1 || settings[2] < 1) return; // dont send bad data
-            if (Plugin.Authentification.PishockName.Length < 3 || Plugin.Authentification.PishockShareCode.Length < 3 || Plugin.Authentification.PishockApiKey.Length < 16) return;
-
-            /*if (lastShock.Ticks + Plugin.Configuration.globalTriggerCooldown * 10000000 > DateTime.Now.Ticks // Cooldown
-                && lastShock.Ticks + 7500000 < DateTime.Now.Ticks) // 0.75 Second leniancy to allow passthrough
-            {
-                Plugin.PluginLog.Verbose(" -> Blocked due to Cooldown!");
-                return;
-            }*/
-            lastShock = DateTime.Now;
-
-            using StringContent jsonContent = new(
-            JsonSerializer.Serialize(new
-            {
-                Username = Plugin.Authentification.PishockName,
-                Name = "WoLPlugin",
-                Code = Plugin.Authentification.PishockShareCode,
-                Intensity = settings[1],
-                Duration = settings[2],
-                Apikey = Plugin.Authentification.PishockApiKey,
-                Op = settings[0], //0 = shock, 1 = vibrate, 2 = beep
-            }),
-            Encoding.UTF8,
-            "application/json");
-
-            try
-            {
-                Plugin.PluginLog.Verbose(" -> Sent!");
-                Stopwatch timeTaken = Stopwatch.StartNew();
-                await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
-                timeTaken.Stop();
-                Plugin.PluginLog.Verbose(" -> Response Time: " + timeTaken.ElapsedMilliseconds + "ms.");
-
-            }
-            catch (Exception ex)
-            {
-                Plugin.PluginLog.Error(ex.ToString());
-                Plugin.PluginLog.Error("Error when sending post request to pishock api");
-            }
         }
 
 
         public async void sendPishockRequest(Trigger TriggerObject)
         {
 
-            Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Length} shockers.");
-
+            Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
+            Plugin.PluginLog.Verbose($" -> Parameters -  {TriggerObject.OpMode} {TriggerObject.Intensity}% for {TriggerObject.Duration}s");
 
             //Validation of Data
             if (Plugin.Authentification.PishockName.Length < 3
@@ -175,8 +150,8 @@ namespace WoLightning
         public async void sendPishockRequest(Trigger TriggerObject, int[] overrideSettings)
         {
 
-            Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Length} shockers.");
-
+            Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
+            Plugin.PluginLog.Verbose($" -> Parameters using Override -  {overrideSettings[0]} {overrideSettings[1]}% for {overrideSettings[2]}s");
 
             //Validation of Data
             if (Plugin.Authentification.PishockName.Length < 3
@@ -230,336 +205,210 @@ namespace WoLightning
             Plugin.PluginLog.Verbose($" -> Requests sent!");
         }
 
-
-        public void sendServerData(string type, string data)
+        public async void sendPishockTestAll()
         {
-            sendServerData(new NetworkPacket(type, data));
+            if (Plugin.Authentification.PishockName.Length < 3
+                || Plugin.Authentification.PishockApiKey.Length < 16)
+            {
+                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                return;
+            }
+            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+
+
+            foreach (var shocker in Plugin.Authentification.PishockShockers)
+            {
+            using StringContent jsonContent = new(
+            JsonSerializer.Serialize(new
+            {
+                Username = Plugin.Authentification.PishockName,
+                Name = "WoLPlugin",
+                Code = shocker.Code,
+                Intensity = 35,
+                Duration = 3,
+                Apikey = Plugin.Authentification.PishockApiKey,
+                Op = 1,
+            }),
+            Encoding.UTF8,
+            "application/json");
+
+                try
+                {
+                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                }
+                catch (Exception ex)
+                {
+                    Plugin.PluginLog.Error(ex.ToString());
+                    Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                }
+            }
+            Plugin.PluginLog.Verbose($" -> Requests sent!");
         }
-        public void sendServerData(string[] type, string[] data)
+
+        public async void requestPishockInfo(string ShareCode)
         {
-            sendServerData(new NetworkPacket(type, data));
+
+            if (Plugin.Authentification.PishockName.Length < 3
+               || Plugin.Authentification.PishockApiKey.Length < 16)
+            {
+                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                return;
+            }
+            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+
+
+            using StringContent jsonContent = new(
+            JsonSerializer.Serialize(new
+            {
+                Username = Plugin.Authentification.PishockName,
+                Code = ShareCode,
+                Apikey = Plugin.Authentification.PishockApiKey,
+
+            }),
+            Encoding.UTF8,
+            "application/json");
+
+            Shocker shocker = Plugin.Authentification.PishockShockers.Find(shocker => shocker.Code ==  ShareCode);
+            if (shocker == null ) return;
+            shocker.Status = ShockerStatus.Unchecked;
+            try
+            {
+                var s = await ClientClean.PostAsync("https://do.pishock.com/api/GetShockerInfo", jsonContent);
+                if (s.StatusCode == HttpStatusCode.OK)
+                    processPishockResponse(s.Content, shocker);
+                else shocker.Status = ShockerStatus.Offline;
+            }
+            catch (Exception ex)
+            {
+                Plugin.PluginLog.Error(ex.ToString());
+                Plugin.PluginLog.Error("Error when sending post request to pishock api");
+            }
         }
 
-        public async void sendServerData(NetworkPacket? packet)
+        public async void requestPishockInfoAll()
         {
-            Plugin.PluginLog.Info("Sending Data to Server:");
-            Plugin.PluginLog.Info(packet.ToString());
-            if (ConnectionStatus != "connected")
+            if (Plugin.Authentification.PishockName.Length < 3
+                || Plugin.Authentification.PishockApiKey.Length < 16)
             {
-                Plugin.PluginLog.Warning("Attempted to send a Request, while we arent connected to the Server!");
-                sendServerLogin();
+                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
                 return;
             }
+            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
 
-            if (Plugin.ClientState.LocalPlayer == null)
+
+            foreach (var shocker in Plugin.Authentification.PishockShockers)
             {
-                Plugin.PluginLog.Info($"Aborting because Player doesnt exist yet.");
-                return;
+                shocker.Status = ShockerStatus.Unchecked;
+                using StringContent jsonContent = new(
+                JsonSerializer.Serialize(new
+                {
+                    Username = Plugin.Authentification.PishockName,
+                    Code = shocker.Code,
+                    Apikey = Plugin.Authentification.PishockApiKey,
+                }),
+                Encoding.UTF8,
+                "application/json");
+
+                try
+                {
+                    var s = await ClientClean.PostAsync("https://do.pishock.com/api/GetShockerInfo", jsonContent);
+
+                    if (s.StatusCode == HttpStatusCode.OK)
+                        processPishockResponse(s.Content, shocker);
+                    else shocker.Status = ShockerStatus.Offline;
+                }
+                catch (Exception ex)
+                {
+                    Plugin.PluginLog.Error(ex.ToString());
+                    Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                }
             }
-            if (Client == null)
-            {
-                ConnectionStatus = "cant connect";
-                Plugin.PluginLog.Error($"We cant send data without a Client!!");
-                return;
-            }
+            Plugin.PluginLog.Verbose($" -> Requests sent!");
+        }
+
+        public async void sendWebserverRequest(NetPacket packet)
+        {
+            Plugin.PluginLog.Verbose(packet.ToString());
+
+        }
+
+        public async void establishWebseverConnection()
+        {
+
+            if (Status == ConnectionStatus.Unavailable) return;
+
+            if (Status == ConnectionStatus.Connected ||
+                Plugin.ClientState.LocalPlayer == null ||
+                Client == null) return;
+
+
+            NetPacket packet = new NetPacket(Operation.RequestServerState, Plugin.LocalPlayerNameFull);
+
+            string key = Plugin.Authentification.ServerKey;
+            if (key.Length == 0) key = "None";
 
             using StringContent jsonContent = new(
                 JsonSerializer.Serialize(new
                 {
                     hash = Plugin.Authentification.getHash(),
-                    key = Plugin.Authentification.ServerKey,
-                    playerNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id,
-                    masterNameFull = Plugin.Authentification.MasterNameFull,
-                    data = packet.ToString(),
-                    isFirstMessage
+                    key,
+                    devKey = Plugin.Authentification.DevKey,
+                    packet,
                 }),
             Encoding.UTF8,
             "application/json");
 
             try
             {
-
+                Plugin.PluginLog.Verbose($"Sending Package");
+                Plugin.PluginLog.Verbose(jsonContent.Headers.ToString());
                 Stopwatch timeTaken = Stopwatch.StartNew();
-                var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/post/", jsonContent);
+                var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/post/WoLightning", jsonContent);
                 timeTaken.Stop();
-                isFirstMessage = false;
                 Ping = timeTaken.ElapsedMilliseconds;
-                if (UpdateTimer.Interval > normal) { ConnectionStatus = "connected"; UpdateTimer.Interval = normal; }
-
                 switch (s.StatusCode)
                 {
+
+                    case HttpStatusCode.Accepted:
+                        Status = ConnectionStatus.Connected;
+                        Plugin.PluginLog.Verbose($"Connection to Server has been Established!");
+                        if (s.Content != null) processResponse(packet, s.Content.ToString());
+                        break;
+
+
+                    // Softerrors
+                    case HttpStatusCode.Unauthorized:
+                        Status = ConnectionStatus.UnknownUser;
+                        Plugin.PluginLog.Error("The Server dídnt know us, so we got registered.");
+                        if (s.Content != null) processResponse(packet, s.Content.ToString());
+                        break;
+
+                    case HttpStatusCode.UpgradeRequired:
+                        Status = ConnectionStatus.Outdated;
+                        Plugin.PluginLog.Warning("We are running a outdated Version.");
+                        break;
+
+                    case HttpStatusCode.Forbidden:
+                        Status = ConnectionStatus.InvalidKey;
+                        Plugin.PluginLog.Error("Our Key does not match the key on the Serverside.");
+                        break;
+
+                    case HttpStatusCode.Locked:
+
+
+                    // Harderrors
                     case HttpStatusCode.NotFound:
                         Plugin.PluginLog.Error("We sent a invalid Request to the Server.");
+                        Status = ConnectionStatus.FatalError;
                         break;
-
-                    case HttpStatusCode.UpgradeRequired:
-                        ConnectionStatus = "outdated";
-                        Plugin.PluginLog.Warning("We are running a outdated Version.");
-                        UpdateTimer.Stop();
-                        break;
-
-                    case HttpStatusCode.Unauthorized:
-                        ConnectionStatus = "cant connect";
-                        Plugin.PluginLog.Error("Server doesnt know us. Did we skip the login?");
-                        UpdateTimer.Stop();
-                        break;
-
-                    case HttpStatusCode.Forbidden:
-                        ConnectionStatus = "invalid key";
-                        Plugin.PluginLog.Error("Our Key does not match the key on the Serverside");
-                        UpdateTimer.Stop();
-                        break;
-
                     case HttpStatusCode.InternalServerError:
+                        Status = ConnectionStatus.FatalError;
                         Plugin.PluginLog.Error("We sent a invalid Packet to the Server.");
-                        break;
 
-                    case HttpStatusCode.Accepted:
-                        Plugin.PluginLog.Verbose($"The Server Accepted our Request.");
                         break;
 
                     default:
-                        ConnectionStatus = "cant connect";
-                        Plugin.PluginLog.Error($"Unknown Response {s.StatusCode}");
-                        UpdateTimer.Stop();
-                        return;
-                }
-
-            }
-            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
-            {
-                Ping = 0;
-                ConnectionStatus = "disconnected";
-                UpdateTimer.Interval = slow;
-                UpdateTimer.Refresh();
-                Client.CancelPendingRequests();
-                Plugin.PluginLog.Info("The Server is not responding.");
-                return;
-            }
-            catch (TaskCanceledException ex)
-            {
-                Plugin.PluginLog.Info("Running Request was Cancelled.");
-                return;
-            }
-            catch (HttpRequestException)
-            {
-                Ping = 0;
-                ConnectionStatus = "disconnected";
-                UpdateTimer.Interval = slow;
-                UpdateTimer.Refresh();
-                Client.CancelPendingRequests();
-                Plugin.PluginLog.Info("The Server refused the connection.");
-                return;
-            }
-            catch (Exception ex)
-            {
-                Ping = 0;
-                ConnectionStatus = "cant connect";
-                UpdateTimer.Stop();
-                Client.CancelPendingRequests();
-                Plugin.PluginLog.Error(ex.ToString());
-                Plugin.PluginLog.Error("A Request threw an error");
-                return;
-            }
-            return;
-        }
-
-
-
-        public async void sendServerRequest()
-        {
-            if (ConnectionStatus != "connected")
-            {
-                Plugin.PluginLog.Warning("Attempted to send a Request, while we arent connected to the Server!");
-                sendServerLogin();
-                return;
-            }
-
-            if (Plugin.ClientState.LocalPlayer == null)
-            {
-                Plugin.PluginLog.Info($"Aborting because Player doesnt exist yet.");
-                return;
-            }
-            if (Client == null)
-            {
-                ConnectionStatus = "cant connect";
-                Plugin.PluginLog.Error($"We cant send data without a Client!!");
-                return;
-            }
-
-            using StringContent jsonContent = new(
-                JsonSerializer.Serialize(new
-                {
-                    hash = Plugin.Authentification.getHash(),
-                    key = Plugin.Authentification.ServerKey,
-                    playerNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id,
-                    masterNameFull = Plugin.Authentification.MasterNameFull,
-                    pStatus = Plugin.NetworkWatcher.running
-                }),
-            Encoding.UTF8,
-            "application/json");
-
-            try
-            {
-                Stopwatch timeTaken = Stopwatch.StartNew();
-                var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/request/", jsonContent);
-                timeTaken.Stop();
-                isFirstMessage = false;
-                Ping = timeTaken.ElapsedMilliseconds;
-
-                if (UpdateTimer.Interval > normal) { ConnectionStatus = "connected"; UpdateTimer.Interval = normal; }
-                UpdateTimer.Refresh();
-
-                if (s == null) return;
-                if (s.Content == null) return;
-                switch (s.StatusCode)
-                {
-                    case HttpStatusCode.OK: // Update - Received Data
-                        string response = Encoding.UTF8.GetString(await s.Content.ReadAsByteArrayAsync());
-                        Plugin.PluginLog.Info($"Code: {s.StatusCode}   Response: {response}");
-                        new NetworkPacket(response).resolve(Plugin);
-                        break;
-
-                    case HttpStatusCode.NoContent: // Update - No Data
-                        // Do Nothing
-                        break;
-
-                    case HttpStatusCode.Accepted:
-                        Plugin.PluginLog.Info("Successfully registered!");
-                        break;
-
-                    case HttpStatusCode.Forbidden:
-                        ConnectionStatus = "invalid key";
-                        Plugin.PluginLog.Error("Our Key does not match the Key on the Serverside.");
-                        UpdateTimer.Stop();
-                        break;
-
-                    case HttpStatusCode.Unauthorized:
-                        Plugin.PluginLog.Info("We are still processing the Key...");
-                        UpdateTimer.Refresh();
-                        break;
-
-                    case HttpStatusCode.UpgradeRequired:
-                        ConnectionStatus = "outdated";
-                        Plugin.PluginLog.Warning("We are running a outdated version.");
-                        UpdateTimer.Stop();
-                        break;
-
-                    default:
-                        ConnectionStatus = "cant connect";
-                        Plugin.PluginLog.Error($"Unknown Response {s.StatusCode}");
-                        UpdateTimer.Stop();
-                        return;
-                }
-            }
-            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
-            {
-                Ping = 0;
-                ConnectionStatus = "disconnected";
-                UpdateTimer.Interval = slow;
-                UpdateTimer.Refresh();
-                Client.CancelPendingRequests();
-                Plugin.PluginLog.Info("The Server is not responding.");
-                return;
-            }
-            catch (TaskCanceledException ex)
-            {
-                Plugin.PluginLog.Info("Running Request was Cancelled.");
-                return;
-            }
-            catch (HttpRequestException)
-            {
-                Ping = 0;
-                ConnectionStatus = "disconnected";
-                UpdateTimer.Interval = slow;
-                UpdateTimer.Refresh();
-                Client.CancelPendingRequests();
-                Plugin.PluginLog.Info("The Server refused the connection.");
-                return;
-            }
-            catch (Exception ex)
-            {
-                Ping = 0;
-                ConnectionStatus = "cant connect";
-                UpdateTimer.Stop();
-                Client.CancelPendingRequests();
-                Plugin.PluginLog.Error(ex.ToString());
-                Plugin.PluginLog.Error("A Request threw an error");
-                return;
-            }
-            return;
-        }
-
-
-        public async void sendServerLogin()
-        {
-            ConnectionStatus = "connecting";
-
-            if (Plugin.ClientState.LocalPlayer == null)
-            {
-                ConnectionStatus = "cant connect";
-                Plugin.PluginLog.Info($"Aborting because Player doesnt exist yet.");
-                return;
-            }
-            if (Client == null)
-            {
-                ConnectionStatus = "cant connect";
-                Plugin.PluginLog.Error($"We cant send data without a Client!!");
-                return;
-            }
-
-            using StringContent jsonContent = new(
-                JsonSerializer.Serialize(new
-                {
-                    hash = Plugin.Authentification.getHash(),
-                    key = Plugin.Authentification.ServerKey,
-                    playerNameFull = Plugin.ClientState.LocalPlayer.Name + "#" + Plugin.ClientState.LocalPlayer.HomeWorld.Id,
-                    masterNameFull = Plugin.Authentification.MasterNameFull,
-                    pStatus = Plugin.NetworkWatcher.running
-                }),
-            Encoding.UTF8,
-            "application/json");
-
-            try
-            {
-                Stopwatch timeTaken = Stopwatch.StartNew();
-                var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/login/", jsonContent);
-                timeTaken.Stop();
-                Ping = timeTaken.ElapsedMilliseconds;
-
-                if (s == null) return;
-                if (s.Content == null) return;
-                string response = Encoding.UTF8.GetString(await s.Content.ReadAsByteArrayAsync());
-                switch (s.StatusCode)
-                {
-                    case HttpStatusCode.Found: // Logged in!
-                        Plugin.PluginLog.Info($"Successfully Logged in!");
-                        ConnectionStatus = "connected";
-                        UpdateTimer.Interval = normal;
-                        UpdateTimer.Start();
-                        break;
-
-                    case HttpStatusCode.Created:
-                        Plugin.PluginLog.Info("Successfully registered!");
-                        ConnectionStatus = "connected";
-                        Plugin.PluginLog.Info($"Code: {s.StatusCode}   Response: {response}");
-                        new NetworkPacket(response).resolve(Plugin);
-                        UpdateTimer.Interval = normal;
-                        UpdateTimer.Start();
-                        break;
-
-                    case HttpStatusCode.Forbidden:
-                        ConnectionStatus = "invalid key";
-                        Plugin.PluginLog.Error("Our Key does not match the Key on the Serverside.");
-                        break;
-
-                    case HttpStatusCode.UpgradeRequired:
-                        ConnectionStatus = "outdated";
-                        Plugin.PluginLog.Error("We are running a outdated version.");
-                        break;
-
-                    default:
-                        ConnectionStatus = "cant connect";
+                        Status = ConnectionStatus.FatalError;
                         Plugin.PluginLog.Error($"Unknown Response {s.StatusCode}");
                         return;
                 }
@@ -567,109 +416,63 @@ namespace WoLightning
             catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
             {
                 Ping = 0;
-                ConnectionStatus = "disconnected";
-                UpdateTimer.Interval = slow;
-                UpdateTimer.Refresh();
-                Client.CancelPendingRequests();
+                Status = ConnectionStatus.WontRespond;
                 Plugin.PluginLog.Info("The Server is not responding.");
                 return;
             }
             catch (TaskCanceledException ex)
             {
-                Plugin.PluginLog.Info("Running Request was Cancelled.");
+                Plugin.PluginLog.Warning("Running Request was Cancelled.");
                 return;
             }
             catch (HttpRequestException)
             {
                 Ping = 0;
-                ConnectionStatus = "disconnected";
-                UpdateTimer.Interval = slow;
-                UpdateTimer.Refresh();
-                Client.CancelPendingRequests();
+                Status = ConnectionStatus.WontRespond;
                 Plugin.PluginLog.Info("The Server refused the connection.");
                 return;
             }
             catch (Exception ex)
             {
                 Ping = 0;
-                ConnectionStatus = "cant connect";
-                UpdateTimer.Stop();
+                Status = ConnectionStatus.FatalError;
                 Client.CancelPendingRequests();
                 Plugin.PluginLog.Error(ex.ToString());
                 Plugin.PluginLog.Error("A Request threw an error");
                 return;
             }
-            return;
+
         }
 
-
-
-        // This is debug function
-        public async void sendUpdateHash()
+        private void processResponse(NetPacket originalMessage, string jsonString)
         {
-            using StringContent jsonContent2 = new(
-                   JsonSerializer.Serialize(new
-                   {
-                       hash = Plugin.Authentification.getHash(),
-                       key = Plugin.devHash(),
-                   }),
-               Encoding.UTF8,
-               "application/json");
-
-            try
-            {
-                Stopwatch timeTaken = Stopwatch.StartNew();
-                var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/hashUpdate/", jsonContent2);
-                timeTaken.Stop();
-                Plugin.PluginLog.Info("Took " + timeTaken.ElapsedMilliseconds + "ms for the request.");
-                Plugin.PluginLog.Info($"Code: {s.StatusCode}  Response: {s}");
-                return;
-            }
-            catch (Exception ex)
-            {
-                Plugin.PluginLog.Error(ex.ToString());
-                Plugin.PluginLog.Error("WoL Error when sending Post reqeuest", ex);
-                return;
-            }
+            Plugin.PluginLog.Verbose(jsonString);
         }
 
-        // This is debug function
-        public async void sendResetUserdata(string input)
+
+        private void processPishockResponse(HttpContent response, Shocker shocker)
         {
-            using StringContent jsonContent2 = new(
-                   JsonSerializer.Serialize(new
-                   {
-                       hash = Plugin.Authentification.getHash(),
-                       key = input,
-                       playerNameFull = Plugin.LocalPlayerNameFull
-                   }),
-               Encoding.UTF8,
-               "application/json");
 
-            try
+            shocker.Status = ShockerStatus.Online;
+            using (var reader = new StreamReader(response.ReadAsStream()))
             {
-                Stopwatch timeTaken = Stopwatch.StartNew();
-                var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/resetUserdata/", jsonContent2);
-                timeTaken.Stop();
-                if (s.StatusCode == HttpStatusCode.OK)
-                {
-                    Client.CancelPendingRequests();
-                    Plugin.Authentification.ServerKey = "";
-                    isFirstMessage = true;
-                    sendServerData("hello", "hello");
-                }
-                Plugin.PluginLog.Info("Took " + timeTaken.ElapsedMilliseconds + "ms for the request.");
-                Plugin.PluginLog.Info($"Code: {s.StatusCode}  Response: {s}");
-                return;
+                string message = reader.ReadToEnd();
+                Plugin.PluginLog.Verbose(message);
+                message = message.Replace("\"", "");
+                message = message.Replace("{", "");
+                message = message.Replace("}", "");
+                string[] partsRaw = message.Split(',');
+                Dictionary<String, String> headers = new Dictionary<String, String>();
+                foreach (var part in partsRaw) headers.Add(part.Split(':')[0], part.Split(':')[1]);
+
+                foreach (var (key, value) in headers) Plugin.PluginLog.Verbose($"{key}:{value}");
+
+
+                if (headers.ContainsKey("name")) shocker.Name = headers["name"];
+                if (headers.ContainsKey("paused") && bool.Parse(headers["paused"]) == true) shocker.Status = ShockerStatus.Paused;
             }
-            catch (Exception ex)
-            {
-                Plugin.PluginLog.Error(ex.ToString());
-                Plugin.PluginLog.Error("WoL Error when sending Post reqeuest", ex);
-                return;
-            }
+
         }
-
 
         public bool toggleFailsafe()
         {

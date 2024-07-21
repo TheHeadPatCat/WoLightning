@@ -9,7 +9,7 @@ namespace WoLightning.Types
         RequestUpdate = 1,
         RequestVersion = 2,
         RequestServerState = 3,
-        
+
         // Presets Sharing
         RequestPresetLinked = 100,
         PostPresetLinked = 101,
@@ -52,10 +52,10 @@ namespace WoLightning.Types
     [Serializable]
     public class NetPacket
     {
-        public Operation Operation;
-        public string Sender;
-        public string? Target;
-        public string? OpData;
+        public Operation Operation { get; set; }
+        public string Sender { get; set; }
+        public string? Target { get; set; }
+        public string? OpData { get; set; }
 
         #region Constructors
         public NetPacket(Operation Type, String Sender)
@@ -79,6 +79,13 @@ namespace WoLightning.Types
         #endregion
 
 
+        public override string ToString()
+        {
+            string output = $"[NetPacket] Op: {Operation.ToString()} as {Sender}";
+            if (Target != null) output += "Targeting: " + Target;
+            if (OpData != null) output += " with Data: " + OpData;
+            return output;
+        }
 
     }
 }

@@ -173,12 +173,6 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
-        if (Plugin.WebClient.ConnectionStatus != "connected")
-        {
-            ImGui.TextColored(new Vector4(1, 0, 0, 1), "You are currently not connected to the Webserver.\nYou can find more Information in the Main Menu.");
-        }
-
-
         if (Plugin.Authentification.HasMaster)
         {
             ImGui.Text("Your Master is currently " + Plugin.Authentification.MasterNameFull);
@@ -658,19 +652,9 @@ public class ConfigWindow : Window, IDisposable
                 Plugin.Authentification.isDisallowed = !Plugin.Authentification.isDisallowed;
             }
 
-            if (ImGui.Button("Test Update", new Vector2(200, 60)))
+            if (ImGui.Button("Test Login", new Vector2(200, 60)))
             {
-                Plugin.WebClient.sendServerRequest();
-            }
-
-            if (ImGui.Button("Test Transfer", new Vector2(200, 60)))
-            {
-                //Plugin.WebClient.sendServerData();
-            }
-
-            if (ImGui.Button("Test Register", new Vector2(200, 60)))
-            {
-                //Plugin.WebClient.sendRequestServer("register", "", "");
+                Plugin.WebClient.establishWebseverConnection();
             }
 
             if (ImGui.Button("Test Upload", new Vector2(200, 60)))
@@ -678,11 +662,6 @@ public class ConfigWindow : Window, IDisposable
                 //Plugin.WebClient.sendRequestServer("upload", "", "");
             }
 
-            ImGui.InputTextWithHint("##hashkey", "Master Key", ref debugKmessage, 256);
-            if (ImGui.Button("Update Hash", new Vector2(200, 60)))
-            {
-                Plugin.WebClient.sendUpdateHash();
-            }
 
             /*if (ImGui.Button("Toggle isMaster", new Vector2(200, 60)))
             {
@@ -704,15 +683,6 @@ public class ConfigWindow : Window, IDisposable
 
 
 
-
-            ImGui.InputTextWithHint("##resetkey", "Reset Key", ref debugRmessage, 256);
-            if (ImGui.Button("Reset Userdata", new Vector2(200, 60)))
-            {
-                Plugin.WebClient.sendResetUserdata(debugRmessage);
-                Configuration.DebugEnabled = false;
-                debugRmessage = "";
-                this.Toggle();
-            }
 
 
 
@@ -739,10 +709,12 @@ public class ConfigWindow : Window, IDisposable
             "First-Person refers to basically any way you can say 'me'. So saying 'I','I'll','Me','Myself' and so on.\nThis currently only works when writing in English.");
 
 
+        ImGui.BeginDisabled();
         createEntry(Configuration.ActivePreset.SayBadWord, "Triggers whenever you say a word from a list.",
             "You can configure these words, once the setting is enabled.");
         if (Configuration.ActivePreset.SayBadWord.IsEnabled())
             ImGui.Text("You can find the Settings for this option in the tab \"Word List\"");
+        ImGui.EndDisabled();
 
     }
     private void DrawCombat()
@@ -954,13 +926,13 @@ public class ConfigWindow : Window, IDisposable
         bool enabled = TriggerObject.IsEnabled();
         if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
         {
-            if (Plugin.Authentification.PishockShockerCodes.Count > 1) ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
-            else if (Plugin.Authentification.PishockShockerCodes.Count == 1)
-            { // this could probably be solved more elegantly
-                if (enabled) TriggerObject.Shockers = TriggerObject.Shockers.Append(Plugin.Authentification.PishockShockerCodes.ElementAt(0).Key).ToArray();
-                else TriggerObject.Shockers = TriggerObject.Shockers.Where(code => code != Plugin.Authentification.PishockShockerCodes.ElementAt(0).Key).ToArray();
+            if (Plugin.Authentification.PishockShockers.Count > 1) ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
+            else if (Plugin.Authentification.PishockShockers.Count == 1)
+            { 
+                if (enabled) TriggerObject.Shockers = Plugin.Authentification.PishockShockers;
+                else TriggerObject.Shockers = new();
             }
-            else if (Plugin.Authentification.PishockShockerCodes.Count == 0)
+            else if (Plugin.Authentification.PishockShockers.Count == 0)
             {
                 // todo show message to add shocker first
             }
@@ -976,13 +948,13 @@ public class ConfigWindow : Window, IDisposable
         bool enabled = TriggerObject.IsEnabled();
         if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
         {
-            if (Plugin.Authentification.PishockShockerCodes.Count > 1) ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
-            else if (Plugin.Authentification.PishockShockerCodes.Count == 1)
-            { // this could probably be solved more elegantly
-                if (enabled) TriggerObject.Shockers = TriggerObject.Shockers.Append(Plugin.Authentification.PishockShockerCodes.ElementAt(0).Key).ToArray();
-                else TriggerObject.Shockers = TriggerObject.Shockers.Where(code => code != Plugin.Authentification.PishockShockerCodes.ElementAt(0).Key).ToArray();
+            if (Plugin.Authentification.PishockShockers.Count > 1) ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
+            else if (Plugin.Authentification.PishockShockers.Count == 1)
+            {
+                if (enabled) TriggerObject.Shockers = Plugin.Authentification.PishockShockers;
+                else TriggerObject.Shockers = new();
             }
-            else if (Plugin.Authentification.PishockShockerCodes.Count == 0)
+            else if (Plugin.Authentification.PishockShockers.Count == 0)
             {
                 // todo show message to add shocker first
             }
@@ -999,7 +971,10 @@ public class ConfigWindow : Window, IDisposable
     {
         bool changed = false;
 
-        ImGui.Button($"{TriggerObject.Shockers.Length}##shockerButton{TriggerObject.Name}", new Vector2(35, 35));
+        ImGui.BeginDisabled();
+        ImGui.Button($"{TriggerObject.Shockers.Count}##shockerButton{TriggerObject.Name}", new Vector2(35, 50));
+        ImGui.EndDisabled();
+        if (ImGui.IsItemHovered( ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip($"Enabled Shockers:\n{TriggerObject.getShockerNamesNewLine()}"); }
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Mode");
@@ -1036,6 +1011,9 @@ public class ConfigWindow : Window, IDisposable
         }
         ImGui.EndGroup();
 
+        if (TriggerObject.Name == "TakeDamage") createProportional(TriggerObject, "Amount of Health% to lose to hit the Limit.", 1, 100);
+        if (TriggerObject.Name == "FailMechanic") createProportional(TriggerObject, "Amount of Stacks needed to hit the Limit.", 1, 8);
+
         ImGui.Separator();
         ImGui.Spacing();
         ImGui.Spacing();
@@ -1053,13 +1031,13 @@ public class ConfigWindow : Window, IDisposable
         {
             ImGui.TextWrapped("Please select all Shockers that should activate for this setting:");
 
-            foreach (var (Name, Code) in Plugin.Authentification.PishockShockerCodes)
+            foreach (var shocker in Plugin.Authentification.PishockShockers)
             {
-                bool isEnabled = TriggerObject.Shockers.Contains(Code);
-                if (ImGui.Checkbox($"{Name}##shockerbox{Code}", ref isEnabled))
+                bool isEnabled = TriggerObject.Shockers.Contains(shocker);
+                if (ImGui.Checkbox($"{shocker.Name}##shockerbox{shocker.Code}", ref isEnabled))
                 { // this could probably be solved more elegantly
-                    if (isEnabled) TriggerObject.Shockers = TriggerObject.Shockers.Append(Code).ToArray();
-                    else TriggerObject.Shockers = TriggerObject.Shockers.Where(code => code != Code).ToArray();
+                    if (isEnabled) TriggerObject.Shockers.Add(shocker);
+                    else TriggerObject.Shockers.Remove(shocker);
                 }
             }
 
@@ -1072,4 +1050,18 @@ public class ConfigWindow : Window, IDisposable
 
 
     }
+
+    private void createProportional(Trigger TriggerObject, string Description, int minValue, int maxValue)
+    {
+        TriggerObject.setupCustomData();
+        bool isEnabled = TriggerObject.CustomData["Proportional"][0] == 1;
+        if (ImGui.Checkbox($"Enable proportional calculations.##proportionalIsEnabled{TriggerObject.Name}", ref isEnabled)) TriggerObject.CustomData["Proportional"][0] = isEnabled ? 1 : 0;
+        if (isEnabled)
+        {
+            int setValue = TriggerObject.CustomData["Proportional"][1];
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2 - 25);
+            if (ImGui.SliderInt($"{Description}##proportionalSlider{TriggerObject.Name}", ref setValue, minValue, maxValue)) TriggerObject.CustomData["Proportional"][1] = setValue;
+        }
+    }
+
 }

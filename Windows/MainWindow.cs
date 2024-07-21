@@ -3,6 +3,7 @@ using ImGuiNET;
 using System;
 using System.Linq;
 using System.Numerics;
+using WoLightning.Types;
 
 namespace WoLightning.Windows;
 
@@ -38,31 +39,36 @@ public class MainWindow : Window, IDisposable
     {
         try
         {
-            switch (Plugin.WebClient.ConnectionStatus)
+            switch (Plugin.WebClient.Status)
             {
-                case "connected":
+                case ConnectionStatus.Connected:
                     ImGui.TextColored(new Vector4(0, 1, 0, 1), $"Connected! Pinging in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
-                case "disconnected":
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), $"The Server is Offline.\nRetrying in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
-                case "outdated":
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "Can't Connect: Outdated Version!"); break;
-                case "connecting":
+                case ConnectionStatus.Connecting:
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Connecting to Webserver..."); break;
-                case "not started":
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Loading Plugin Configurations..."); break;
-                case "cant connect":
+                    
+                case ConnectionStatus.Outdated:
+                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "Can't Connect - Outdated Version!"); break;
+                case ConnectionStatus.WontRespond:
+                    ImGui.TextColored(new Vector4(1, 0, 0, 1), $"The Server is Offline.\nRetrying in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
+                case ConnectionStatus.FatalError:
                     ImGui.TextColored(new Vector4(1, 0, 0, 1), "Something went wrong!\nPlease check the /xllog Window"); break;
-                case "invalid key":
+                case ConnectionStatus.InvalidKey:
                     ImGui.TextColored(new Vector4(1, 0, 0, 1), "The saved key does not match with the Server.\nYou may only reset it by asking the Dev."); break;
 
+
+                case ConnectionStatus.Unavailable:
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "The Webserver is temporarily unavailable.\nAll other Functions still work though."); break;
             }
 
-            if (Plugin.WebClient.ConnectionStatus != "connected" && Plugin.WebClient.ConnectionStatus != "connecting")
+            /*
+            if (((int)Plugin.WebClient.Status) < 199)
             {
                 ImGui.SameLine();
-                if (ImGui.Button("O", new Vector2(30, 30))) Plugin.WebClient.sendServerLogin();
+                if (ImGui.Button("O", new Vector2(30, 30))) ;
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip("Reconnect");
             }
+            */
+
 
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
 
@@ -99,19 +105,20 @@ public class MainWindow : Window, IDisposable
             ImGui.Spacing();
             ImGui.Spacing();
             ImGui.Spacing();
-            if (ImGui.Button("Open Configuration", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
+            if (ImGui.Button("Open Trigger Configuration", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
             {
                 Plugin.ToggleConfigUI();
             }
 
 
-            if (Plugin.Authentification.IsMaster)
+
+            ImGui.BeginDisabled();
+            if (ImGui.Button("Master Mode - Unavailable", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
             {
-                if (ImGui.Button("Open Master Window", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
-                {
-                    Plugin.ToggleMasterUI();
-                }
+               Plugin.ToggleMasterUI();
             }
+            ImGui.EndDisabled();
+                
 
 
 
@@ -142,34 +149,40 @@ public class MainWindow : Window, IDisposable
                 if (ImGui.Button("+ Add##registerShocker"))
                 {
                     Plugin.PluginLog.Verbose(Plugin.Authentification.PishockShareCode);
-                    Plugin.Authentification.PishockShockerCodes.Add("Shocker" + Plugin.Authentification.PishockShockerCodes.Count, Plugin.Authentification.PishockShareCode);
-                    //Plugin.Authentification.PishockShareCode = "";
+                    Plugin.Authentification.PishockShockers.Add(new Shocker($"Shocker{Plugin.Authentification.PishockShockers.Count}", Plugin.Authentification.PishockShareCode));
+                    Plugin.WebClient.requestPishockInfo(Plugin.Authentification.PishockShareCode);
                 }
                 int x = 0;
 
 
                 ImGui.Text("Current Shockers:");
-                while (Plugin.Authentification.PishockShockerCodes.Count > x)
+                while (Plugin.Authentification.PishockShockers.Count > x)
                 {
-                    string Name = Plugin.Authentification.PishockShockerCodes.ElementAt(x).Key;
-                    string Code = Plugin.Authentification.PishockShockerCodes.ElementAt(x).Value;
-                    //Plugin.PluginLog.Verbose("- " + Name + " C: " + Code);
-                    string tName = Name;
+                    Shocker target = Plugin.Authentification.PishockShockers[x];
+                    string tName = target.Name;
                     ImGui.SetNextItemWidth(205);
-                    if (ImGui.InputText($"##nameof{Code}", ref tName, 32, ImGuiInputTextFlags.EnterReturnsTrue))
-                    {
-                        Plugin.Authentification.PishockShockerCodes.Remove(Name);
-                        Plugin.Authentification.PishockShockerCodes.Add(tName, Code);
-                    }
+
+                    ImGui.Text("Status: ");
                     ImGui.SameLine();
-                    if (ImGui.Button($"Remove##remove{Code}"))
+                    switch (target.Status)
                     {
-                        Plugin.Authentification.PishockShockerCodes.Remove(Name);
+                        case ShockerStatus.Online: ImGui.TextColored(new Vector4(0, 1, 0, 1), "Online!"); break;
+                        case ShockerStatus.Paused: ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Paused"); break;
+                        case ShockerStatus.Unchecked: ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Requesting Data..."); break;
+                        default:
+                            ImGui.TextColored(new Vector4(0.7f, 0, 0, 1), "Unavailable"); break;
+
                     }
+                    ImGui.Text(target.Name);
+
+                    ImGui.SameLine();
+                    if (ImGui.Button($"Remove##remove{target.Code}"))
+                    {
+                        Plugin.Authentification.PishockShockers.Remove(target);
+                    }
+                    ImGui.Separator();
                     x++;
                 }
-
-                if (Plugin.Authentification.PishockShockerCodes.Count > 0) ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.8f), "Press [Enter] to finish renaming.");
 
 
                 if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
@@ -177,7 +190,8 @@ public class MainWindow : Window, IDisposable
                 if (ImGui.Button("Save & Test", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
                 {
                     Plugin.Authentification.Save();
-                    Plugin.WebClient.sendRequestShock([1, 30, 1]);
+                    Plugin.WebClient.requestPishockInfoAll();
+                    //Plugin.WebClient.sendPishockTestAll();
                 }
             }
         }

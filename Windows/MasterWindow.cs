@@ -79,7 +79,7 @@ public class MasterWindow : Window, IDisposable
 
                 if (!Configuration.SubsIsActive.ContainsKey(sub)) break;
 
-                if (ImGui.SmallButton($"O##toggle{sub}")) Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "setpluginstate"], ["ordered to toggle", sub, Configuration.SubsIsActive[sub] ? "false" : "true"]));
+                //if (ImGui.SmallButton($"O##toggle{sub}")) Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "setpluginstate"], ["ordered to toggle", sub, Configuration.SubsIsActive[sub] ? "false" : "true"]));
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip("Toggle Plugin State");
                 ImGui.SameLine();
                 ImGui.TextColored(Configuration.SubsIsActive[sub] ? active : inactive, sub);
@@ -100,13 +100,13 @@ public class MasterWindow : Window, IDisposable
                 if (ImGui.Checkbox($"Disallow\nSettings?##checkbox{sub}", ref c))
                 {
                     Configuration.SubsIsDisallowed[sub] = c;
-                    Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "updatesetting"], ["ordered to update", sub, "isdisallowed" + "#" + c.ToString()]));
+                    //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "updatesetting"], ["ordered to update", sub, "isdisallowed" + "#" + c.ToString()]));
                     Configuration.Save();
                 }
                 ImGui.SameLine();
                 if (ImGui.Button($"Unbind##unbind{sub}"))
                 {
-                    Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "unbindsub"], ["unbind request", sub, "undefined"]));
+                    //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "unbindsub"], ["unbind request", sub, "undefined"]));
                     Configuration.SubsIsDisallowed.Remove(sub);
                     Configuration.SubsActivePresetIndexes.Remove(sub);
                     Plugin.Authentification.OwnedSubs.Remove(sub); // these will cause a error, but thats okay
@@ -150,7 +150,7 @@ public class MasterWindow : Window, IDisposable
                 Configuration.SubsIsDisallowed[requestingSub] = false;
                 Configuration.SubsIsActive[requestingSub] = false;
                 Plugin.Authentification.IsMaster = true;
-                Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "true"]));
+                //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "true"]));
                 requestingSub = "";
                 UpdateStatus();
                 Configuration.Save();
@@ -160,7 +160,7 @@ public class MasterWindow : Window, IDisposable
             if (ImGui.Button("Refuse"))
             {
                 if (!Plugin.Authentification.IsMaster) this.Toggle();
-                Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "false"]));
+                //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "false"]));
                 requestingSub = "";
             }
         }
@@ -176,7 +176,7 @@ public class MasterWindow : Window, IDisposable
         {
             output.append(new NetworkPacket(["packet", "refplayer", "requestsubstatus"], ["request", sub, "undefined"]));
         }
-        Plugin.WebClient.sendServerData(output);
+        //Plugin.WebClient.sendServerData(output);
     }
 
 
