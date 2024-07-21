@@ -72,6 +72,7 @@ public class MainWindow : Window, IDisposable
 
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
             presetIndex = Plugin.Configuration.PresetIndex;
+            if(presetIndex == -1)Plugin.Configuration.Save();
             if (ImGui.Combo("", ref presetIndex, [.. Plugin.Configuration.PresetNames], Plugin.Configuration.Presets.Count, 6))
             {
                 Plugin.Configuration.loadPreset(Plugin.Configuration.PresetNames[presetIndex]);

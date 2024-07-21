@@ -12,6 +12,7 @@ using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Timers;
 using WoLightning.Types;
+using static FFXIVClientStructs.FFXIV.Client.UI.RaptureAtkHistory.Delegates;
 
 
 namespace WoLightning.Windows;
@@ -155,16 +156,20 @@ public class ConfigWindow : Window, IDisposable
     {
         if (Configuration.Version < new Configuration().Version)
         {
-            ImGui.TextColored(new Vector4(1, 0, 0, 1), "YOUR CONFIGURATION IS OUTDATED!");
+            ImGui.TextColored(new Vector4(1, 0, 0, 1), "Your Configuration is incompatible.");
             if (ImGui.Button("Reset & Update Config"))
             {
-                if (isAlternative) Plugin.ToggleMasterConfigUI();
-                else Plugin.ToggleConfigUI();
                 Configuration = new Configuration();
                 Configuration.Initialize(Plugin, isAlternative, Plugin.ConfigurationDirectoryPath, true);
+
+                Configuration.Presets.Add(new Preset("Default"));
+                Configuration.Save();
+                Configuration.loadPreset(addInput);
+                Configuration.deletePreset(Configuration.ActivePreset);
+                Configuration.Save();
+
                 Plugin.sendNotif("Your configuration has been reset!");
 
-                Configuration.Save();
                 if (!isAlternative) Plugin.Configuration = Configuration;
                 else Parent.Configuration = Configuration;
             }

@@ -121,12 +121,10 @@ public sealed class Plugin : IDalamudPlugin
         {
 
             ConfigurationDirectoryPath = PluginInterface.GetPluginConfigDirectory() + "\\" + ClientState.LocalPlayer.Name;
-            if (!Directory.Exists(ConfigurationDirectoryPath))
-            {
-                Directory.CreateDirectory(ConfigurationDirectoryPath);
-                Directory.CreateDirectory(ConfigurationDirectoryPath + "\\Presets");
-                Directory.CreateDirectory(ConfigurationDirectoryPath + "\\MasterPresets");
-            }
+            if (!Directory.Exists(ConfigurationDirectoryPath)) Directory.CreateDirectory(ConfigurationDirectoryPath);
+            if(!Directory.Exists(ConfigurationDirectoryPath + "\\Presets")) Directory.CreateDirectory(ConfigurationDirectoryPath + "\\Presets");
+            if (!Directory.Exists(ConfigurationDirectoryPath + "\\MasterPresets")) Directory.CreateDirectory(ConfigurationDirectoryPath + "\\MasterPresets");
+
             ConfigurationDirectoryPath += "\\";
 
             Configuration = new Configuration();

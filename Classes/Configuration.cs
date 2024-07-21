@@ -20,7 +20,7 @@ namespace WoLightning
         public bool DebugEnabled { get; set; } = false;
 
         // Preset Settings
-        [NonSerialized] public Preset ActivePreset;
+        [NonSerialized] public Preset ActivePreset = new("Default");
         [NonSerialized] public List<Preset> Presets = new();
         [NonSerialized] public List<String> PresetNames = new(); // used for comboBoxes
         [NonSerialized] public int PresetIndex = 0;
@@ -65,10 +65,16 @@ namespace WoLightning
                     Presets.Add(tPreset);
                 }
             }
-            if (!loadPreset(LastPresetName)) loadPreset("Default");
-            if (ActivePreset == null) ActivePreset = new Preset("Default");
-            PresetIndex = Presets.IndexOf(ActivePreset);
+            if (Presets.Count == 0)
+            {
+                ActivePreset = new Preset("Default");
+                Presets.Add(ActivePreset);
+                Save();
+                loadPreset("Default");
+                return;
+            }
             Save();
+            if (!loadPreset(LastPresetName)) loadPreset("Default");
         }
 
         public void Initialize(Plugin plugin, bool isAlternative, string ConfigurationDirectoryPath, bool createNew)
