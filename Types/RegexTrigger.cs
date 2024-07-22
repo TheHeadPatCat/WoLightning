@@ -3,12 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace WoLightning.Types
 {
-    public enum OpType
-    {
-        Shock = 0,
-        Vibrate = 1,
-        Beep = 2
-    }
+    
     public class RegexTrigger
     {
         public Guid GUID = Guid.NewGuid();

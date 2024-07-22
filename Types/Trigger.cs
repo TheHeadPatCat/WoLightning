@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace WoLightning.Types
 {
+    public enum OpType
+    {
+        Shock = 0,
+        Vibrate = 1,
+        Beep = 2
+    }
+
     [Serializable]
     public class Trigger
     {

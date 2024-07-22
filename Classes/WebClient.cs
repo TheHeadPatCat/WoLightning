@@ -126,7 +126,7 @@ namespace WoLightning
             {
                 Username = Plugin.Authentification.PishockName,
                 Name = "WoLPlugin",
-                Code = shocker,
+                Code = shocker.Code,
                 Intensity = TriggerObject.Intensity,
                 Duration = TriggerObject.Duration,
                 Apikey = Plugin.Authentification.PishockApiKey,
@@ -195,7 +195,7 @@ namespace WoLightning
             {
                 Username = Plugin.Authentification.PishockName,
                 Name = "WoLPlugin",
-                Code = shocker,
+                Code = shocker.Code,
                 Intensity = overrideSettings[0],
                 Duration = overrideSettings[1],
                 Apikey = Plugin.Authentification.PishockApiKey,
@@ -469,6 +469,27 @@ namespace WoLightning
             Plugin.PluginLog.Verbose(jsonString);
         }
 
+        private void processPishockResponse(HttpContent response)
+        {
+
+            using (var reader = new StreamReader(response.ReadAsStream()))
+            {
+                string message = reader.ReadToEnd();
+                Plugin.PluginLog.Verbose(message);
+                message = message.Replace("\"", "");
+                message = message.Replace("{", "");
+                message = message.Replace("}", "");
+                string[] partsRaw = message.Split(',');
+                Dictionary<String, String> headers = new Dictionary<String, String>();
+                foreach (var part in partsRaw) headers.Add(part.Split(':')[0], part.Split(':')[1]);
+                
+                foreach (var (key,value) in headers)
+                {
+                    Plugin.PluginLog.Verbose($"{key}: {value}");
+                }
+            }
+
+        }
 
         private void processPishockResponse(HttpContent response, Shocker shocker)
         {
