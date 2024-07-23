@@ -44,20 +44,20 @@ public class MainWindow : Window, IDisposable
                 case ConnectionStatus.Connected:
                     ImGui.TextColored(new Vector4(0, 1, 0, 1), $"Connected! Pinging in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
                 case ConnectionStatus.Connecting:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Connecting to Webserver..."); break;
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Connecting to web server..."); break;
                     
                 case ConnectionStatus.Outdated:
                     ImGui.TextColored(new Vector4(1, 0, 0, 1), "Can't Connect - Outdated Version!"); break;
                 case ConnectionStatus.WontRespond:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), $"The Server is Offline.\nRetrying in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
+                    ImGui.TextColored(new Vector4(1, 0, 0, 1), $"The Server is offline.\nRetrying in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
                 case ConnectionStatus.FatalError:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "Something went wrong!\nPlease check the /xllog Window"); break;
+                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "Something went wrong!\nPlease check the /xllog window."); break;
                 case ConnectionStatus.InvalidKey:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "The saved key does not match with the Server.\nYou may only reset it by asking the Dev."); break;
+                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "The saved key does not match with the server.\nYou may only reset it by asking the dev."); break;
 
 
                 case ConnectionStatus.Unavailable:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "The Webserver is temporarily unavailable.\nAll other Functions still work though."); break;
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "The web server is temporarily unavailable.\nAll other functions still work."); break;
             }
 
             /*
@@ -78,8 +78,8 @@ public class MainWindow : Window, IDisposable
                 Plugin.Configuration.loadPreset(Plugin.Configuration.PresetNames[presetIndex]);
             }
 
-            if (Plugin.NetworkWatcher.running) { ImGui.TextColored(activeColor, "The Plugin is running."); }
-            else { ImGui.TextColored(deactivatedColor, "The Plugin is deactivated."); }
+            if (Plugin.NetworkWatcher.running) { ImGui.TextColored(activeColor, "The plugin is running."); }
+            else { ImGui.TextColored(deactivatedColor, "The plugin is deactivated."); }
             if (Plugin.WebClient.failsafe) ImGui.TextColored(deactivatedColor, "Failsafe is engaged. Use /red to reactivate the plugin.");
 
 
