@@ -57,7 +57,7 @@ public class MasterWindow : Window, IDisposable
             ImGui.TextColored(new Vector4(1, 0, 0, 1), "Seomething went really really wrong!!\nYou can check /xllog for the error");
             return;
         }
-        ImGui.TextColored(new Vector4(1, 0, 0, 1), "VERY HEAVY WIP\n\nAlot of Buttons and things dont have instant feedback.\nThis is because the Client on the other side only updates every 15 seconds.\nPlease have some patience and dont spam the buttons.\n(It shouldnt break anything, but it might...)");
+        ImGui.TextColored(new Vector4(1, 0, 0, 1), "VERY HEAVY WIP\n\nMany buttons do not have instant feedback.\nThis is because the client on the other side only updates every 15 seconds.\nPlease have some patience and don't spam the buttons.\n(It shouldn't break anything, but it might...)");
 
         ImGui.Spacing();
         ImGui.Spacing();
@@ -126,7 +126,7 @@ public class MasterWindow : Window, IDisposable
         {
             ConfigWindow.Toggle();
         }
-        ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Open a creator window to setup Presets without impacting your own!");
+        ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Open a creator window to setup presets without impacting your own!");
 
         ImGui.Spacing();
         ImGui.Spacing();

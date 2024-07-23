@@ -101,7 +101,7 @@ public sealed class Plugin : IDalamudPlugin
         });
         CommandManager.AddHandler(CommandNameAlias, new CommandInfo(OnCommandAlias)
         {
-            HelpMessage = "Alias for /wolighting"
+            HelpMessage = "Alias for /wolighting."
         });
         CommandManager.AddHandler(Failsafe, new CommandInfo(OnFailsafe)
         {
@@ -109,7 +109,7 @@ public sealed class Plugin : IDalamudPlugin
         });
         CommandManager.AddHandler(OpenConfigFolder, new CommandInfo(OnOpenConfigFolder)
         {
-            HelpMessage = "Opens the Configuration Folder."
+            HelpMessage = "Opens the configuration folder."
         });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
@@ -253,13 +253,13 @@ public sealed class Plugin : IDalamudPlugin
     {
         if (answer == "false")
         {
-            sendNotif("The other player rejected your Request!");
+            sendNotif("The other player rejected your request!");
             //Configuration.MasterNameFull = "";
             return;
         }
         if (answer == "true")
         {
-            sendNotif("The other player accepted your Request!");
+            sendNotif("The other player accepted your request!");
             //.HasMaster = true;
             Configuration.Save();
         }
