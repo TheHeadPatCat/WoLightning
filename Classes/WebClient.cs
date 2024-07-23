@@ -137,7 +137,7 @@ namespace WoLightning
 
                 try
                 {
-                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                    ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 }
                 catch (Exception ex)
                 {
@@ -206,7 +206,7 @@ namespace WoLightning
 
                 try
                 {
-                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                    ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 }
                 catch (Exception ex)
                 {

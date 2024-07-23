@@ -6,6 +6,7 @@ using Dalamud.Plugin.Services;
 using System;
 using System.Diagnostics;
 using System.IO;
+using WoLightning.Classes;
 using WoLightning.Windows;
 
 namespace WoLightning;
@@ -38,7 +39,7 @@ public sealed class Plugin : IDalamudPlugin
     public IObjectTable ObjectTable { get; init; }
     public IGameInteropProvider GameInteropProvider { get; init; }
     public IPartyList PartyList { get; init; }
-
+    public TextLog TextLog { get; init; }
 
     // Gui Interfaces
     public readonly WindowSystem WindowSystem = new("WoLightning");
@@ -86,6 +87,9 @@ public sealed class Plugin : IDalamudPlugin
         NotificationManager = notificationManager;
         GameInteropProvider = gameInteropProvider;
         PartyList = partyList;
+
+        TextLog = new TextLog();
+
         NetworkWatcher = new NetworkWatcher(this); // we need this to check for logins
         WindowSystem.AddWindow(BufferWindow);
 
