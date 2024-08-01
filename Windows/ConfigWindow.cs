@@ -537,6 +537,12 @@ public class ConfigWindow : Window, IDisposable
                 Plugin.WebClient.sendWebserverRequest(OperationCode.Login);
             }
 
+            if (ImGui.Button("Register on Server", new Vector2(200, 60)))
+            {
+                Plugin.WebClient.sendWebserverRequest(OperationCode.Register);
+            }
+
+
 
 
             if (ImGui.Button("Test Operation", new Vector2(200, 60)))

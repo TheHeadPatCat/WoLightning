@@ -397,8 +397,12 @@ namespace WoLightning
                         if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
                         break;
 
+                    case HttpStatusCode.Locked:
+                        Status = ConnectionStatus.DevMode;
+                        Plugin.PluginLog.Warning("The Server is currently in DevMode.");
+                        break;
 
-                    // Softerrors
+                    // Softerrors DEPRECATED
                     case HttpStatusCode.Unauthorized:
                         Status = ConnectionStatus.UnknownUser;
                         Plugin.PluginLog.Error("The Server dídnt know us, so we got registered.");
@@ -416,11 +420,7 @@ namespace WoLightning
                         Plugin.PluginLog.Error("Our Key does not match the key on the Serverside.");
                         break;
 
-                    case HttpStatusCode.Locked:
-                        Status = ConnectionStatus.DevMode;
-                        Plugin.PluginLog.Warning("The Server is currently in DevMode.");
-                        break;
-
+                    
                     // Harderrors
                     case HttpStatusCode.NotFound:
                         Status = ConnectionStatus.FatalError;
@@ -470,17 +470,15 @@ namespace WoLightning
         }
 
 
-        private async void processResponse(NetPacket originalPacket, Task<String?> responseString)
+        private async void processResponse(NetPacket originalPacket, Task<String> responseString)
         {
             try
             {
                 String? s = await responseString;
                 if (s == null) return;
-                Plugin.PluginLog.Verbose(s);
                 NetPacket? re = JsonSerializer.Deserialize<NetPacket>(s);
                 if (re == null) return;
-                Plugin.PluginLog.Verbose(re.ToString());
-
+                
                 if (!re.validate())
                 {
                     Plugin.PluginLog.Error("We have received a invalid packet.");

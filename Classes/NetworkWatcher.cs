@@ -50,6 +50,7 @@ namespace WoLightning
         {
             Plugin = plugin;
             Plugin.ClientState.Login += HandleLogin;
+            Plugin.ClientState.Logout += HandleLogout;
         }
 
         public void Start() //Todo only start specific services, when respective trigger is on

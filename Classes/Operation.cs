@@ -97,10 +97,23 @@ namespace WoLightning.Classes
 
                 // Account
                 case OperationCode.Login:
-                    
-                    return "Not Implemented";
+                    if (responsePacket.OpData != null && responsePacket.OpData.Split("-")[0] == "Success")
+                    {
+                        Plugin.WebClient.Status = ConnectionStatus.Connected;
+                        Plugin.PluginLog.Verbose("Logged into the Webserver!");
+                        return null;
+                    }
+                    Plugin.WebClient.Status = ConnectionStatus.UnknownUser;
+                    return responsePacket.OpData;
                 case OperationCode.Register:
-                    return "Not Implemented";
+                    if (responsePacket.OpData != null && responsePacket.OpData.Split("-")[0] == "Success")
+                    {
+                        Plugin.Authentification.ServerKey = responsePacket.Sender.Key;
+                        Plugin.PluginLog.Verbose("We have been registered to the Server.", responsePacket.Sender.Key);
+                        return null;
+                    }
+                    return responsePacket.OpData;
+
                 case OperationCode.UploadBackup:
                     return "Not Implemented";
                 case OperationCode.RequestBackup:

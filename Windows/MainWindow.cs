@@ -45,7 +45,10 @@ public class MainWindow : Window, IDisposable
                     ImGui.TextColored(new Vector4(0, 1, 0, 1), $"Connected! Pinging in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
                 case ConnectionStatus.Connecting:
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Connecting to web server..."); break;
-                    
+                case ConnectionStatus.UnknownUser:
+                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "The Server does not know us. Registering..."); break;
+
+
                 case ConnectionStatus.Outdated:
                     ImGui.TextColored(new Vector4(1, 0, 0, 1), "Can't Connect - Outdated Version!"); break;
                 case ConnectionStatus.WontRespond:

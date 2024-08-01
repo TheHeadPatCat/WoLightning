@@ -44,8 +44,6 @@ public class MasterWindow : Window, IDisposable
     public void Dispose()
     {
         if (this.IsOpen) this.Toggle();
-        Plugin.WindowSystem.RemoveWindow(ConfigWindow);
-        ConfigWindow.Dispose();
         Configuration.Dispose();
     }
 

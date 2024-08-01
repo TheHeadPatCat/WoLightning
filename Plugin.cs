@@ -167,6 +167,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void onLogout()
     {
+
         MainWindow.Dispose();
         ConfigWindow.Dispose();
         MasterWindow.Dispose();
