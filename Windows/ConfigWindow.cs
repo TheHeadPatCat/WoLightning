@@ -526,22 +526,21 @@ public class ConfigWindow : Window, IDisposable
                 Plugin.NetworkWatcher.HandleChatMessage(t, 0, ref s, ref m, ref b);
             }
 
-
-
-
-            if (ImGui.Button("Toggle Master mode", new Vector2(200, 60)))
+            if (ImGui.Button("Ping Server", new Vector2(200, 60)))
             {
-                Plugin.Authentification.isDisallowed = !Plugin.Authentification.isDisallowed;
+                Plugin.WebClient.sendWebserverRequest(Operation.Ping);
             }
 
-            if (ImGui.Button("Test Login", new Vector2(200, 60)))
+            if (ImGui.Button("Login to Server", new Vector2(200, 60)))
             {
-                Plugin.WebClient.establishWebseverConnection();
+                Plugin.WebClient.sendWebserverRequest(Operation.Login);
             }
 
-            if (ImGui.Button("Test Upload", new Vector2(200, 60)))
+
+
+            if (ImGui.Button("Test Operation", new Vector2(200, 60)))
             {
-                //Plugin.WebClient.sendRequestServer("upload", "", "");
+                
             }
             ImGui.EndTabItem();
         }

@@ -52,24 +52,25 @@ namespace WoLightning.Types
     [Serializable]
     public class NetPacket
     {
-        public Operation Operation { get; set; }
-        public string Sender { get; set; }
-        public string? Target { get; set; }
-        public string? OpData { get; set; }
+        public Operation? Operation { get; set; } // Operation will be echoe'd by the Server, with fitting Opdata for the Result
+        public Player? Sender { get; set; } // If we get a packet with us as the Sender, its a Server Answer.
+        public Player? Target { get; set; } // Target might not be needed, so nullable
+        public string? OpData { get; set; } // Not all Operations need arguments, server will include a message for the log
 
         #region Constructors
-        public NetPacket(Operation Type, String Sender)
+        public NetPacket() { }
+        public NetPacket(Operation Type, Player Sender)
         {
             Operation = Type;
             this.Sender = Sender;
         }
-        public NetPacket(Operation Type, String Sender, String OpData)
+        public NetPacket(Operation Type, Player Sender, String? OpData)
         {
             Operation = Type;
             this.Sender = Sender;
             this.OpData = OpData;
         }
-        public NetPacket(Operation Type, String Sender, String OpData, String Target)
+        public NetPacket(Operation Type, Player Sender, String? OpData, Player? Target)
         {
             Operation = Type;
             this.Sender = Sender;
@@ -81,10 +82,16 @@ namespace WoLightning.Types
 
         public override string ToString()
         {
-            string output = $"[NetPacket] Op: {Operation.ToString()} as {Sender}";
-            if (Target != null) output += "Targeting: " + Target;
+            string output = $"[NetPacket] Op: {Operation.ToString()} as {Sender.ToString()}";
+            if (Target != null) output += "Targeting: " + Target.ToString();
             if (OpData != null) output += " with Data: " + OpData;
             return output;
+        }
+
+        public bool execute()
+        {
+
+            return false;
         }
 
     }

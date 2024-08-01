@@ -1,4 +1,5 @@
 
+using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,10 +7,12 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using WoLightning.Types;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -38,7 +41,7 @@ namespace WoLightning
         private readonly Plugin Plugin;
         public string ServerVersion = string.Empty;
         public long Ping { get; set; } = -1;
-        public ConnectionStatus Status { get; set; } = ConnectionStatus.Unavailable;
+        public ConnectionStatus Status { get; set; } = ConnectionStatus.NotStarted;
         public readonly TimerPlus UpdateTimer = new TimerPlus();
         private readonly double fast = new TimeSpan(0, 0, 2).TotalMilliseconds;
         private readonly double normal = new TimeSpan(0, 0, 15).TotalMilliseconds;
@@ -68,7 +71,7 @@ namespace WoLightning
         {
             if (Client != null) return;
 
-            /* Temporarily Disabled
+
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             handler.SslProtocols = SslProtocols.Tls12;
@@ -79,11 +82,11 @@ namespace WoLightning
             handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, error) => { return cert != null && handler.ClientCertificates.Contains(cert); };
             Client = new(handler) { Timeout = TimeSpan.FromSeconds(10) };
             Plugin.PluginLog.Verbose("HttpClient successfully created!");
-            UpdateTimer.Interval = normal;
+            //UpdateTimer.Interval = normal;
 
             //UpdateTimer.Elapsed += (sender, e) => sendServerRequest();
             //sendServerLogin();
-            */
+
 
             ClientClean = new HttpClient();
             requestPishockInfoAll();
@@ -174,7 +177,7 @@ namespace WoLightning
                 return;
             }
 
-            if(overrideSettings.Length != 3 || overrideSettings[0] < 0 || overrideSettings[0] > 2)
+            if (overrideSettings.Length != 3 || overrideSettings[0] < 0 || overrideSettings[0] > 2)
             {
                 Plugin.PluginLog.Verbose(" -> Blocked due to invalid OverrideSettings!");
                 return;
@@ -184,7 +187,7 @@ namespace WoLightning
             if (overrideSettings[1] < 1) overrideSettings[1] = 1;
             if (overrideSettings[1] > 100) overrideSettings[1] = 100;
             if (overrideSettings[2] < 1) overrideSettings[2] = 1;
-            if (overrideSettings[2] > 10)overrideSettings[2] = 10;
+            if (overrideSettings[2] > 10) overrideSettings[2] = 10;
 
             Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
 
@@ -233,19 +236,19 @@ namespace WoLightning
 
             foreach (var shocker in Plugin.Authentification.PishockShockers)
             {
-            using StringContent jsonContent = new(
-            JsonSerializer.Serialize(new
-            {
-                Username = Plugin.Authentification.PishockName,
-                Name = "WoLPlugin",
-                Code = shocker.Code,
-                Intensity = 35,
-                Duration = 3,
-                Apikey = Plugin.Authentification.PishockApiKey,
-                Op = 1,
-            }),
-            Encoding.UTF8,
-            "application/json");
+                using StringContent jsonContent = new(
+                JsonSerializer.Serialize(new
+                {
+                    Username = Plugin.Authentification.PishockName,
+                    Name = "WoLPlugin",
+                    Code = shocker.Code,
+                    Intensity = 35,
+                    Duration = 3,
+                    Apikey = Plugin.Authentification.PishockApiKey,
+                    Op = 1,
+                }),
+                Encoding.UTF8,
+                "application/json");
 
                 try
                 {
@@ -285,8 +288,8 @@ namespace WoLightning
             Encoding.UTF8,
             "application/json");
 
-            Shocker shocker = Plugin.Authentification.PishockShockers.Find(shocker => shocker.Code ==  ShareCode);
-            if (shocker == null ) return;
+            Shocker shocker = Plugin.Authentification.PishockShockers.Find(shocker => shocker.Code == ShareCode);
+            if (shocker == null) return;
             shocker.Status = ShockerStatus.Unchecked;
             try
             {
@@ -346,32 +349,31 @@ namespace WoLightning
             Plugin.PluginLog.Verbose($" -> Requests sent!");
         }
 
-        public async void sendWebserverRequest(NetPacket packet)
+
+        public void sendWebserverRequest(Operation Op){sendWebserverRequest(Op, null, null); }
+        public void sendWebserverRequest(Operation Op, String? OpData) { sendWebserverRequest(Op, OpData, null); }
+
+        public async void sendWebserverRequest(Operation Op, String? OpData, Player? Target)
         {
-            Plugin.PluginLog.Verbose(packet.ToString());
-
-        }
-
-        public async void establishWebseverConnection()
-        {
-
             if (Status == ConnectionStatus.Unavailable) return;
 
-            if (Status == ConnectionStatus.Connected ||
-                Plugin.ClientState.LocalPlayer == null ||
+            if (Plugin.ClientState.LocalPlayer == null ||
                 Client == null) return;
 
 
-            NetPacket packet = new NetPacket(Operation.RequestServerState, Plugin.LocalPlayerNameFull);
+            var localPlayer = Plugin.ClientState.LocalPlayer;
+            Player sentPlayer = new Player(
+                localPlayer.Name.ToString(),
+                (int)localPlayer.HomeWorld.Id,
+                Plugin.Authentification.ServerKey,
+                Plugin.NetworkWatcher.running);
 
-            string key = Plugin.Authentification.ServerKey;
-            if (key.Length == 0) key = "None";
+            NetPacket packet = new NetPacket(Operation.RequestServerState, sentPlayer, OpData, Target);
 
             using StringContent jsonContent = new(
                 JsonSerializer.Serialize(new
                 {
-                    hash = Plugin.Authentification.getHash(),
-                    key,
+                    hash = "n982093c09209jg0920g", // Plugin.Authentification.getHash()
                     devKey = Plugin.Authentification.DevKey,
                     packet,
                 }),
@@ -381,7 +383,7 @@ namespace WoLightning
             try
             {
                 Plugin.PluginLog.Verbose($"Sending Package");
-                Plugin.PluginLog.Verbose(jsonContent.Headers.ToString());
+                Plugin.PluginLog.Verbose(packet.ToString());
                 Stopwatch timeTaken = Stopwatch.StartNew();
                 var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/post/WoLightning", jsonContent);
                 timeTaken.Stop();
@@ -389,10 +391,9 @@ namespace WoLightning
                 switch (s.StatusCode)
                 {
 
-                    case HttpStatusCode.Accepted:
+                    case HttpStatusCode.OK:
                         Status = ConnectionStatus.Connected;
                         Plugin.PluginLog.Verbose($"Connection to Server has been Established!");
-                        if (s.Content != null) processResponse(packet, s.Content.ToString());
                         break;
 
 
@@ -400,7 +401,7 @@ namespace WoLightning
                     case HttpStatusCode.Unauthorized:
                         Status = ConnectionStatus.UnknownUser;
                         Plugin.PluginLog.Error("The Server dídnt know us, so we got registered.");
-                        if (s.Content != null) processResponse(packet, s.Content.ToString());
+                        if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
                         break;
 
                     case HttpStatusCode.UpgradeRequired:
@@ -464,9 +465,34 @@ namespace WoLightning
 
         }
 
-        private void processResponse(NetPacket originalMessage, string jsonString)
+
+        private async void processResponse(NetPacket originalPacket, Task<String?> responseString)
         {
-            Plugin.PluginLog.Verbose(jsonString);
+            try
+            {
+                String? s = await responseString;
+                if (s == null) return;
+                Plugin.PluginLog.Verbose(s);
+                NetPacket? re = JsonSerializer.Deserialize<NetPacket>(s);
+                if (re == null) return;
+                Plugin.PluginLog.Verbose(re.ToString());
+
+                if(re.Sender.getFullName() == Plugin.LocalPlayerNameFull && re.OpData != null)
+                {
+                    // This is a Response from the Server to us. We are supposed to Read its Contents.
+
+                }
+
+                if(re.Target != null && re.Target.getFullName() == Plugin.LocalPlayerNameFull)
+                {
+                    // We are the target of this operation. Process whatever Operation is needed.
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Plugin.PluginLog.Error(ex.ToString());
+            }
         }
 
         private void processPishockResponse(HttpContent response)

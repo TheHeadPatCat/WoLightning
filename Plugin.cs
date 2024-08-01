@@ -10,6 +10,8 @@ using WoLightning.Classes;
 using WoLightning.Windows;
 
 namespace WoLightning;
+
+
 public sealed class Plugin : IDalamudPlugin
 {
 
