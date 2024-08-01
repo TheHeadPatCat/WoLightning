@@ -148,9 +148,14 @@ namespace WoLightning.Types
             return Name + "@" + WorldId;
         }
 
+        public bool validate()
+        {
+            return (Name != null && Name.Length > 3 && Name.Length < 25 && getWorldName() != "UNKNOWN");
+        }
         public override string ToString()
         {
-            return $"[Player] {Name} @{getWorldName()}\nKey: {Key.Substring(0,10)}(...)";
+            if(Key == null || Key.Length < 7) return $"[Player] {Name} @{getWorldName()}\nKey: [Unknown]";
+            return $"[Player] {Name} @{getWorldName()}\nKey: {Key.Substring(0,7)}(...)";
         }
 
     }

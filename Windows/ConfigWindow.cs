@@ -13,6 +13,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Timers;
+using WoLightning.Classes;
 using WoLightning.Types;
 using static FFXIVClientStructs.FFXIV.Client.UI.RaptureAtkHistory.Delegates;
 
@@ -528,12 +529,12 @@ public class ConfigWindow : Window, IDisposable
 
             if (ImGui.Button("Ping Server", new Vector2(200, 60)))
             {
-                Plugin.WebClient.sendWebserverRequest(Operation.Ping);
+                Plugin.WebClient.sendWebserverRequest(OperationCode.Ping);
             }
 
             if (ImGui.Button("Login to Server", new Vector2(200, 60)))
             {
-                Plugin.WebClient.sendWebserverRequest(Operation.Login);
+                Plugin.WebClient.sendWebserverRequest(OperationCode.Login);
             }
 
 

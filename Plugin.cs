@@ -57,6 +57,7 @@ public sealed class Plugin : IDalamudPlugin
     public WebClient? WebClient { get; set; }
     public Authentification? Authentification { get; set; }
     public Configuration? Configuration { get; set; }
+    public Operation Operation { get; set; }
 
 
 
@@ -91,6 +92,7 @@ public sealed class Plugin : IDalamudPlugin
         PartyList = partyList;
 
         TextLog = new TextLog();
+        Operation = new Operation(this);
 
         NetworkWatcher = new NetworkWatcher(this); // we need this to check for logins
         WindowSystem.AddWindow(BufferWindow);

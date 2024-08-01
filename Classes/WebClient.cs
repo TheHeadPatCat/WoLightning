@@ -14,6 +14,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using WoLightning.Classes;
 using WoLightning.Types;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -350,10 +351,10 @@ namespace WoLightning
         }
 
 
-        public void sendWebserverRequest(Operation Op){sendWebserverRequest(Op, null, null); }
-        public void sendWebserverRequest(Operation Op, String? OpData) { sendWebserverRequest(Op, OpData, null); }
+        public void sendWebserverRequest(OperationCode Op){sendWebserverRequest(Op, null, null); }
+        public void sendWebserverRequest(OperationCode Op, String? OpData) { sendWebserverRequest(Op, OpData, null); }
 
-        public async void sendWebserverRequest(Operation Op, String? OpData, Player? Target)
+        public async void sendWebserverRequest(OperationCode Op, String? OpData, Player? Target)
         {
             if (Status == ConnectionStatus.Unavailable) return;
 
@@ -368,7 +369,7 @@ namespace WoLightning
                 Plugin.Authentification.ServerKey,
                 Plugin.NetworkWatcher.running);
 
-            NetPacket packet = new NetPacket(Operation.RequestServerState, sentPlayer, OpData, Target);
+            NetPacket packet = new NetPacket(Op, sentPlayer, OpData, Target);
 
             using StringContent jsonContent = new(
                 JsonSerializer.Serialize(new
@@ -393,7 +394,7 @@ namespace WoLightning
 
                     case HttpStatusCode.OK:
                         Status = ConnectionStatus.Connected;
-                        Plugin.PluginLog.Verbose($"Connection to Server has been Established!");
+                        if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
                         break;
 
 
@@ -407,6 +408,7 @@ namespace WoLightning
                     case HttpStatusCode.UpgradeRequired:
                         Status = ConnectionStatus.Outdated;
                         Plugin.PluginLog.Warning("We are running a outdated Version.");
+                        if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
                         break;
 
                     case HttpStatusCode.Forbidden:
@@ -415,12 +417,14 @@ namespace WoLightning
                         break;
 
                     case HttpStatusCode.Locked:
-
+                        Status = ConnectionStatus.DevMode;
+                        Plugin.PluginLog.Warning("The Server is currently in DevMode.");
+                        break;
 
                     // Harderrors
                     case HttpStatusCode.NotFound:
-                        Plugin.PluginLog.Error("We sent a invalid Request to the Server.");
                         Status = ConnectionStatus.FatalError;
+                        Plugin.PluginLog.Error("We sent a invalid Request to the Server.");
                         break;
                     case HttpStatusCode.InternalServerError:
                         Status = ConnectionStatus.FatalError;
@@ -477,17 +481,19 @@ namespace WoLightning
                 if (re == null) return;
                 Plugin.PluginLog.Verbose(re.ToString());
 
-                if(re.Sender.getFullName() == Plugin.LocalPlayerNameFull && re.OpData != null)
+                if (!re.validate())
                 {
-                    // This is a Response from the Server to us. We are supposed to Read its Contents.
-
+                    Plugin.PluginLog.Error("We have received a invalid packet.");
+                    return;
                 }
-
-                if(re.Target != null && re.Target.getFullName() == Plugin.LocalPlayerNameFull)
+                
+                String? result = Plugin.Operation.execute(originalPacket,re);
+                if(result != null)
                 {
-                    // We are the target of this operation. Process whatever Operation is needed.
+                    Plugin.PluginLog.Error("The Packet failed to execute.\nReason: " + result);
+                    return;
                 }
-
+                Plugin.PluginLog.Verbose("Resolved Packet successfully.");
             }
             catch (Exception ex)
             {
