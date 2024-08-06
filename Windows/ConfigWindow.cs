@@ -1,9 +1,13 @@
-﻿using Dalamud.Game.Text;
+﻿using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Style;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -514,8 +518,12 @@ public class ConfigWindow : Window, IDisposable
 
             ImGui.SetWindowFontScale(2f);
             ImGui.TextColored(new Vector4(1,0,0,1),"\nThese are debug settings.\nPlease don't touch them.\n\n");
-            ImGui.SetWindowFontScale(1);
+            ImGui.SetWindowFontScale(1.33f);
+            ImGui.TextColored(new Vector4(1, 0, 0, 1), "Pressing them might softlock the plugin, break your config\nBan you from the Webserver permanently, or worst of all...\nUnpat your dog/cat.");
+            ImGui.SetWindowFontScale(0.77f);
+            ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.8f), "(or fish)");
 
+            ImGui.SetWindowFontScale(1f);
             ImGui.Spacing();
 
             ImGui.InputInt("XIVChattype", ref debugFtype);
@@ -536,6 +544,15 @@ public class ConfigWindow : Window, IDisposable
 
             ImGui.ListBox("Operation", ref debugOpIndex, debugOpCodes, debugOpCodes.Length, 4);
             ImGui.InputText("OpData", ref debugOpData, 512);
+
+            IGameObject st = Plugin.TargetManager.Target;
+            if (st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player) {
+                IPlayerCharacter st1 = (IPlayerCharacter)st;
+                if (debugPlayerTarget == null || debugPlayerTarget.Name != st1.Name.ToString())
+                {
+                    debugPlayerTarget = new Player(st1.Name.ToString(), (int)st1.HomeWorld.Id);
+                }
+            }
 
             string playerName = "None";
             if(debugPlayerTarget != null) playerName = debugPlayerTarget.Name;

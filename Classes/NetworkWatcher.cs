@@ -421,6 +421,11 @@ namespace WoLightning
             // Currently Unused
         }
 
+        private void TargetSomething()
+        {
+
+        }
+
 
         private void OnEmoteIncoming(IPlayerCharacter sourceObj, ushort emoteId)
         {

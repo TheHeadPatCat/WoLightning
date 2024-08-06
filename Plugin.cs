@@ -1,3 +1,4 @@
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.Command;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Windowing;
@@ -41,6 +42,7 @@ public sealed class Plugin : IDalamudPlugin
     public IObjectTable ObjectTable { get; init; }
     public IGameInteropProvider GameInteropProvider { get; init; }
     public IPartyList PartyList { get; init; }
+    public ITargetManager TargetManager { get; init; }
     public TextLog TextLog { get; init; }
 
     // Gui Interfaces
@@ -74,7 +76,8 @@ public sealed class Plugin : IDalamudPlugin
         INotificationManager notificationManager,
         IObjectTable objectTable,
         IGameInteropProvider gameInteropProvider,
-        IPartyList partyList
+        IPartyList partyList,
+        ITargetManager targetManager
         )
     {
         // Setup all Services
@@ -90,6 +93,7 @@ public sealed class Plugin : IDalamudPlugin
         NotificationManager = notificationManager;
         GameInteropProvider = gameInteropProvider;
         PartyList = partyList;
+        TargetManager = targetManager;
 
         TextLog = new TextLog();
         Operation = new Operation(this);

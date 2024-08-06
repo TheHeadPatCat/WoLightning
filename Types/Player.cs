@@ -124,10 +124,21 @@ namespace WoLightning.Types
     [Serializable]
     public class Player
     {
-        public string Name { get; set; }
-        public int WorldId { get; set; }
-        public string Key { get; set; }
-        public bool PluginActive { get; set; }
+        public string? Name { get; set; }
+        public int? WorldId { get; set; }
+        public string? Key { get; set; }
+        public bool? PluginActive { get; set; }
+
+
+        public Player()
+        {
+        }
+
+        public Player(string name, int worldId)
+        {
+            Name = name;
+            WorldId = worldId;
+        }
 
         public Player(string name, int worldId, string key, bool pluginActive) {
             Name = name;
