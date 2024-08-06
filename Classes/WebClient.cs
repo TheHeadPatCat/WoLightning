@@ -514,8 +514,8 @@ namespace WoLightning
 
         internal void sendPing(object? o, ElapsedEventArgs? e)
         {
-            sendWebserverRequest(OperationCode.Ping);
-            
+            if (Status != ConnectionStatus.Connected) sendWebserverRequest(OperationCode.Login);
+            else sendWebserverRequest(OperationCode.Ping);
         }
 
 

@@ -292,11 +292,6 @@ public sealed class Plugin : IDalamudPlugin
     }
 
 
-    public string devHash()
-    {
-        return ConfigWindow.debugKmessage;
-
-    }
 
 
 

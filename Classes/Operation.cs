@@ -63,6 +63,60 @@ namespace WoLightning.Classes
             this.Plugin = Plugin;
         }
 
+        public static int[] allOpcodesInt()
+        {
+            int[] result = new int[Enum.GetValues(typeof(OperationCode)).Length];
+            int i = 0;
+            foreach(int op in Enum.GetValues(typeof(OperationCode))) { 
+                result[i] = op;
+                i++;
+            }
+            return result;
+        }
+        public static string[] allOpCodesString()
+        {
+            string[] result = new string[Enum.GetNames(typeof(OperationCode)).Length];
+            int i = 0;
+            foreach (string op in Enum.GetNames(typeof(OperationCode))){
+                result[i] = op;
+                i++;
+            }
+            return result;
+        }
+
+        public static string[] allOpCodesString(bool includeCode)
+        {
+            string[] result = new string[Enum.GetNames(typeof(OperationCode)).Length];
+            int i = 0;
+            foreach (OperationCode op in Enum.GetValues(typeof(OperationCode)))
+            {
+                result[i] = $"({(int)op}) - " + op.ToString();
+                i++;
+            }
+            return result;
+        }
+
+        public static OperationCode[] allOpCodes()
+        {
+            OperationCode[] result = new OperationCode[Enum.GetValues(typeof(OperationCode)).Length];
+            int i = 0;
+            foreach (OperationCode op in Enum.GetValues(typeof(OperationCode)))
+            {
+                result[i] = op;
+                i++;
+            }
+            return result;
+        }
+
+        public static OperationCode getOperationCode(string name)
+        {
+            foreach (OperationCode op in Enum.GetValues(typeof(OperationCode)))
+            {
+                if (name == op.ToString()) return op;
+            }
+            throw new Exception("Invalid OperationCode"); // maybe not throw this...? 
+        }
+
         public String? execute(NetPacket originalPacket,NetPacket responsePacket) // null is success - String returned is Error message
         {
 
