@@ -515,7 +515,7 @@ namespace WoLightning
         internal void sendPing(object? o, ElapsedEventArgs? e)
         {
             sendWebserverRequest(OperationCode.Ping);
-            Plugin.PluginLog.Verbose("Sent ping");
+            
         }
 
 
