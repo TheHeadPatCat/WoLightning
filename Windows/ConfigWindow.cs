@@ -65,9 +65,11 @@ public class ConfigWindow : Window, IDisposable
     private int debugFtype = 0;
     private string debugFsender = "";
     private string debugFmessage = "";
-    public string debugKmessage = "";
-    private string debugRmessage = "";
-    private string debugCstring = "";
+
+    private int debugOpIndex = 0;
+    private string debugOpData = "";
+    private Player debugPlayerTarget = null;
+    private string[] debugOpCodes = Operation.allOpCodesString(true);
 
 
 
@@ -509,7 +511,12 @@ public class ConfigWindow : Window, IDisposable
     {
         if (ImGui.BeginTabItem("Debug"))
         {
-            ImGui.Text("These are debug settings.\nPlease don't touch them.");
+
+            ImGui.SetWindowFontScale(2f);
+            ImGui.TextColored(new Vector4(1,0,0,1),"\nThese are debug settings.\nPlease don't touch them.\n\n");
+            ImGui.SetWindowFontScale(1);
+
+            ImGui.Spacing();
 
             ImGui.InputInt("XIVChattype", ref debugFtype);
             //ImGui.InputInt("senderId", ref debugFtype);
@@ -527,27 +534,21 @@ public class ConfigWindow : Window, IDisposable
                 Plugin.NetworkWatcher.HandleChatMessage(t, 0, ref s, ref m, ref b);
             }
 
-            if (ImGui.Button("Ping Server", new Vector2(200, 60)))
-            {
-                Plugin.WebClient.sendWebserverRequest(OperationCode.Ping);
-            }
+            ImGui.ListBox("Operation", ref debugOpIndex, debugOpCodes, debugOpCodes.Length, 4);
+            ImGui.InputText("OpData", ref debugOpData, 512);
 
-            if (ImGui.Button("Login to Server", new Vector2(200, 60)))
-            {
-                Plugin.WebClient.sendWebserverRequest(OperationCode.Login);
-            }
-
-            if (ImGui.Button("Register on Server", new Vector2(200, 60)))
-            {
-                Plugin.WebClient.sendWebserverRequest(OperationCode.Register);
-            }
-
-
+            string playerName = "None";
+            if(debugPlayerTarget != null) playerName = debugPlayerTarget.Name;
+            ImGui.InputText("Target", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
 
 
             if (ImGui.Button("Test Operation", new Vector2(200, 60)))
             {
-                
+                Plugin.WebClient.sendWebserverRequest(
+                    Operation.getOperationCode(
+                        debugOpCodes[debugOpIndex].Split(" - ")[1]),
+                        debugOpData,
+                        debugPlayerTarget);
             }
             ImGui.EndTabItem();
         }
