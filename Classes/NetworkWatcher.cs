@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin.Services;
+using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,7 +51,7 @@ namespace WoLightning
         {
             Plugin = plugin;
             Plugin.ClientState.Login += HandleLogin;
-            Plugin.ClientState.Logout += HandleLogout;
+            Plugin.ClientState.Logout += HandleLogout; 
         }
 
         public void Start() //Todo only start specific services, when respective trigger is on

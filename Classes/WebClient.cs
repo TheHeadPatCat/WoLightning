@@ -1,5 +1,6 @@
 
 using Dalamud.Plugin.Services;
+using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,11 +10,13 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Reflection.Metadata;
 using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
+using System.Timers;
 using WoLightning.Classes;
 using WoLightning.Types;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -41,12 +44,13 @@ namespace WoLightning
     {
         private readonly Plugin Plugin;
         public string ServerVersion = string.Empty;
-        public long Ping { get; set; } = -1;
+        private List<double> lastPings { get; set; } = new(); // Todo implement proper Ping class instead
+        
+        private readonly double maxPingsStored = 5;
         public ConnectionStatus Status { get; set; } = ConnectionStatus.NotStarted;
-        public readonly TimerPlus UpdateTimer = new TimerPlus();
-        private readonly double fast = new TimeSpan(0, 0, 2).TotalMilliseconds;
-        private readonly double normal = new TimeSpan(0, 0, 15).TotalMilliseconds;
-        private readonly double slow = new TimeSpan(0, 5, 0).TotalMilliseconds;
+        public readonly TimerPlus PingTimer = new TimerPlus();
+        private readonly double pingSpeed = new TimeSpan(0, 0, 3).TotalMilliseconds;
+        private readonly double retrySpeed = new TimeSpan(0, 3, 0).TotalMilliseconds;
 
         public bool failsafe { get; set; } = false;
 
@@ -55,6 +59,7 @@ namespace WoLightning
         public WebClient(Plugin plugin)
         {
             Plugin = plugin;
+            lastPings.EnsureCapacity(6);
         }
         public void Dispose()
         {
@@ -64,8 +69,16 @@ namespace WoLightning
                 Client.Dispose();
                 Client = null;
             }
-            UpdateTimer.Stop();
-            UpdateTimer.Dispose();
+            PingTimer.Stop();
+            PingTimer.Dispose();
+        }
+
+        public int Ping()
+        {
+            double avg = 0;
+            if(lastPings.Count > 5) lastPings = lastPings.Slice(0, 5);
+            foreach (double time in lastPings)avg += time;
+            return (int)(avg / lastPings.Count / 3); // adjusted due to the 3 second pinging
         }
 
         public void createHttpClient()
@@ -83,12 +96,8 @@ namespace WoLightning
             handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, error) => { return cert != null && handler.ClientCertificates.Contains(cert); };
             Client = new(handler) { Timeout = TimeSpan.FromSeconds(10) };
             Plugin.PluginLog.Verbose("HttpClient successfully created!");
-            //UpdateTimer.Interval = normal;
 
-            //UpdateTimer.Elapsed += (sender, e) => sendServerRequest();
-            //sendServerLogin();
-
-
+            establishWebserverConnection();
             ClientClean = new HttpClient();
             requestPishockInfoAll();
         }
@@ -383,16 +392,23 @@ namespace WoLightning
 
             try
             {
-                Plugin.PluginLog.Verbose($"Sending Package");
-                Plugin.PluginLog.Verbose(packet.ToString());
+                //Plugin.PluginLog.Verbose($"Sending Package");
+                //Plugin.PluginLog.Verbose(packet.ToString());
                 Stopwatch timeTaken = Stopwatch.StartNew();
                 var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/post/WoLightning", jsonContent);
                 timeTaken.Stop();
-                Ping = timeTaken.ElapsedMilliseconds;
+                lastPings.Insert(0,timeTaken.ElapsedMilliseconds);
                 switch (s.StatusCode)
                 {
 
                     case HttpStatusCode.OK:
+                        if(PingTimer.Interval != pingSpeed) // todo add more precise logic
+                        {
+                            PingTimer.Interval = pingSpeed;
+                            if(PingTimer.Enabled)PingTimer.Refresh();
+                            else PingTimer.Start();
+                            Plugin.PluginLog.Verbose("Reset Timer");
+                        }
                         Status = ConnectionStatus.Connected;
                         if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
                         break;
@@ -405,7 +421,7 @@ namespace WoLightning
                     // Softerrors DEPRECATED
                     case HttpStatusCode.Unauthorized:
                         Status = ConnectionStatus.UnknownUser;
-                        Plugin.PluginLog.Error("The Server dídnt know us, so we got registered.");
+                        Plugin.PluginLog.Warning("The Server dídnt know us, so we got registered.");
                         if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
                         break;
 
@@ -440,9 +456,10 @@ namespace WoLightning
             }
             catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
             {
-                Ping = 0;
+                
                 Status = ConnectionStatus.WontRespond;
                 Plugin.PluginLog.Info("The Server is not responding.");
+                severWebserverConnection();
                 return;
             }
             catch (TaskCanceledException ex)
@@ -452,21 +469,51 @@ namespace WoLightning
             }
             catch (HttpRequestException)
             {
-                Ping = 0;
+                
                 Status = ConnectionStatus.WontRespond;
-                Plugin.PluginLog.Info("The Server refused the connection.");
+                Plugin.PluginLog.Info("The Server is online, but refused the connection.");
+                severWebserverConnection();
                 return;
             }
             catch (Exception ex)
             {
-                Ping = 0;
+                
                 Status = ConnectionStatus.FatalError;
                 Client.CancelPendingRequests();
                 Plugin.PluginLog.Error(ex.ToString());
                 Plugin.PluginLog.Error("A Request threw an error");
+                severWebserverConnection(true);
                 return;
             }
 
+        }
+
+
+
+        public void establishWebserverConnection()
+        {
+            PingTimer.Interval = pingSpeed;
+            PingTimer.Elapsed += sendPing;
+            PingTimer.Start();
+            sendWebserverRequest(OperationCode.Login);
+        }
+
+        public void severWebserverConnection()
+        {
+            PingTimer.Interval = retrySpeed;
+            PingTimer.Refresh();
+        }
+
+        public void severWebserverConnection(bool force)
+        {
+            PingTimer.Interval = retrySpeed;
+            PingTimer.Elapsed -= sendPing;
+            PingTimer.Stop();
+        }
+
+        internal void sendPing(object? sender, ElapsedEventArgs? e)
+        {
+            sendWebserverRequest(OperationCode.Ping);
         }
 
 
@@ -491,7 +538,7 @@ namespace WoLightning
                     Plugin.PluginLog.Error("The Packet failed to execute.\nReason: " + result);
                     return;
                 }
-                Plugin.PluginLog.Verbose("Resolved Packet successfully.");
+                //Plugin.PluginLog.Verbose("Resolved Packet successfully.");
             }
             catch (Exception ex)
             {

@@ -41,8 +41,10 @@ public class MainWindow : Window, IDisposable
         {
             switch (Plugin.WebClient.Status)
             {
+                case ConnectionStatus.NotConnected:
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Not Connected to the Webserver."); break;
                 case ConnectionStatus.Connected:
-                    ImGui.TextColored(new Vector4(0, 1, 0, 1), $"Connected! Pinging in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
+                    ImGui.TextColored(new Vector4(0, 1, 0, 1), $"Connected!\nAverage Ping: {Plugin.WebClient.Ping()}ms"); break;
                 case ConnectionStatus.Connecting:
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Connecting to web server..."); break;
                 case ConnectionStatus.UnknownUser:
@@ -52,7 +54,7 @@ public class MainWindow : Window, IDisposable
                 case ConnectionStatus.Outdated:
                     ImGui.TextColored(new Vector4(1, 0, 0, 1), "Can't Connect - Outdated Version!"); break;
                 case ConnectionStatus.WontRespond:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), $"The Server is offline.\nRetrying in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.UpdateTimer.TimeLeft).TotalSeconds}s..."); break;
+                    ImGui.TextColored(new Vector4(1, 0, 0, 1), $"The Server is offline.\nRetrying in {(int)TimeSpan.FromMilliseconds(Plugin.WebClient.PingTimer.TimeLeft).TotalSeconds}s..."); break;
                 case ConnectionStatus.FatalError:
                     ImGui.TextColored(new Vector4(1, 0, 0, 1), "Something went wrong!\nPlease check the /xllog window."); break;
                 case ConnectionStatus.InvalidKey:
@@ -63,14 +65,15 @@ public class MainWindow : Window, IDisposable
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "The web server is temporarily unavailable.\nAll other functions still work."); break;
             }
 
-            /*
             if (((int)Plugin.WebClient.Status) < 199)
             {
                 ImGui.SameLine();
-                if (ImGui.Button("O", new Vector2(30, 30))) ;
+                if (ImGui.Button("O", new Vector2(30, 30)))
+                {
+                    Plugin.WebClient.establishWebserverConnection();
+                }
                 if (ImGui.IsItemHovered()) ImGui.SetTooltip("Reconnect");
             }
-            */
 
 
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();

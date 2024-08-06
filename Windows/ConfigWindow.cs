@@ -788,16 +788,7 @@ public class ConfigWindow : Window, IDisposable
         bool enabled = TriggerObject.IsEnabled();
         if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
         {
-            if (Plugin.Authentification.PishockShockers.Count > 1) ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
-            else if (Plugin.Authentification.PishockShockers.Count == 1)
-            { 
-                if (enabled) TriggerObject.Shockers = Plugin.Authentification.PishockShockers;
-                else TriggerObject.Shockers = new();
-            }
-            else if (Plugin.Authentification.PishockShockers.Count == 0)
-            {
-                // todo show message to add shocker first
-            }
+            ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
         }
         ImGui.SameLine();
         ImGui.Text($"{Description}");
@@ -809,18 +800,7 @@ public class ConfigWindow : Window, IDisposable
         createShockerSelector(TriggerObject);
         bool enabled = TriggerObject.IsEnabled();
         if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
-        {
-            if (Plugin.Authentification.PishockShockers.Count > 1) ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
-            else if (Plugin.Authentification.PishockShockers.Count == 1)
-            {
-                if (enabled) TriggerObject.Shockers = Plugin.Authentification.PishockShockers;
-                else TriggerObject.Shockers = new();
-            }
-            else if (Plugin.Authentification.PishockShockers.Count == 0)
-            {
-                // todo show message to add shocker first
-            }
-        }
+                ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
         ImGui.SameLine();
         ImGui.Text($"{Description}");
         ImGui.SameLine();
@@ -884,28 +864,39 @@ public class ConfigWindow : Window, IDisposable
 
     private void createShockerSelector(Trigger TriggerObject)
     {
-
+        // Todo add proper formatting, this popup looks terrible
         Vector2 center = ImGui.GetMainViewport().GetCenter();
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
         ImGui.SetNextWindowSize(new Vector2(400, 250));
         bool isModalOpen = TriggerObject.isModalOpen;
         if (ImGui.BeginPopupModal($"Select Shockers##selectShockers{TriggerObject.Name}", ref isModalOpen, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.Popup | ImGuiWindowFlags.NoTitleBar))
         {
-            ImGui.TextWrapped("Please select all shockers that should activate for this setting:");
 
-            foreach (var shocker in Plugin.Authentification.PishockShockers)
+            if (Plugin.Authentification.PishockShockers.Count == 0)
             {
-                bool isEnabled = TriggerObject.Shockers.Contains(shocker);
-                if (ImGui.Checkbox($"{shocker.Name}##shockerbox{shocker.Code}", ref isEnabled))
-                { // this could probably be solved more elegantly
-                    if (isEnabled) TriggerObject.Shockers.Add(shocker);
-                    else TriggerObject.Shockers.Remove(shocker);
+                ImGui.TextWrapped("Please add Shockers first via the \"Account Settings\" in the main window.");
+                if (ImGui.Button($"Okay##okayShockerSelectorAbort", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
+                {
+                    ImGui.CloseCurrentPopup();
                 }
             }
-
-            if (ImGui.Button($"Apply##apply{TriggerObject.Name}", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
+            else
             {
-                ImGui.CloseCurrentPopup();
+                ImGui.TextWrapped("Please select all shockers that should activate for this trigger:");
+                foreach (var shocker in Plugin.Authentification.PishockShockers)
+                {
+                    bool isEnabled = TriggerObject.Shockers.Contains(shocker);
+                    if (ImGui.Checkbox($"{shocker.Name}##shockerbox{shocker.Code}", ref isEnabled))
+                    { // this could probably be solved more elegantly
+                        if (isEnabled) TriggerObject.Shockers.Add(shocker);
+                        else TriggerObject.Shockers.Remove(shocker);
+                    }
+                }
+
+                if (ImGui.Button($"Apply##apply{TriggerObject.Name}", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
+                {
+                    ImGui.CloseCurrentPopup();
+                }
             }
             ImGui.EndPopup();
         }
