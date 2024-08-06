@@ -493,6 +493,7 @@ namespace WoLightning
         public void establishWebserverConnection()
         {
             PingTimer.Interval = pingSpeed;
+            PingTimer.Elapsed -= sendPing; // make sure we only have one ping event
             PingTimer.Elapsed += sendPing;
             PingTimer.Start();
             sendWebserverRequest(OperationCode.Login);
@@ -507,13 +508,14 @@ namespace WoLightning
         public void severWebserverConnection(bool force)
         {
             PingTimer.Interval = retrySpeed;
-            PingTimer.Elapsed -= sendPing;
-            PingTimer.Stop();
+            if (PingTimer.Enabled) PingTimer.Elapsed -= sendPing;
+            if (PingTimer.Enabled) PingTimer.Stop();
         }
 
-        internal void sendPing(object? sender, ElapsedEventArgs? e)
+        internal void sendPing(object? o, ElapsedEventArgs? e)
         {
             sendWebserverRequest(OperationCode.Ping);
+            Plugin.PluginLog.Verbose("Sent ping");
         }
 
 
