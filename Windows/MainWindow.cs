@@ -20,11 +20,14 @@ public class MainWindow : Window, IDisposable
     public MainWindow(Plugin plugin)
         : base("Warrior of Lightning##Main", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.AlwaysAutoResize)
     {
+        
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(280, 250),
-            MaximumSize = new Vector2(320, 2000)
+            MaximumSize = new Vector2(280, 2000)
         };
+        
+
 
         Plugin = plugin;
     }
@@ -36,6 +39,7 @@ public class MainWindow : Window, IDisposable
 
     public override async void Draw()
     {
+        
         try
         {
             switch (Plugin.WebClient.Status)
@@ -80,6 +84,7 @@ public class MainWindow : Window, IDisposable
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
             presetIndex = Plugin.Configuration.PresetIndex;
             if (presetIndex == -1) Plugin.Configuration.Save();
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 15);
             if (ImGui.Combo("", ref presetIndex, [.. Plugin.Configuration.PresetNames], Plugin.Configuration.Presets.Count, 6))
             {
                 Plugin.Configuration.loadPreset(Plugin.Configuration.PresetNames[presetIndex]);
@@ -89,13 +94,11 @@ public class MainWindow : Window, IDisposable
             else { ImGui.TextColored(deactivatedColor, "The plugin is deactivated."); }
             if (Plugin.WebClient.failsafe) ImGui.TextColored(deactivatedColor, "Failsafe is engaged. Use /red to reactivate the plugin.");
 
-
-
-            if (!Plugin.NetworkWatcher.running && ImGui.Button("Start Plugin", new Vector2(ImGui.GetWindowSize().X - 10, 50)))
+            if (!Plugin.NetworkWatcher.running && ImGui.Button("Start Plugin", new Vector2(ImGui.GetWindowSize().X - 15, 50)))
             {
                 Plugin.NetworkWatcher.Start();
             }
-            else if (Plugin.NetworkWatcher.running && ImGui.Button("Stop Plugin", new Vector2(ImGui.GetWindowSize().X - 10, 50)))
+            else if (Plugin.NetworkWatcher.running && ImGui.Button("Stop Plugin", new Vector2(ImGui.GetWindowSize().X - 15, 50)))
             {
                 Plugin.NetworkWatcher.Dispose();
             }
@@ -110,18 +113,13 @@ public class MainWindow : Window, IDisposable
                 Plugin.Configuration.Save();
             }
             if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
-            ImGui.Spacing();
-            ImGui.Spacing();
-            ImGui.Spacing();
-            if (ImGui.Button("Open Trigger Configuration", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
+            if (ImGui.Button("Open Trigger Configuration", new Vector2(ImGui.GetWindowSize().X - 15, 25)))
             {
                 Plugin.ToggleConfigUI();
             }
 
-
-
-            if(Plugin.WebClient.Status != ConnectionStatus.Connected)ImGui.BeginDisabled();
-            if (ImGui.Button("Master Mode", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
+            if (Plugin.WebClient.Status != ConnectionStatus.Connected)ImGui.BeginDisabled();
+            if (ImGui.Button("Master Mode", new Vector2(ImGui.GetWindowSize().X - 15, 25)))
             {
                 Plugin.ToggleMasterUI();
             }
@@ -131,15 +129,15 @@ public class MainWindow : Window, IDisposable
 
 
 
-
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 15);
             if (ImGui.CollapsingHeader("Account & Shockers", ImGuiTreeNodeFlags.CollapsingHeader))
             {
-
+                ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 15);
                 if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
                 var PishockNameField = Plugin.Authentification.PishockName;
                 if (ImGui.InputTextWithHint("##PishockUsername", "Pishock Username", ref PishockNameField, 24))
                     Plugin.Authentification.PishockName = PishockNameField;
-
+                ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 15);
                 var PishockApiField = Plugin.Authentification.PishockApiKey;
                 if (ImGui.InputTextWithHint("##PishockAPIKey", "API Key from \"Account\"", ref PishockApiField, 64, ImGuiInputTextFlags.Password))
                     Plugin.Authentification.PishockApiKey = PishockApiField;
@@ -197,7 +195,7 @@ public class MainWindow : Window, IDisposable
 
                 if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
 
-                if (ImGui.Button("Save & Test", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
+                if (ImGui.Button("Save & Test", new Vector2(ImGui.GetWindowSize().X - 15, 25)))
                 {
                     Plugin.Authentification.Save();
                     Plugin.WebClient.requestPishockInfoAll();
