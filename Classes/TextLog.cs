@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace WoLightning.Classes
 {
@@ -19,8 +15,9 @@ namespace WoLightning.Classes
             isFileAvailable = File.Exists(FilePath);
             return isFileAvailable;
         }
-        
-        public async void Log(string message) {
+
+        public async void Log(string message)
+        {
             if (!validateFile()) return;
             await File.AppendAllTextAsync(FilePath, message);
         }

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Xml.Linq;
 using WoLightning.Types;
 
 
@@ -55,8 +54,8 @@ namespace WoLightning
             Configuration s = DeserializeConfig(f);
             foreach (PropertyInfo property in typeof(Configuration).GetProperties().Where(p => p.CanWrite)) property.SetValue(this, property.GetValue(s, null), null);
 
-            
-            if(Directory.Exists(ConfigurationDirectoryPath + "\\Presets"))
+
+            if (Directory.Exists(ConfigurationDirectoryPath + "\\Presets"))
             {
                 foreach (var file in Directory.EnumerateFiles(ConfigurationDirectoryPath + "\\Presets"))
                 {

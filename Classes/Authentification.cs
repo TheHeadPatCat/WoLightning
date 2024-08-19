@@ -42,7 +42,7 @@ namespace WoLightning
         public bool isDisallowed { get; set; } = false; //locks the interface
 
 
-        public string DevKey {  get; set; } = string.Empty;
+        public string DevKey { get; set; } = string.Empty;
 
 
         public Authentification() { }

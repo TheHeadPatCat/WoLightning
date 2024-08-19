@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace WoLightning.Types
 {
-    
+
     public class RegexTrigger
     {
         public Guid GUID = Guid.NewGuid();

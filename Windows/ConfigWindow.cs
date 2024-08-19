@@ -4,22 +4,17 @@ using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Interface.Style;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
-using FFXIVClientStructs.FFXIV.Client.Game.Object;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Timers;
 using WoLightning.Classes;
 using WoLightning.Types;
-using static FFXIVClientStructs.FFXIV.Client.UI.RaptureAtkHistory.Delegates;
 
 
 
@@ -157,7 +152,7 @@ public class ConfigWindow : Window, IDisposable
             DrawCustomTriggerTab();
             //DrawPermissionsTab(); todo make work again
             // DrawCommandTab(); todo not implemented
-            DrawDebugTab();
+            if(Configuration.DebugEnabled) DrawDebugTab();
 
             ImGui.EndTabBar();
         }
@@ -289,8 +284,8 @@ public class ConfigWindow : Window, IDisposable
             if (ImGui.Button("Confirm##conRem", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
             {
 
-                    Configuration.deletePreset(Configuration.ActivePreset);
-                    ImGui.CloseCurrentPopup();
+                Configuration.deletePreset(Configuration.ActivePreset);
+                ImGui.CloseCurrentPopup();
             }
             ImGui.SameLine();
             if (ImGui.Button("Cancel##canRem", new Vector2(ImGui.GetWindowSize().X / 2 - 10, 25))) ImGui.CloseCurrentPopup();
@@ -510,14 +505,15 @@ public class ConfigWindow : Window, IDisposable
         }
     }
 
-    [Conditional("DEBUG")] //only draw debug tab if built locally with debug, yell at me if you dont want this
+    //[Conditional("DEBUG")] //only draw debug tab if built locally with debug, yell at me if you dont want this
+    // No Longer needed, since i reimplemented the Configuration.DebugEnabled check - which for some reason wasnt used?
     private void DrawDebugTab()
     {
         if (ImGui.BeginTabItem("Debug"))
         {
 
             ImGui.SetWindowFontScale(2f);
-            ImGui.TextColored(new Vector4(1,0,0,1),"\nThese are debug settings.\nPlease don't touch them.\n\n");
+            ImGui.TextColored(new Vector4(1, 0, 0, 1), "\nThese are debug settings.\nPlease don't touch them.\n\n");
             ImGui.SetWindowFontScale(1.33f);
             ImGui.TextColored(new Vector4(1, 0, 0, 1), "Pressing them might softlock the plugin, break your config\nBan you from the Webserver permanently, or worst of all...\nUnpat your dog/cat.");
             ImGui.SetWindowFontScale(0.77f);
@@ -546,7 +542,8 @@ public class ConfigWindow : Window, IDisposable
             ImGui.InputText("OpData", ref debugOpData, 512);
 
             IGameObject st = Plugin.TargetManager.Target;
-            if (st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player) {
+            if (st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+            {
                 IPlayerCharacter st1 = (IPlayerCharacter)st;
                 if (debugPlayerTarget == null || debugPlayerTarget.Name != st1.Name.ToString())
                 {
@@ -555,8 +552,11 @@ public class ConfigWindow : Window, IDisposable
             }
 
             string playerName = "None";
-            if(debugPlayerTarget != null) playerName = debugPlayerTarget.Name;
-            ImGui.InputText("Target", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
+            if (debugPlayerTarget != null) playerName = debugPlayerTarget.Name;
+            ImGui.InputText("##debugTargetPlayer", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
+
+            ImGui.SameLine();
+            if (ImGui.Button("X##debugRemovePlayer")) debugPlayerTarget = null;
 
 
             if (ImGui.Button("Test Operation", new Vector2(200, 60)))
@@ -818,7 +818,7 @@ public class ConfigWindow : Window, IDisposable
         createShockerSelector(TriggerObject);
         bool enabled = TriggerObject.IsEnabled();
         if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
-                ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
+            ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
         ImGui.SameLine();
         ImGui.Text($"{Description}");
         ImGui.SameLine();
@@ -834,7 +834,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.BeginDisabled();
         ImGui.Button($"{TriggerObject.Shockers.Count}##shockerButton{TriggerObject.Name}", new Vector2(35, 50));
         ImGui.EndDisabled();
-        if (ImGui.IsItemHovered( ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip($"Enabled Shockers:\n{TriggerObject.getShockerNamesNewLine()}"); }
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip($"Enabled Shockers:\n{TriggerObject.getShockerNamesNewLine()}"); }
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Mode");

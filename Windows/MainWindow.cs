@@ -1,7 +1,6 @@
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
-using System.Linq;
 using System.Numerics;
 using WoLightning.Types;
 
@@ -78,7 +77,7 @@ public class MainWindow : Window, IDisposable
 
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
             presetIndex = Plugin.Configuration.PresetIndex;
-            if(presetIndex == -1)Plugin.Configuration.Save();
+            if (presetIndex == -1) Plugin.Configuration.Save();
             if (ImGui.Combo("", ref presetIndex, [.. Plugin.Configuration.PresetNames], Plugin.Configuration.Presets.Count, 6))
             {
                 Plugin.Configuration.loadPreset(Plugin.Configuration.PresetNames[presetIndex]);
@@ -122,7 +121,7 @@ public class MainWindow : Window, IDisposable
             ImGui.BeginDisabled();
             if (ImGui.Button("Master Mode", new Vector2(ImGui.GetWindowSize().X - 10, 25)))
             {
-               Plugin.ToggleMasterUI();
+                Plugin.ToggleMasterUI();
             }
             ImGui.EndDisabled();
             if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip($"Temporarily Disabled until i have reworked the Server."); }

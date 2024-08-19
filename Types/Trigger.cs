@@ -65,7 +65,7 @@ namespace WoLightning.Types
 
         public void setupCustomData()
         {
-            if(CustomData == null) CustomData = new Dictionary<String, int[]>();
+            if (CustomData == null) CustomData = new Dictionary<String, int[]>();
             if (CustomData.Count > 0) return;
             switch (this.Name)
             {

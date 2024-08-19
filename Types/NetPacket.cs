@@ -3,7 +3,7 @@ using WoLightning.Classes;
 
 namespace WoLightning.Types
 {
-    
+
 
     [Serializable]
     public class NetPacket

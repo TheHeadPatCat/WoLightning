@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace WoLightning.Types
 {
@@ -13,7 +9,7 @@ namespace WoLightning.Types
         Online = 1,
         Paused = 2,
         Offline = 3,
-        
+
         NotAuthorized = 100,
         DoesntExist = 101,
         AlreadyUsed = 102,

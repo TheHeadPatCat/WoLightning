@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using WoLightning.Types;
 
 namespace WoLightning.Classes
@@ -58,8 +54,9 @@ namespace WoLightning.Classes
     public class Operation
     {
         private readonly Plugin Plugin;
-        
-        public Operation(Plugin Plugin) { 
+
+        public Operation(Plugin Plugin)
+        {
             this.Plugin = Plugin;
         }
 
@@ -67,7 +64,8 @@ namespace WoLightning.Classes
         {
             int[] result = new int[Enum.GetValues(typeof(OperationCode)).Length];
             int i = 0;
-            foreach(int op in Enum.GetValues(typeof(OperationCode))) { 
+            foreach (int op in Enum.GetValues(typeof(OperationCode)))
+            {
                 result[i] = op;
                 i++;
             }
@@ -77,7 +75,8 @@ namespace WoLightning.Classes
         {
             string[] result = new string[Enum.GetNames(typeof(OperationCode)).Length];
             int i = 0;
-            foreach (string op in Enum.GetNames(typeof(OperationCode))){
+            foreach (string op in Enum.GetNames(typeof(OperationCode)))
+            {
                 result[i] = op;
                 i++;
             }
@@ -117,7 +116,7 @@ namespace WoLightning.Classes
             throw new Exception("Invalid OperationCode"); // maybe not throw this...? 
         }
 
-        public String? execute(NetPacket originalPacket,NetPacket responsePacket) // null is success - String returned is Error message
+        public String? execute(NetPacket originalPacket, NetPacket responsePacket) // null is success - String returned is Error message
         {
 
             // So, you might look at this and think to yourself... dear god this is terrible
@@ -130,7 +129,7 @@ namespace WoLightning.Classes
                 // General
                 case OperationCode.Ping:
                     return null;
-                    
+
                 case OperationCode.RequestUpdate:
                     return "Not Implemented";
                 case OperationCode.RequestVersion:
@@ -215,8 +214,8 @@ namespace WoLightning.Classes
 
                 default:
                     return "Operation is Invalid";
-                    
-                    
+
+
             }
         }
 

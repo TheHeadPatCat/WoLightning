@@ -1,20 +1,11 @@
-
-using Dalamud.Plugin.Services;
-using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Net.Sockets;
-using System.Reflection.Metadata;
 using System.Security.Authentication;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using System.Timers;
 using WoLightning.Classes;
@@ -28,7 +19,7 @@ namespace WoLightning
         NotStarted = 0,
         NotConnected = 1,
         Unavailable = 2, // temporarily used as server isnt active
-        
+
         WontRespond = 101,
         Outdated = 102,
         UnknownUser = 103,
@@ -45,7 +36,7 @@ namespace WoLightning
         private readonly Plugin Plugin;
         public string ServerVersion = string.Empty;
         private List<double> lastPings { get; set; } = new(); // Todo implement proper Ping class instead
-        
+
         private readonly double maxPingsStored = 5;
         public ConnectionStatus Status { get; set; } = ConnectionStatus.NotStarted;
         public readonly TimerPlus PingTimer = new TimerPlus();
@@ -76,8 +67,8 @@ namespace WoLightning
         public int Ping()
         {
             double avg = 0;
-            if(lastPings.Count > 5) lastPings = lastPings.Slice(0, 5);
-            foreach (double time in lastPings)avg += time;
+            if (lastPings.Count > 5) lastPings = lastPings.Slice(0, 5);
+            foreach (double time in lastPings) avg += time;
             return (int)(avg / lastPings.Count / 3); // adjusted due to the 3 second pinging
         }
 
@@ -360,7 +351,7 @@ namespace WoLightning
         }
 
 
-        public void sendWebserverRequest(OperationCode Op){sendWebserverRequest(Op, null, null); }
+        public void sendWebserverRequest(OperationCode Op) { sendWebserverRequest(Op, null, null); }
         public void sendWebserverRequest(OperationCode Op, String? OpData) { sendWebserverRequest(Op, OpData, null); }
 
         public async void sendWebserverRequest(OperationCode Op, String? OpData, Player? Target)
@@ -392,20 +383,19 @@ namespace WoLightning
 
             try
             {
-                //Plugin.PluginLog.Verbose($"Sending Package");
-                //Plugin.PluginLog.Verbose(packet.ToString());
+                
                 Stopwatch timeTaken = Stopwatch.StartNew();
                 var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/post/WoLightning", jsonContent);
                 timeTaken.Stop();
-                lastPings.Insert(0,timeTaken.ElapsedMilliseconds);
+                lastPings.Insert(0, timeTaken.ElapsedMilliseconds);
                 switch (s.StatusCode)
                 {
 
                     case HttpStatusCode.OK:
-                        if(PingTimer.Interval != pingSpeed) // todo add more precise logic
+                        if (PingTimer.Interval != pingSpeed) // todo add more precise logic
                         {
                             PingTimer.Interval = pingSpeed;
-                            if(PingTimer.Enabled)PingTimer.Refresh();
+                            if (PingTimer.Enabled) PingTimer.Refresh();
                             else PingTimer.Start();
                             Plugin.PluginLog.Verbose("Reset Timer");
                         }
@@ -436,16 +426,17 @@ namespace WoLightning
                         Plugin.PluginLog.Error("Our Key does not match the key on the Serverside.");
                         break;
 
-                    
+
                     // Harderrors
                     case HttpStatusCode.NotFound:
                         Status = ConnectionStatus.FatalError;
                         Plugin.PluginLog.Error("We sent a invalid Request to the Server.");
+                        Plugin.PluginLog.Verbose(packet.ToString());
                         break;
                     case HttpStatusCode.InternalServerError:
                         Status = ConnectionStatus.FatalError;
                         Plugin.PluginLog.Error("We sent a invalid Packet to the Server.");
-
+                        Plugin.PluginLog.Verbose(packet.ToString());
                         break;
 
                     default:
@@ -456,7 +447,7 @@ namespace WoLightning
             }
             catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
             {
-                
+
                 Status = ConnectionStatus.WontRespond;
                 Plugin.PluginLog.Info("The Server is not responding.");
                 severWebserverConnection();
@@ -469,7 +460,7 @@ namespace WoLightning
             }
             catch (HttpRequestException)
             {
-                
+
                 Status = ConnectionStatus.WontRespond;
                 Plugin.PluginLog.Info("The Server is online, but refused the connection.");
                 severWebserverConnection();
@@ -477,7 +468,7 @@ namespace WoLightning
             }
             catch (Exception ex)
             {
-                
+
                 Status = ConnectionStatus.FatalError;
                 Client.CancelPendingRequests();
                 Plugin.PluginLog.Error(ex.ToString());
@@ -527,15 +518,15 @@ namespace WoLightning
                 if (s == null) return;
                 NetPacket? re = JsonSerializer.Deserialize<NetPacket>(s);
                 if (re == null) return;
-                
+
                 if (!re.validate())
                 {
                     Plugin.PluginLog.Error("We have received a invalid packet.");
                     return;
                 }
-                
-                String? result = Plugin.Operation.execute(originalPacket,re);
-                if(result != null)
+
+                String? result = Plugin.Operation.execute(originalPacket, re);
+                if (result != null)
                 {
                     Plugin.PluginLog.Error("The Packet failed to execute.\nReason: " + result);
                     return;
@@ -561,8 +552,8 @@ namespace WoLightning
                 string[] partsRaw = message.Split(',');
                 Dictionary<String, String> headers = new Dictionary<String, String>();
                 foreach (var part in partsRaw) headers.Add(part.Split(':')[0], part.Split(':')[1]);
-                
-                foreach (var (key,value) in headers)
+
+                foreach (var (key, value) in headers)
                 {
                     Plugin.PluginLog.Verbose($"{key}: {value}");
                 }
