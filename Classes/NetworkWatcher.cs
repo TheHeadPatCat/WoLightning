@@ -132,12 +132,12 @@ namespace WoLightning
             {
                 if (lookingForMaster.Enabled)
                 {
-                    Plugin.PluginLog.Info("Found Master Signature!");
+                    Plugin.Log("Found Master Signature!", true);
                     lookingForMaster.Stop();
                     LeashTimer.Start();
                 }
             }
-            else Plugin.PluginLog.Info("Could not find Signature... Retrying");
+            else Plugin.Log("Could not find Signature... Retrying", true);
         }
 
         private void CheckLeashDistance()
@@ -154,15 +154,15 @@ namespace WoLightning
                     lookingForMaster.Elapsed += (sender, e) => scanForMasterCharacter();
                     lookingForMaster.Start();
                     LeashTimer.Stop();
-                    Plugin.PluginLog.Info("Lost Master Signature!");
-                    Plugin.PluginLog.Info("Starting Scanner...");
+                    Plugin.Log("Lost Master Signature!",true);
+                    Plugin.Log("Starting Scanner...",true);
                     return;
                 }
                 return;
             }
 
-            Plugin.PluginLog.Info($"{MasterCharacter.Name} - {MasterCharacter.Address} - {MasterCharacter.ObjectIndex}");
-            Plugin.PluginLog.Info($"Valid: {MasterCharacter.IsValid()} Master Pos: {MasterCharacter.Position} Local Pos: {Plugin.ClientState.LocalPlayer.Position} diff: {MasterCharacter.Position - Plugin.ClientState.LocalPlayer.Position}");
+            Plugin.Log($"{MasterCharacter.Name} - {MasterCharacter.Address} - {MasterCharacter.ObjectIndex}",true);
+            Plugin.Log($"Valid: {MasterCharacter.IsValid()} Master Pos: {MasterCharacter.Position} Local Pos: {Plugin.ClientState.LocalPlayer.Position} diff: {MasterCharacter.Position - Plugin.ClientState.LocalPlayer.Position}",true);
         }
 
 
@@ -228,7 +228,7 @@ namespace WoLightning
                                 foundVuln = true;
                                 var amount = status.StackCount;
 
-                                Plugin.PluginLog.Verbose("Found Vuln Up - Amount: " + amount + " lastVulnCount: " + lastVulnAmount);
+                                Plugin.Log("Found Vuln Up - Amount: " + amount + " lastVulnCount: " + lastVulnAmount);
                                 if (amount > lastVulnAmount)
                                 {
                                     Plugin.sendNotif($"You failed a Mechanic!");
@@ -267,14 +267,14 @@ namespace WoLightning
                     {
                         deadIndexes[lastCheckedIndex] = true;
                         amountDead++;
-                        Plugin.PluginLog.Information($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} members are dead.");
+                        Plugin.Log($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} members are dead.");
                         Plugin.WebClient.sendPishockRequest(ActivePreset.PartymemberDies, [ActivePreset.PartymemberDies.Intensity * (amountDead / Plugin.PartyList.Length), ActivePreset.PartymemberDies.Duration * (amountDead / Plugin.PartyList.Length)]);
                     }
                     else if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP > 0 && deadIndexes[lastCheckedIndex])
                     {
                         deadIndexes[lastCheckedIndex] = false;
                         amountDead--;
-                        Plugin.PluginLog.Information($"(Deathmode) - Player revived - {amountDead}/{Plugin.PartyList.Length} members are dead.");
+                        Plugin.Log($"(Deathmode) - Player revived - {amountDead}/{Plugin.PartyList.Length} members are dead.");
                     }
                     lastCheckedIndex++;
                     lastPartyCheck = 0;
@@ -286,7 +286,7 @@ namespace WoLightning
             }
             catch (Exception e)
             {
-                Plugin.PluginLog.Error(e.ToString());
+                Plugin.Error(e.ToString());
             }
         }
 
@@ -306,7 +306,7 @@ namespace WoLightning
             if (lastHP < LocalPlayer.CurrentHp && ActivePreset.TakeDamage.IsEnabled())
             {
                 uint amount = LocalPlayer.CurrentHp - lastHP;
-                Plugin.PluginLog.Verbose($"Cur: {LocalPlayer.CurrentHp} Last: {lastHP} diff: {LocalPlayer.CurrentHp - lastHP}");
+                Plugin.Log($"Cur: {LocalPlayer.CurrentHp} Last: {lastHP} diff: {LocalPlayer.CurrentHp - lastHP}",true);
                 if (ActivePreset.TakeDamage.CustomData == null) ActivePreset.TakeDamage.setupCustomData(); //failsafe
                 if (ActivePreset.TakeDamage.CustomData["Proportional"][0] == 1)
                 {
@@ -325,15 +325,15 @@ namespace WoLightning
         private void HandleStatusChange()
         {
             //64 = vuln up
-            Plugin.PluginLog.Verbose("StatusList Changed");
-            Plugin.PluginLog.Verbose(LocalPlayer.StatusList.ToString());
+            Plugin.Log("StatusList Changed",true);
+            Plugin.Log(LocalPlayer.StatusList.ToString(),true);
         }
 
         public unsafe void HandleChatMessage(XivChatType type, int timespamp, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
             if (Plugin.ClientState.LocalPlayer == null)
             {
-                Plugin.PluginLog.Error("Wtf, LocalPlayer is null?");
+                Plugin.Error("Wtf, LocalPlayer is null?",true);
                 return;
             }
             if (message == null) return; //sanity check in case we get sent bad data
@@ -388,10 +388,10 @@ namespace WoLightning
                 List<RegexTrigger> triggers = ActivePreset.CustomMessageTriggers;
                 foreach (RegexTrigger trigger in triggers)
                 {
-                    Plugin.PluginLog.Information(message.TextValue);
+                    Plugin.Log(message.TextValue,true);
                     if (trigger.Enabled && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
-                        Plugin.PluginLog.Information($"Trigger {trigger.Name} triggered. Zap!");
+                        Plugin.Log($"Trigger {trigger.Name} triggered. Zap!");
                         //Plugin.WebClient.sendPishockRequest(ActivePreset.) todo rework
                     }
                 }

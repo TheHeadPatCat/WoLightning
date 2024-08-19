@@ -62,12 +62,12 @@
             string refPlayer = "";
             foreach (string packet in encodedData.Split("@@"))
             {
-                Plugin.PluginLog.Info("Resolving Part: " + packet);
+                Plugin.Log("Resolving Part: " + packet);
                 if (packet.Length < 3) break;
                 string[] dis = packet.Split("@");
                 if (dis.Length != 2) break; //invalid packet
 
-                Plugin.PluginLog.Info("Passed Validation.");
+                Plugin.Log("Passed Validation.");
                 switch (dis[0])
                 {
                     /*case "packet": Plugin.PluginLog.Info("Name of Packet: " + packet); refPlayer = ""; break;
@@ -85,7 +85,7 @@
                     case "updatesubstatus": Plugin.updateMasterWindow(refPlayer, bool.Parse(dis[1])); break;
                     case "setpluginstate": if (bool.Parse(dis[1])) Plugin.NetworkWatcher.Start(); else Plugin.NetworkWatcher.Stop(); break;
                     */
-                    default: Plugin.PluginLog.Error("Received Packet that has an Invalid type!", dis); break;
+                    default: Plugin.Error("Received Packet that has an Invalid type!", dis); break;
                 }
                 Plugin.PluginLog.Info("Done resolving packet.");
             }

@@ -14,9 +14,10 @@ namespace WoLightning
     [Serializable]
     public class Configuration : IPluginConfiguration, IDisposable
     {
-        // wipes the entire thing (except the above) or if version number is higher than found one
+        public int PluginVersion { get; set; } = 301;
         public int Version { get; set; } = 30;
         public bool DebugEnabled { get; set; } = false;
+        public bool LogEnabled { get; set; } = true;
 
         // Preset Settings
         [NonSerialized] public Preset ActivePreset = new("Default");

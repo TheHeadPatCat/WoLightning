@@ -22,12 +22,12 @@ public sealed class Plugin : IDalamudPlugin
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const string currentVersion = "0.3.0.1";
+    public const int currentVersion = 301;
     public const string randomKey = "Currently Unused";
+    
     public string? ConfigurationDirectoryPath { get; set; }
 
     public string? LocalPlayerNameFull;
-
 
     // Services
     public IDalamudPluginInterface PluginInterface { get; init; }
@@ -43,7 +43,7 @@ public sealed class Plugin : IDalamudPlugin
     public IGameInteropProvider GameInteropProvider { get; init; }
     public IPartyList PartyList { get; init; }
     public ITargetManager TargetManager { get; init; }
-    public TextLog TextLog { get; init; }
+    public TextLog TextLog { get; set; }
 
     // Gui Interfaces
     public readonly WindowSystem WindowSystem = new("WoLightning");
@@ -95,7 +95,6 @@ public sealed class Plugin : IDalamudPlugin
         PartyList = partyList;
         TargetManager = targetManager;
 
-        TextLog = new TextLog();
         Operation = new Operation(this);
 
         NetworkWatcher = new NetworkWatcher(this); // we need this to check for logins
@@ -138,6 +137,8 @@ public sealed class Plugin : IDalamudPlugin
             if (!Directory.Exists(ConfigurationDirectoryPath + "\\MasterPresets")) Directory.CreateDirectory(ConfigurationDirectoryPath + "\\MasterPresets");
 
             ConfigurationDirectoryPath += "\\";
+
+            TextLog = new TextLog(this,ConfigurationDirectoryPath);
 
             Configuration = new Configuration();
             LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
@@ -238,6 +239,66 @@ public sealed class Plugin : IDalamudPlugin
     public void ToggleMasterUI() => MasterWindow.Toggle();
     public void ToggleMasterConfigUI() => MasterWindow.ConfigWindow.Toggle();
 
+    #region Logging
+    public void Log(string message)
+    {
+        if (!this.Configuration.LogEnabled) return;
+        PluginLog.Verbose(message);
+        TextLog.Log(message);
+    }
+
+    public void Log(Object obj)
+    {
+        if (!this.Configuration.LogEnabled) return;
+        PluginLog.Verbose(obj.ToString());
+        TextLog.Log(obj);
+    }
+
+    public void Log(string message,bool noText)
+    {
+        if (!this.Configuration.LogEnabled) return;
+        PluginLog.Verbose(message);
+    }
+
+    public void Log(Object obj, bool noText)
+    {
+        if (!this.Configuration.LogEnabled) return;
+        PluginLog.Verbose(obj.ToString());
+    }
+
+
+    public void Error(string message)
+    {
+        if (!this.Configuration.LogEnabled) return;
+        PluginLog.Error(message);
+        TextLog.Log("--- ERROR: \n" + message);
+    }
+
+    public void Error(string message, Object obj)
+    {
+        if (!this.Configuration.LogEnabled) return;
+        PluginLog.Error(message);
+        PluginLog.Error(obj.ToString());
+        TextLog.Log("--- ERROR: \n" + message);
+        TextLog.Log(obj);
+    }
+
+    public void Error(string message, bool noText)
+    {
+        if (!this.Configuration.LogEnabled) return;
+        PluginLog.Error(message);
+    }
+
+    public void Error(string message,Object obj, bool noText)
+    {
+        if (!this.Configuration.LogEnabled) return;
+        PluginLog.Error(message);
+        PluginLog.Error(obj.ToString());
+    }
+    #endregion
+
+
+    // Todo: Move all of these into a seperate Class
     public Notification getNotifTemp()
     {
         Notification result = new Notification();
@@ -256,7 +317,6 @@ public sealed class Plugin : IDalamudPlugin
         result.Content = content;
         NotificationManager.AddNotification(result);
     }
-
 
     public void handleMasterAnswer(string answer)
     {

@@ -153,7 +153,7 @@ namespace WoLightning.Classes
                     if (responsePacket.OpData != null && responsePacket.OpData.Split("-")[0] == "Success")
                     {
                         Plugin.WebClient.Status = ConnectionStatus.Connected;
-                        Plugin.PluginLog.Verbose("Logged into the Webserver!");
+                        Plugin.Log("Logged into the Webserver!");
                         return null;
                     }
                     Plugin.WebClient.Status = ConnectionStatus.UnknownUser;
@@ -162,7 +162,7 @@ namespace WoLightning.Classes
                     if (responsePacket.OpData != null && responsePacket.OpData.Split("-")[0] == "Success")
                     {
                         Plugin.Authentification.ServerKey = responsePacket.Sender.Key;
-                        Plugin.PluginLog.Verbose("We have been registered to the Server.", responsePacket.Sender.Key);
+                        Plugin.Log("We have been registered to the Server - Key: " + responsePacket.Sender.Key);
                         return null;
                     }
                     return responsePacket.OpData;

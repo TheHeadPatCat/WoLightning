@@ -534,7 +534,7 @@ public class ConfigWindow : Window, IDisposable
                 SeString s = debugFsender.ToString();
                 SeString m = debugFmessage.ToString();
                 bool b = false;
-                Plugin.PluginLog.Info("Sending fake message:");
+                Plugin.Log("Sending fake message:");
                 Plugin.NetworkWatcher.HandleChatMessage(t, 0, ref s, ref m, ref b);
             }
 

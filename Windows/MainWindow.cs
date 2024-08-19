@@ -40,6 +40,8 @@ public class MainWindow : Window, IDisposable
         {
             switch (Plugin.WebClient.Status)
             {
+                case ConnectionStatus.NotStarted:
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Starting Plugin..."); break;
                 case ConnectionStatus.NotConnected:
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Not Connected to the Webserver."); break;
                 case ConnectionStatus.Connected:
@@ -155,7 +157,7 @@ public class MainWindow : Window, IDisposable
                 ImGui.SameLine();
                 if (ImGui.Button("+ Add##registerShocker"))
                 {
-                    Plugin.PluginLog.Verbose(Plugin.Authentification.PishockShareCode);
+                    Plugin.Log(Plugin.Authentification.PishockShareCode);
                     Plugin.Authentification.PishockShockers.Add(new Shocker($"Shocker{Plugin.Authentification.PishockShockers.Count}", Plugin.Authentification.PishockShareCode));
                     Plugin.WebClient.requestPishockInfo(Plugin.Authentification.PishockShareCode);
                 }
@@ -204,8 +206,7 @@ public class MainWindow : Window, IDisposable
         }
         catch (Exception e)
         {
-            Plugin.PluginLog.Error("Something went terribly wrong!");
-            Plugin.PluginLog.Error(e.ToString());
+            Plugin.Error("Something went terribly wrong!", e);
         }
 
     }

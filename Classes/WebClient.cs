@@ -86,7 +86,7 @@ namespace WoLightning
 
             handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, error) => { return cert != null && handler.ClientCertificates.Contains(cert); };
             Client = new(handler) { Timeout = TimeSpan.FromSeconds(10) };
-            Plugin.PluginLog.Verbose("HttpClient successfully created!");
+            Plugin.Log("HttpClient successfully created!");
 
             establishWebserverConnection();
             ClientClean = new HttpClient();
@@ -97,31 +97,31 @@ namespace WoLightning
         public async void sendPishockRequest(Trigger TriggerObject)
         {
 
-            Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
-            Plugin.PluginLog.Verbose($" -> Parameters -  {TriggerObject.OpMode} {TriggerObject.Intensity}% for {TriggerObject.Duration}s");
+            Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
+            Plugin.Log($" -> Parameters -  {TriggerObject.OpMode} {TriggerObject.Intensity}% for {TriggerObject.Duration}s");
 
             //Validation of Data
             if (Plugin.Authentification.PishockName.Length < 3
                 || Plugin.Authentification.PishockApiKey.Length < 16)
             {
-                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                Plugin.Log(" -> Aborted due to invalid Account Settings!");
                 return;
             }
 
             if (failsafe)
             {
-                Plugin.PluginLog.Verbose(" -> Blocked request due to failsafe mode!");
+                Plugin.Log(" -> Blocked request due to failsafe mode!");
                 return;
             }
 
             if (!TriggerObject.Validate())
             {
-                Plugin.PluginLog.Verbose(" -> Blocked due to invalid TriggerObject!");
+                Plugin.Log(" -> Blocked due to invalid TriggerObject!");
                 return;
             }
 
 
-            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+            Plugin.Log($" -> Data Validated. Creating Requests...");
 
             foreach (var shocker in TriggerObject.Shockers)
             {
@@ -145,42 +145,42 @@ namespace WoLightning
                 }
                 catch (Exception ex)
                 {
-                    Plugin.PluginLog.Error(ex.ToString());
-                    Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                    Plugin.Error(ex.ToString());
+                    Plugin.Error("Error when sending post request to pishock api");
                 }
             }
-            Plugin.PluginLog.Verbose($" -> Requests sent!");
+            Plugin.Log($" -> Requests sent!");
         }
 
         public async void sendPishockRequest(Trigger TriggerObject, int[] overrideSettings)
         {
 
-            Plugin.PluginLog.Verbose($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
-            Plugin.PluginLog.Verbose($" -> Parameters using Override -  {overrideSettings[0]} {overrideSettings[1]}% for {overrideSettings[2]}s");
+            Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
+            Plugin.Log($" -> Parameters using Override -  {overrideSettings[0]} {overrideSettings[1]}% for {overrideSettings[2]}s");
 
             //Validation of Data
             if (Plugin.Authentification.PishockName.Length < 3
                 || Plugin.Authentification.PishockApiKey.Length < 16)
             {
-                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                Plugin.Log(" -> Aborted due to invalid Account Settings!");
                 return;
             }
 
             if (failsafe)
             {
-                Plugin.PluginLog.Verbose(" -> Blocked request due to failsafe mode!");
+                Plugin.Log(" -> Blocked request due to failsafe mode!");
                 return;
             }
 
             if (!TriggerObject.Validate())
             {
-                Plugin.PluginLog.Verbose(" -> Blocked due to invalid TriggerObject!");
+                Plugin.Log(" -> Blocked due to invalid TriggerObject!");
                 return;
             }
 
             if (overrideSettings.Length != 3 || overrideSettings[0] < 0 || overrideSettings[0] > 2)
             {
-                Plugin.PluginLog.Verbose(" -> Blocked due to invalid OverrideSettings!");
+                Plugin.Log(" -> Blocked due to invalid OverrideSettings!");
                 return;
             }
 
@@ -190,7 +190,7 @@ namespace WoLightning
             if (overrideSettings[2] < 1) overrideSettings[2] = 1;
             if (overrideSettings[2] > 10) overrideSettings[2] = 10;
 
-            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+            Plugin.Log($" -> Data Validated. Creating Requests...");
 
             foreach (var shocker in TriggerObject.Shockers)
             {
@@ -214,25 +214,25 @@ namespace WoLightning
                 }
                 catch (Exception ex)
                 {
-                    Plugin.PluginLog.Error(ex.ToString());
-                    Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                    Plugin.Error(ex.ToString());
+                    Plugin.Error("Error when sending post request to pishock api");
                 }
             }
-            Plugin.PluginLog.Verbose($" -> Requests sent!");
+            Plugin.Log($" -> Requests sent!");
         }
 
         public async void sendPishockTestAll()
         {
 
-            Plugin.PluginLog.Verbose($"Sending Test request for {Plugin.Authentification.PishockShockers.Count} shockers.");
+            Plugin.Log($"Sending Test request for {Plugin.Authentification.PishockShockers.Count} shockers.");
 
             if (Plugin.Authentification.PishockName.Length < 3
                 || Plugin.Authentification.PishockApiKey.Length < 16)
             {
-                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                Plugin.Log(" -> Aborted due to invalid Account Settings!");
                 return;
             }
-            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+            Plugin.Log($" -> Data Validated. Creating Requests...");
 
 
             foreach (var shocker in Plugin.Authentification.PishockShockers)
@@ -257,25 +257,25 @@ namespace WoLightning
                 }
                 catch (Exception ex)
                 {
-                    Plugin.PluginLog.Error(ex.ToString());
-                    Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                    Plugin.Error(ex.ToString());
+                    Plugin.Error("Error when sending post request to pishock api");
                 }
             }
-            Plugin.PluginLog.Verbose($" -> Requests sent!");
+            Plugin.Log($" -> Requests sent!");
         }
 
         public async void requestPishockInfo(string ShareCode)
         {
 
-            Plugin.PluginLog.Verbose($"Requesting Information for {ShareCode}...");
+            Plugin.Log($"Requesting Information for {ShareCode}...");
 
             if (Plugin.Authentification.PishockName.Length < 3
                || Plugin.Authentification.PishockApiKey.Length < 16)
             {
-                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                Plugin.Log(" -> Aborted due to invalid Account Settings!");
                 return;
             }
-            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+            Plugin.Log($" -> Data Validated. Creating Requests...");
 
 
             using StringContent jsonContent = new(
@@ -301,27 +301,27 @@ namespace WoLightning
             }
             catch (Exception ex)
             {
-                Plugin.PluginLog.Error(ex.ToString());
-                Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                Plugin.Error(ex.ToString());
+                Plugin.Error("Error when sending post request to pishock api");
             }
         }
 
         public async void requestPishockInfoAll()
         {
-            Plugin.PluginLog.Verbose($"Requesting Information for all Shockers.");
+            Plugin.Log($"Requesting Information for all Shockers.");
 
             if (Plugin.Authentification.PishockName.Length < 3
                 || Plugin.Authentification.PishockApiKey.Length < 16)
             {
-                Plugin.PluginLog.Verbose(" -> Aborted due to invalid Account Settings!");
+                Plugin.Log(" -> Aborted due to invalid Account Settings!");
                 return;
             }
-            Plugin.PluginLog.Verbose($" -> Data Validated. Creating Requests...");
+            Plugin.Log($" -> Data Validated. Creating Requests...");
 
 
             foreach (var shocker in Plugin.Authentification.PishockShockers)
             {
-                Plugin.PluginLog.Verbose($" -> Requesting Information for {shocker.Code}...");
+                Plugin.Log($" -> Requesting Information for {shocker.Code}...");
                 shocker.Status = ShockerStatus.Unchecked;
                 using StringContent jsonContent = new(
                 JsonSerializer.Serialize(new
@@ -343,11 +343,11 @@ namespace WoLightning
                 }
                 catch (Exception ex)
                 {
-                    Plugin.PluginLog.Error(ex.ToString());
-                    Plugin.PluginLog.Error("Error when sending post request to pishock api");
+                    Plugin.Error(ex.ToString());
+                    Plugin.Error("Error when sending post request to pishock api");
                 }
             }
-            Plugin.PluginLog.Verbose($" -> Requests sent!");
+            Plugin.Log($" -> Requests sent!");
         }
 
 
@@ -397,7 +397,7 @@ namespace WoLightning
                             PingTimer.Interval = pingSpeed;
                             if (PingTimer.Enabled) PingTimer.Refresh();
                             else PingTimer.Start();
-                            Plugin.PluginLog.Verbose("Reset Timer");
+                            Plugin.Log("Reset Timer");
                         }
                         Status = ConnectionStatus.Connected;
                         if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
@@ -405,43 +405,41 @@ namespace WoLightning
 
                     case HttpStatusCode.Locked:
                         Status = ConnectionStatus.DevMode;
-                        Plugin.PluginLog.Warning("The Server is currently in DevMode.");
+                        Plugin.Log("The Server is currently in DevMode.");
                         break;
 
                     // Softerrors DEPRECATED
                     case HttpStatusCode.Unauthorized:
                         Status = ConnectionStatus.UnknownUser;
-                        Plugin.PluginLog.Warning("The Server dídnt know us, so we got registered.");
+                        Plugin.Log("The Server dídnt know us, so we got registered.");
                         if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
                         break;
 
                     case HttpStatusCode.UpgradeRequired:
                         Status = ConnectionStatus.Outdated;
-                        Plugin.PluginLog.Warning("We are running a outdated Version.");
+                        Plugin.Log("We are running a outdated Version.");
                         if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
                         break;
 
                     case HttpStatusCode.Forbidden:
                         Status = ConnectionStatus.InvalidKey;
-                        Plugin.PluginLog.Error("Our Key does not match the key on the Serverside.");
+                        Plugin.Error("Our Key does not match the key on the Serverside.", packet);
                         break;
 
 
                     // Harderrors
                     case HttpStatusCode.NotFound:
                         Status = ConnectionStatus.FatalError;
-                        Plugin.PluginLog.Error("We sent a invalid Request to the Server.");
-                        Plugin.PluginLog.Verbose(packet.ToString());
+                        Plugin.Error("We sent a invalid Request to the Server.", packet);
                         break;
                     case HttpStatusCode.InternalServerError:
                         Status = ConnectionStatus.FatalError;
-                        Plugin.PluginLog.Error("We sent a invalid Packet to the Server.");
-                        Plugin.PluginLog.Verbose(packet.ToString());
+                        Plugin.Error("We sent a invalid Packet to the Server.", packet);
                         break;
 
                     default:
                         Status = ConnectionStatus.FatalError;
-                        Plugin.PluginLog.Error($"Unknown Response {s.StatusCode}");
+                        Plugin.Error($"Unknown Response {s.StatusCode}", packet);
                         return;
                 }
             }
@@ -449,20 +447,20 @@ namespace WoLightning
             {
 
                 Status = ConnectionStatus.WontRespond;
-                Plugin.PluginLog.Info("The Server is not responding.");
+                Plugin.Log("The Server is not responding.");
                 severWebserverConnection();
                 return;
             }
             catch (TaskCanceledException ex)
             {
-                Plugin.PluginLog.Warning("Running Request was Cancelled.");
+                Plugin.Log("Running Request was Cancelled.");
                 return;
             }
             catch (HttpRequestException)
             {
 
                 Status = ConnectionStatus.WontRespond;
-                Plugin.PluginLog.Info("The Server is online, but refused the connection.");
+                Plugin.Log("The Server is online, but refused the connection.");
                 severWebserverConnection();
                 return;
             }
@@ -471,8 +469,7 @@ namespace WoLightning
 
                 Status = ConnectionStatus.FatalError;
                 Client.CancelPendingRequests();
-                Plugin.PluginLog.Error(ex.ToString());
-                Plugin.PluginLog.Error("A Request threw an error");
+                Plugin.Error(ex.ToString());
                 severWebserverConnection(true);
                 return;
             }
@@ -521,21 +518,21 @@ namespace WoLightning
 
                 if (!re.validate())
                 {
-                    Plugin.PluginLog.Error("We have received a invalid packet.");
+                    Plugin.Error("We have received a invalid packet.");
                     return;
                 }
 
                 String? result = Plugin.Operation.execute(originalPacket, re);
                 if (result != null)
                 {
-                    Plugin.PluginLog.Error("The Packet failed to execute.\nReason: " + result);
+                    Plugin.Error("The Packet failed to execute.\nReason: " + result);
                     return;
                 }
-                //Plugin.PluginLog.Verbose("Resolved Packet successfully.");
+                
             }
             catch (Exception ex)
             {
-                Plugin.PluginLog.Error(ex.ToString());
+                Plugin.Error(ex.ToString());
             }
         }
 
@@ -545,7 +542,7 @@ namespace WoLightning
             using (var reader = new StreamReader(response.ReadAsStream()))
             {
                 string message = reader.ReadToEnd();
-                Plugin.PluginLog.Verbose(message);
+                Plugin.Log(message);
                 message = message.Replace("\"", "");
                 message = message.Replace("{", "");
                 message = message.Replace("}", "");
@@ -555,7 +552,7 @@ namespace WoLightning
 
                 foreach (var (key, value) in headers)
                 {
-                    Plugin.PluginLog.Verbose($"{key}: {value}");
+                    Plugin.Log($"{key}: {value}");
                 }
             }
 
@@ -568,16 +565,12 @@ namespace WoLightning
             using (var reader = new StreamReader(response.ReadAsStream()))
             {
                 string message = reader.ReadToEnd();
-                //Plugin.PluginLog.Verbose(message);
                 message = message.Replace("\"", "");
                 message = message.Replace("{", "");
                 message = message.Replace("}", "");
                 string[] partsRaw = message.Split(',');
                 Dictionary<String, String> headers = new Dictionary<String, String>();
                 foreach (var part in partsRaw) headers.Add(part.Split(':')[0], part.Split(':')[1]);
-
-                //foreach (var (key, value) in headers) Plugin.PluginLog.Verbose($"{key}:{value}");
-
 
                 if (headers.ContainsKey("name")) shocker.Name = headers["name"];
                 if (headers.ContainsKey("paused") && bool.Parse(headers["paused"]) == true) shocker.Status = ShockerStatus.Paused;

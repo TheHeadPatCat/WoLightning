@@ -27,12 +27,12 @@ namespace WoLightning
             {
                 hookEmote = Plugin.GameInteropProvider.HookFromSignature<OnEmoteFuncDelegate>("40 53 56 41 54 41 57 48 83 EC ?? 48 8B 02", OnEmoteDetour);
                 hookEmote.Enable();
-                Plugin.PluginLog.Info("Started EmoteReaderHook!");
+                Plugin.Log("Started EmoteReaderHook!");
                 IsValid = true;
             }
             catch (Exception ex)
             {
-                Plugin.PluginLog.Error(ex + "");
+                Plugin.Error(ex + "");
             }
         }
 
@@ -77,7 +77,7 @@ namespace WoLightning
                     }
                 }
             }
-            catch (Exception ex) { Plugin.PluginLog.Error(ex.ToString()); }
+            catch (Exception ex) { Plugin.Error(ex.ToString()); }
 
             hookEmote.Original(unk, instigatorAddr, emoteId, targetId, unk2);
         }
