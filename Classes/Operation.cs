@@ -21,6 +21,7 @@ namespace WoLightning.Classes
         // Account
         Login = 500,
         Register = 501,
+        Reset = 502,
 
         UploadBackup = 510, // Backups
         RequestBackup = 511,
@@ -128,6 +129,8 @@ namespace WoLightning.Classes
 
                 // General
                 case OperationCode.Ping:
+                    Plugin.Log("Got Response Packet!!");
+                    Plugin.Log(responsePacket);
                     return null;
 
                 case OperationCode.RequestUpdate:
@@ -156,7 +159,9 @@ namespace WoLightning.Classes
                         Plugin.Log("Logged into the Webserver!");
                         return null;
                     }
-                    Plugin.WebClient.Status = ConnectionStatus.UnknownUser;
+                    if (responsePacket.OpData != null && (responsePacket.OpData.Split("-")[1] == "NotRegistered")){
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.Register);
+                    }
                     return responsePacket.OpData;
                 case OperationCode.Register:
                     if (responsePacket.OpData != null && responsePacket.OpData.Split("-")[0] == "Success")
@@ -166,7 +171,19 @@ namespace WoLightning.Classes
                         return null;
                     }
                     return responsePacket.OpData;
-
+                case OperationCode.Reset:
+                    if (responsePacket.OpData != null && responsePacket.OpData == "Success-Removed")
+                    {
+                        Plugin.Authentification.ServerKey = string.Empty;
+                        Plugin.Log("Reset Userdata on Webserver.");
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.Register);
+                        return null;
+                    }
+                    else
+                    {
+                        Plugin.Log("Failed Reset");
+                    }
+                    return responsePacket.OpData;
                 case OperationCode.UploadBackup:
                     return "Not Implemented";
                 case OperationCode.RequestBackup:

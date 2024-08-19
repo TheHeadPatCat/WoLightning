@@ -1,4 +1,5 @@
 using Dalamud.Game.ClientState.Objects;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Command;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Interface.Windowing;
@@ -8,6 +9,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using WoLightning.Classes;
+using WoLightning.Types;
 using WoLightning.Windows;
 
 namespace WoLightning;
@@ -27,7 +29,8 @@ public sealed class Plugin : IDalamudPlugin
     
     public string? ConfigurationDirectoryPath { get; set; }
 
-    public string? LocalPlayerNameFull;
+    public IPlayerCharacter LocalPlayerCharacter { get; set; }
+    public Player LocalPlayer { get; set; }
 
     // Services
     public IDalamudPluginInterface PluginInterface { get; init; }
@@ -141,11 +144,13 @@ public sealed class Plugin : IDalamudPlugin
             TextLog = new TextLog(this,ConfigurationDirectoryPath);
 
             Configuration = new Configuration();
-            LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
+            
             Configuration.Initialize(this, false, ConfigurationDirectoryPath);
 
             Authentification = new Authentification(ConfigurationDirectoryPath);
 
+            LocalPlayerCharacter = ClientState.LocalPlayer;
+            LocalPlayer = new Player(LocalPlayerCharacter.Name.ToString(), (int)LocalPlayerCharacter.HomeWorld.Id, Authentification.ServerKey, NetworkWatcher.running);
 
             WebClient = new WebClient(this);
             EmoteReaderHooks = new EmoteReaderHooks(this);
@@ -156,7 +161,6 @@ public sealed class Plugin : IDalamudPlugin
 
             if (Configuration.ActivateOnStart) NetworkWatcher.Start();
 
-            LocalPlayerNameFull = ClientState.LocalPlayer.Name.ToString() + "#" + ClientState.LocalPlayer.HomeWorld.Id;
             WebClient.createHttpClient();
 
             WindowSystem.AddWindow(ConfigWindow);
@@ -237,7 +241,7 @@ public sealed class Plugin : IDalamudPlugin
     public void ToggleConfigUI() => ConfigWindow.Toggle();
     public void ToggleMainUI() => MainWindow.Toggle();
     public void ToggleMasterUI() => MasterWindow.Toggle();
-    public void ToggleMasterConfigUI() => MasterWindow.ConfigWindow.Toggle();
+    public void ToggleMasterConfigUI() => MasterWindow.CopiedConfigWindow.Toggle();
 
     #region Logging
     public void Log(string message)
@@ -317,44 +321,6 @@ public sealed class Plugin : IDalamudPlugin
         result.Content = content;
         NotificationManager.AddNotification(result);
     }
-
-    public void handleMasterAnswer(string answer)
-    {
-        if (answer == "false")
-        {
-            sendNotif("The other player rejected your request!");
-            //Configuration.MasterNameFull = "";
-            return;
-        }
-        if (answer == "true")
-        {
-            sendNotif("The other player accepted your request!");
-            //.HasMaster = true;
-            Configuration.Save();
-        }
-    }
-
-    public void handleMasterRequest(string subNameFull)
-    {
-        MasterWindow.requestingSub = subNameFull;
-        if (!MasterWindow.IsOpen) MasterWindow.Toggle();
-    }
-
-    public void handleSubUnbind()
-    {
-        sendNotif("Your Master unbound you!");
-        // Configuration.HasMaster = false;
-        // Configuration.MasterNameFull = "";
-        // Plugin.Authentification.isDisallowed = false;
-        Configuration.Save();
-    }
-
-    public void updateMasterWindow(string subNameFull, bool active)
-    {
-        MasterWindow.Configuration.SubsIsActive[subNameFull] = active;
-        MasterWindow.updating = false;
-    }
-
 
 
 

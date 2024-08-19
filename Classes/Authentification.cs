@@ -34,11 +34,11 @@ namespace WoLightning
 
         // Mastermode - Master Settings
         public bool IsMaster { get; set; } = false;
-        public List<string> OwnedSubs { get; set; } = new List<string>();
+        public List<Player> OwnedSubs { get; set; } = new List<Player>();
 
         // Mastermode - Sub Settings
         public bool HasMaster { get; set; } = false;
-        public string MasterNameFull { get; set; } = string.Empty;
+        public Player Master { get; set; } = null;
         public bool isDisallowed { get; set; } = false; //locks the interface
 
 

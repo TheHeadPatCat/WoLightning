@@ -127,7 +127,7 @@ namespace WoLightning
 
         public void scanForMasterCharacter()
         {
-            MasterCharacter = scanForPlayerCharacter(Plugin.Authentification.MasterNameFull);
+            //MasterCharacter = scanForPlayerCharacter(Plugin.Authentification.);
             if (MasterCharacter != null)
             {
                 if (lookingForMaster.Enabled)

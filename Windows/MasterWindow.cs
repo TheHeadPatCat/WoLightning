@@ -1,7 +1,11 @@
-﻿using Dalamud.Interface.Windowing;
+﻿using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Numerics;
+using WoLightning.Classes;
+using WoLightning.Types;
 
 namespace WoLightning.Windows;
 
@@ -9,15 +13,10 @@ public class MasterWindow : Window, IDisposable
 {
     private readonly Plugin Plugin;
     public Configuration Configuration;
-    public readonly ConfigWindow ConfigWindow;
+    public readonly ConfigWindow CopiedConfigWindow;
 
-
-    public string requestingSub = "";
-    private Vector4 active = new Vector4(0, 1, 0, 1);
-    private Vector4 inactive = new Vector4(0, 1, 0, 1);
-    public bool updating = false;
-
-    bool errorEncountered = false;
+    private Player selectedMaster = null;
+    private bool validating = false;
 
 
     public MasterWindow(Plugin plugin)
@@ -30,12 +29,11 @@ public class MasterWindow : Window, IDisposable
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(450, 520),
-            MaximumSize = new Vector2(2000, 2000)
+            MaximumSize = new Vector2(650, 800)
         };
 
-        ConfigWindow = new ConfigWindow(Plugin, Configuration, this);
-        Plugin.WindowSystem.AddWindow(ConfigWindow);
-        //if (Configuration.OwnedSubs.Count > 0) { } //setup timer
+        CopiedConfigWindow = new ConfigWindow(Plugin, Configuration, this);
+        Plugin.WindowSystem.AddWindow(CopiedConfigWindow);
     }
 
 
@@ -50,132 +48,135 @@ public class MasterWindow : Window, IDisposable
     public override async void Draw()
 
     {
-        if (errorEncountered)
+        if (Plugin.Authentification.HasMaster) drawIsSubmissive();
+        else drawBecomeSubmissive();
+
+        drawLine();
+
+        if (Plugin.Authentification.IsMaster) drawIsMaster();
+        else drawBecomeMaster();
+
+    }
+
+
+
+    private void drawBecomeSubmissive()
+    {
+        if (ImGui.CollapsingHeader("Become a Submissive"))
         {
-            ImGui.TextColored(new Vector4(1, 0, 0, 1), "Seomething went really really wrong!!\nYou can check /xllog for the error");
-            return;
-        }
-        ImGui.TextColored(new Vector4(1, 0, 0, 1), "VERY HEAVY WIP\n\nMany buttons do not have instant feedback.\nThis is because the client on the other side only updates every 15 seconds.\nPlease have some patience and don't spam the buttons.\n(It shouldn't break anything, but it might...)");
 
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
+            ImGui.Text("This Menu allows you to designate another Player as your Master.\nOnce they accept your request, they will gain access to the following:");
+            ImGui.BulletText("Changing your Presets & Triggers");
+            ImGui.BulletText("Disallowing you from changing your Settings");
+            ImGui.BulletText("Stopping or Starting the Plugin at will");
+            ImGui.BulletText("Several Master-specific features, like leashing you to them.");
+
+            ImGui.TextWrapped("\nPlease make sure that you fully trust the person, as the only ways to being released again, is through their choice, or resetting your account.");
 
 
-        if (updating) ImGui.BeginDisabled();
-        if (ImGui.Button(updating ? "Requesting..." : "Request Status")) UpdateStatus();
-        if (updating) ImGui.EndDisabled();
+            ImGui.Text("\nPlease select the Player ingame, that you want to have as your Master.");
 
-        try
-        {
-            ImGui.Text("You currently own:");
-            foreach (var sub in Plugin.Authentification.OwnedSubs)
+            IGameObject st = Plugin.TargetManager.Target;
+            if (!validating && st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
             {
-                ImGui.Bullet();
-
-                if (!Configuration.SubsIsActive.ContainsKey(sub)) break;
-
-                //if (ImGui.SmallButton($"O##toggle{sub}")) Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "setpluginstate"], ["ordered to toggle", sub, Configuration.SubsIsActive[sub] ? "false" : "true"]));
-                if (ImGui.IsItemHovered()) ImGui.SetTooltip("Toggle Plugin State");
-                ImGui.SameLine();
-                ImGui.TextColored(Configuration.SubsIsActive[sub] ? active : inactive, sub);
-                ImGui.SameLine();
-                ImGui.Text("  Preset:");
-                ImGui.SameLine();
-                ImGui.SetNextItemWidth(120);
-
-                var p = Configuration.SubsActivePresetIndexes[sub];
-                if (ImGui.Combo($"##presetbox{sub}", ref p, [.. Configuration.PresetNames], Configuration.Presets.Count))
+                IPlayerCharacter st1 = (IPlayerCharacter)st;
+                if (selectedMaster == null || selectedMaster.Name != st1.Name.ToString())
                 {
-                    Configuration.SubsActivePresetIndexes[sub] = p;
-                    //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "importpreset"], ["ordered to swap", sub, Configuration.sharePreset(Configuration.Presets.Keys.ToArray()[p])]));
-                    Configuration.Save();
-                }
-                var c = Configuration.SubsIsDisallowed[sub];
-                ImGui.SameLine();
-                if (ImGui.Checkbox($"Disallow\nSettings?##checkbox{sub}", ref c))
-                {
-                    Configuration.SubsIsDisallowed[sub] = c;
-                    //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "updatesetting"], ["ordered to update", sub, "isdisallowed" + "#" + c.ToString()]));
-                    Configuration.Save();
-                }
-                ImGui.SameLine();
-                if (ImGui.Button($"Unbind##unbind{sub}"))
-                {
-                    //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "unbindsub"], ["unbind request", sub, "undefined"]));
-                    Configuration.SubsIsDisallowed.Remove(sub);
-                    Configuration.SubsActivePresetIndexes.Remove(sub);
-                    Plugin.Authentification.OwnedSubs.Remove(sub); // these will cause a error, but thats okay
-                    Configuration.Save();
+                    selectedMaster = new Player(st1.Name.ToString(), (int)st1.HomeWorld.Id);
                 }
             }
-        }
-        catch (Exception e)
-        {
 
-            Plugin.PluginLog.Error(e.ToString());
-            errorEncountered = true;
-        }
-
-
-        if (ImGui.Button("Open Preset Creator"))
-        {
-            ConfigWindow.Toggle();
-        }
-        ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Open a creator window to setup presets without impacting your own!");
-
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-        ImGui.Spacing();
-
-        if (requestingSub.Length > 0)
-        {
-            ImGui.TextColored(new Vector4(0.7f, 0, 0.7f, 1), $"{requestingSub} is requesting to become your Sub!");
-
-            if (ImGui.Button("Accept"))
-            {
-                if (!Plugin.Authentification.OwnedSubs.Contains(requestingSub)) Plugin.Authentification.OwnedSubs.Add(requestingSub);
-                Configuration.SubsActivePresetIndexes[requestingSub] = 0;
-                Configuration.SubsIsDisallowed[requestingSub] = false;
-                Configuration.SubsIsActive[requestingSub] = false;
-                Plugin.Authentification.IsMaster = true;
-                //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "true"]));
-                requestingSub = "";
-                UpdateStatus();
-                Configuration.Save();
-                Plugin.Configuration.Save();
-            }
+            string playerName = "None";
+            if (selectedMaster != null) playerName = selectedMaster.Name;
+            ImGui.BeginDisabled();
+            ImGui.InputText("##selectedMaster", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
+            ImGui.EndDisabled();
             ImGui.SameLine();
-            if (ImGui.Button("Refuse"))
+            if (!validating && ImGui.Button("X##removeSelectedMaster")) selectedMaster = null;
+
+            if (selectedMaster != null && !selectedMaster.equals(Plugin.LocalPlayer))
             {
-                if (!Plugin.Authentification.IsMaster) this.Toggle();
-                //Plugin.WebClient.sendServerData(new NetworkPacket(["packet", "refplayer", "answermaster"], ["acceptrequest", requestingSub, "false"]));
-                requestingSub = "";
+
+                if (!validating && ImGui.Button("Request to become Master"))
+                {
+                    validating = true;
+                    Plugin.WebClient.sendWebserverRequest(OperationCode.RequestBecomeSub, "Request" , selectedMaster);
+                }
+                else if (validating)
+                {
+                    ImGui.BeginDisabled();
+                    ImGui.Button("Requested, please wait...");
+                    ImGui.EndDisabled();
+                }
             }
+
         }
+    }
+    
+    private void drawIsSubmissive()
+    {
+        ImGui.TextColored(new Vector4(1, 0.6f, 1, 1), "Submission Status");
+        ImGui.Separator();
+        ImGui.Text("You are currently bound to ");
+        ImGui.SameLine();
+        ImGui.TextColored(new Vector4(0.6f, 0, 0.6f, 1), Plugin.Authentification.Master.getFullName());
+
+        if (Plugin.Authentification.isDisallowed) ImGui.TextColored(new Vector4(1, 0, 0, 1), "They do not allow you to change your Settings.");
+        else ImGui.TextColored(new Vector4(0, 1, 0, 1), "They allow you to change your Settings.");
 
 
     }
 
-    private void UpdateStatus()
+    private void drawBecomeMaster()
     {
-        updating = true;
-        NetworkPacket output = new NetworkPacket();
+        if (ImGui.CollapsingHeader("Become a Master"))
+        {
+            ImGui.TextWrapped("To become a Master, you need to have someone else send a submission request to you.\nTo do this, they need to navigate to this Menu, and select the 'Become a Submissive' option.");
+
+            ImGui.TextWrapped("Once someone submits to you, you'll get access to a Menu here, letting you control and change several options on their behalf.");
+        }
+    }
+
+    private void drawIsMaster()
+    {
+        ImGui.Text("You currently control ");
+        ImGui.SameLine();
+        ImGui.TextColored(new Vector4(0.6f, 0, 0.6f, 1), $"{Plugin.Authentification.OwnedSubs.Count} Submissives.");
+        ImGui.Separator();
+        if(ImGui.Button("Open Preset Configurator"))CopiedConfigWindow.Toggle();
+        ImGui.Spacing();
+        ImGui.Spacing();
+        ImGui.Text("Statuslist");
         foreach (var sub in Plugin.Authentification.OwnedSubs)
         {
-            output.append(new NetworkPacket(["packet", "refplayer", "requestsubstatus"], ["request", sub, "undefined"]));
+            if (sub.Online == null || sub.PluginActive == null) return;
+            ImGui.Bullet();
+            ImGui.SameLine();
+            if ((bool)sub.Online) ImGui.TextColored(new Vector4(0, 1, 0, 1), $"{sub.Name}##{sub.getFullName()}");
+            else ImGui.TextColored(new Vector4(1, 0, 0, 1), $"{sub.Name}##{sub.getFullName()}");
+            ImGui.SameLine();
+            if ((bool)sub.PluginActive) ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0, 1, 0, 1));
+            else ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(1, 0, 0, 1));
+            if(ImGui.Button("Pluginstate"))togglePluginState(sub);
+            ImGui.PopStyleColor();
         }
-        //Plugin.WebClient.sendServerData(output);
     }
 
+    private void togglePluginState(Player sub)
+    {
+        sub.PluginActive = !sub.PluginActive;
+        Plugin.WebClient.sendWebserverRequest(OperationCode.OrderEnabledChange, sub.PluginActive + "", sub);
+    }
+
+    private void drawLine()
+    {
+        ImGui.Spacing();
+        ImGui.Spacing();
+        ImGui.BeginDisabled();
+        ImGui.Button("##decoLine", new Vector2(ImGui.GetWindowWidth() - 15, 10));
+        ImGui.EndDisabled();
+        ImGui.Spacing();
+        ImGui.Spacing();
+    }
 
 }

@@ -44,16 +44,23 @@ namespace WoLightning.Classes
                 }
                 catch { }
             }
-
-            File.AppendAllText(FilePath, $"\n\n======================\nNew Session Started\nVersion {Plugin.currentVersion}");
-            File.AppendAllText(FilePath, "\n" + DateTime.Now.ToShortDateString() + "  " + DateTime.Now.Hour + ":" + DateTime.Now.Minute + ":" + DateTime.Now.Second);
+            try
+            {
+                File.AppendAllText(FilePath, $"\n\n======================\nNew Session Started\nVersion {Plugin.currentVersion}");
+                File.AppendAllText(FilePath, "\n" + DateTime.Now.ToShortDateString() + "  " + DateTime.Now.Hour + ":" + DateTime.Now.Minute + ":" + DateTime.Now.Second);
+            }
+            catch { }
         }
 
         public async void Log(string message)
         {
             if (!validateFile()) return;
             DateTime now = DateTime.Now;
-            await File.AppendAllTextAsync(FilePath, "\n" + $"[{now.Hour}:{now.Minute}:{now.Second}] " + message);
+            try
+            {
+                await File.AppendAllTextAsync(FilePath, "\n" + $"[{now.Hour}:{now.Minute}:{now.Second}] " + message);
+            }
+            catch { }
         }
 
         public async void Log(Object obj)
@@ -61,10 +68,15 @@ namespace WoLightning.Classes
             if (!validateFile()) return;
 
             DateTime now = DateTime.Now;
-            await File.AppendAllTextAsync(FilePath, "\n" + $"[{now.Hour}:{now.Minute}:{now.Second}] " + obj.GetType().Name);
-            foreach (var prop in obj.GetType().GetProperties()) {
-                await File.AppendAllTextAsync(FilePath, "\n - " + prop.Name+ ": " + prop.GetValue(obj, null));
+            try
+            {
+                await File.AppendAllTextAsync(FilePath, "\n" + $"[{now.Hour}:{now.Minute}:{now.Second}] " + obj.GetType().Name);
+                foreach (var prop in obj.GetType().GetProperties())
+                {
+                    await File.AppendAllTextAsync(FilePath, "\n - " + prop.Name + ": " + prop.GetValue(obj, null));
+                }
             }
+            catch { }
         }
 
     }

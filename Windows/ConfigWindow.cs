@@ -126,7 +126,7 @@ public class ConfigWindow : Window, IDisposable
     private void resetRequest(object sender, ElapsedEventArgs e)
     {
         timeOutRequest.Stop();
-        Plugin.Authentification.MasterNameFull = "";
+        //Plugin.Authentification.MasterNameFull = "";
 
     }
 
@@ -183,7 +183,7 @@ public class ConfigWindow : Window, IDisposable
 
         if (Plugin.Authentification.HasMaster)
         {
-            ImGui.Text("Your Master is currently " + Plugin.Authentification.MasterNameFull);
+            //ImGui.Text("Your Master is currently " + Plugin.Authentification.MasterNameFull);
         }
 
         if (Plugin.Authentification.isDisallowed)

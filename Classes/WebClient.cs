@@ -362,14 +362,9 @@ namespace WoLightning
                 Client == null) return;
 
 
-            var localPlayer = Plugin.ClientState.LocalPlayer;
-            Player sentPlayer = new Player(
-                localPlayer.Name.ToString(),
-                (int)localPlayer.HomeWorld.Id,
-                Plugin.Authentification.ServerKey,
-                Plugin.NetworkWatcher.running);
 
-            NetPacket packet = new NetPacket(Op, sentPlayer, OpData, Target);
+
+            NetPacket packet = new NetPacket(Op, Plugin.LocalPlayer, OpData, Target);
 
             using StringContent jsonContent = new(
                 JsonSerializer.Serialize(new

@@ -124,6 +124,7 @@ namespace WoLightning.Types
         public string? Name { get; set; }
         public int? WorldId { get; set; }
         public string? Key { get; set; }
+        public bool? Online { get; set; }
         public bool? PluginActive { get; set; }
 
 
@@ -165,6 +166,11 @@ namespace WoLightning.Types
         {
             if (Key == null || Key.Length < 7) return $"[Player] {Name} @{getWorldName()}\nKey: [Unknown]";
             return $"[Player] {Name} @{getWorldName()}\nKey: {Key.Substring(0, 7)}(...)";
+        }
+
+        public bool equals(Player other)
+        {
+            return getFullName() == other.getFullName();
         }
 
     }
