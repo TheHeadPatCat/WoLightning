@@ -100,7 +100,7 @@ public class MasterWindow : Window, IDisposable
                 if (!validating && ImGui.Button("Request to become Master"))
                 {
                     validating = true;
-                    Plugin.WebClient.sendWebserverRequest(OperationCode.RequestBecomeSub, "Request" , selectedMaster);
+                    Plugin.WebClient.sendWebserverRequest(OperationCode.RequestBecomeSub, null , selectedMaster);
                 }
                 else if (validating)
                 {

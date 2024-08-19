@@ -129,7 +129,8 @@ namespace WoLightning.Classes
 
                 // General
                 case OperationCode.Ping:
-                    Plugin.Log("Got Response Packet!!");
+                    if (responsePacket.Operation == OperationCode.Ping) return null;
+                    Plugin.Log("Responsepacket get!");
                     Plugin.Log(responsePacket);
                     return null;
 
@@ -197,6 +198,8 @@ namespace WoLightning.Classes
                 case OperationCode.RequestUpdateSubs:
                     return "Not Implemented";
                 case OperationCode.RequestBecomeSub:
+                    Plugin.Log("Request received:");
+                    Plugin.Log(responsePacket);
                     return "Not Implemented";
                 case OperationCode.AnswerSub:
                     return "Not Implemented";
