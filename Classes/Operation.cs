@@ -129,9 +129,7 @@ namespace WoLightning.Classes
 
                 // General
                 case OperationCode.Ping:
-                    if (responsePacket.Operation == OperationCode.Ping) return null;
-                    Plugin.Log("Responsepacket get!");
-                    Plugin.Log(responsePacket);
+                    // We pinged the server, and it did not have anything for us.
                     return null;
 
                 case OperationCode.RequestUpdate:
@@ -154,16 +152,21 @@ namespace WoLightning.Classes
 
                 // Account
                 case OperationCode.Login:
+
+                    // We logged in!
                     if (responsePacket.OpData != null && responsePacket.OpData.Split("-")[0] == "Success")
                     {
                         Plugin.WebClient.Status = ConnectionStatus.Connected;
                         Plugin.Log("Logged into the Webserver!");
                         return null;
                     }
+
+                    // We arent known to the server - register us.
                     if (responsePacket.OpData != null && (responsePacket.OpData.Split("-")[1] == "NotRegistered")){
                         Plugin.WebClient.sendWebserverRequest(OperationCode.Register);
                     }
                     return responsePacket.OpData;
+
                 case OperationCode.Register:
                     if (responsePacket.OpData != null && responsePacket.OpData.Split("-")[0] == "Success")
                     {
@@ -177,7 +180,7 @@ namespace WoLightning.Classes
                     {
                         Plugin.Authentification.ServerKey = string.Empty;
                         Plugin.Log("Reset Userdata on Webserver.");
-                        Plugin.WebClient.sendWebserverRequest(OperationCode.Register);
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.Login);
                         return null;
                     }
                     else
@@ -198,11 +201,43 @@ namespace WoLightning.Classes
                 case OperationCode.RequestUpdateSubs:
                     return "Not Implemented";
                 case OperationCode.RequestBecomeSub:
-                    Plugin.Log("Request received:");
-                    Plugin.Log(responsePacket);
-                    return "Not Implemented";
+                    // We received the request of another playing becoming our sub
+
+                    if (!responsePacket.Target.equals(Plugin.LocalPlayer))
+                    { // We somehow arent the Target of this packet...?? (Sanity Check)
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub,"Fail-InvalidTarget");
+                        return "Invalid Target";
+                    }
+                    if(responsePacket.Sender == null || !responsePacket.Sender.validate()){
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Fail-InvalidSender");
+                        return "Invalid Sender";
+                    }
+
+                    if (Plugin.Authentification.OwnedSubs.ContainsKey(responsePacket.Sender.getFullName())){
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Fail-AlreadyExists");
+                        return "Already Exists";
+                    }
+
+                    Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-RegisterPossible");
+                    return null;
                 case OperationCode.AnswerSub:
-                    return "Not Implemented";
+                    // We received the validation from the requested Master
+
+                    if (!responsePacket.Target.equals(Plugin.LocalPlayer)) return "Invalid Target";
+                    if (responsePacket.Sender == null || !responsePacket.Sender.validate()) return "Invalid Sender";
+                    if (responsePacket.OpData == null) return "No OpData";
+                    if (!responsePacket.OpData.StartsWith("Success"))
+                    { // Validation Failed - let the user know
+                        Plugin.Authentification.validating = false;
+                        Plugin.Authentification.errorString = responsePacket.OpData;
+                        Plugin.Authentification.targetMaster = null;
+                        return responsePacket.OpData;
+                    }
+                    // Validation worked out!
+                    // Allow the user to send out the request.
+                    Plugin.Authentification.validated = true;
+                    Plugin.Authentification.validating = false;
+                    return null;
                 case OperationCode.RegisterMaster:
                     return "Not Implemented";
                 case OperationCode.RegisterSub:

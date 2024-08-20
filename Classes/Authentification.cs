@@ -32,9 +32,23 @@ namespace WoLightning
 
 
 
+
+
+        // Mastermode - Authentification Process
+
+        [NonSerialized]
+        public bool validating = false;
+        [NonSerialized]
+        public bool validated = false;
+        [NonSerialized]
+        public Player? targetMaster;
+        [NonSerialized]
+        public String? errorString = string.Empty;
+
+
         // Mastermode - Master Settings
         public bool IsMaster { get; set; } = false;
-        public List<Player> OwnedSubs { get; set; } = new List<Player>();
+        public Dictionary<String,Player> OwnedSubs { get; set; } = new();
 
         // Mastermode - Sub Settings
         public bool HasMaster { get; set; } = false;

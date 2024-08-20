@@ -16,7 +16,6 @@ public class MasterWindow : Window, IDisposable
     public readonly ConfigWindow CopiedConfigWindow;
 
     private Player selectedMaster = null;
-    private bool validating = false;
 
 
     public MasterWindow(Plugin plugin)
@@ -74,41 +73,72 @@ public class MasterWindow : Window, IDisposable
             ImGui.TextWrapped("\nPlease make sure that you fully trust the person, as the only ways to being released again, is through their choice, or resetting your account.");
 
 
-            ImGui.Text("\nPlease select the Player ingame, that you want to have as your Master.");
-
-            IGameObject st = Plugin.TargetManager.Target;
-            if (!validating && st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+            if (!Plugin.Authentification.validated)
             {
-                IPlayerCharacter st1 = (IPlayerCharacter)st;
-                if (selectedMaster == null || selectedMaster.Name != st1.Name.ToString())
+                ImGui.Text("\nPlease select the Player ingame, that you want to have as your Master.");
+
+                IGameObject st = Plugin.TargetManager.Target;
+                if (!Plugin.Authentification.validating && st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
                 {
-                    selectedMaster = new Player(st1.Name.ToString(), (int)st1.HomeWorld.Id);
+                    IPlayerCharacter st1 = (IPlayerCharacter)st;
+                    if (selectedMaster == null || selectedMaster.Name != st1.Name.ToString())
+                    {
+                        selectedMaster = new Player(st1.Name.ToString(), (int)st1.HomeWorld.Id);
+                    }
+                }
+
+                string playerName = "None";
+                if (selectedMaster != null) playerName = selectedMaster.Name;
+                ImGui.BeginDisabled();
+                ImGui.InputText("##selectedMaster", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
+                ImGui.EndDisabled();
+                ImGui.SameLine();
+                if (!Plugin.Authentification.validating && ImGui.Button("X##removeSelectedMaster")) selectedMaster = null;
+
+                if (selectedMaster != null && !selectedMaster.equals(Plugin.LocalPlayer))
+                {
+
+                    if (!Plugin.Authentification.validating && ImGui.Button("Validate Player"))
+                    {
+                        Plugin.Authentification.validating = true;
+                        Plugin.Authentification.targetMaster = selectedMaster;
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.RequestBecomeSub, null, selectedMaster);
+                    }
+                    else if (Plugin.Authentification.validating)
+                    {
+                        ImGui.BeginDisabled();
+                        ImGui.Button("Validation running, please wait...");
+                        ImGui.EndDisabled();
+                    }
                 }
             }
-
-            string playerName = "None";
-            if (selectedMaster != null) playerName = selectedMaster.Name;
-            ImGui.BeginDisabled();
-            ImGui.InputText("##selectedMaster", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
-            ImGui.EndDisabled();
-            ImGui.SameLine();
-            if (!validating && ImGui.Button("X##removeSelectedMaster")) selectedMaster = null;
-
-            if (selectedMaster != null && !selectedMaster.equals(Plugin.LocalPlayer))
+            else
             {
+                ImGui.Text("\nValidation Succeeded.\nAre you sure you want ");
+                ImGui.SameLine();
+                ImGui.TextColored(new Vector4(0.6f, 0, 0.6f, 1), Plugin.Authentification.targetMaster.getFullName());
+                ImGui.SameLine();
+                ImGui.Text(" as your Master?");
 
-                if (!validating && ImGui.Button("Request to become Master"))
+                if(Plugin.Authentification.validating)ImGui.BeginDisabled();
+                if(ImGui.Button($"Yes, submit to\n{Plugin.Authentification.targetMaster.getFullName()}"))
                 {
-                    validating = true;
-                    Plugin.WebClient.sendWebserverRequest(OperationCode.RequestBecomeSub, null , selectedMaster);
+                    Plugin.Authentification.validating = true;
+                    Plugin.WebClient.sendWebserverRequest(OperationCode.RegisterMaster, null, selectedMaster);
                 }
-                else if (validating)
+                if (ImGui.Button("Abort!"))
                 {
-                    ImGui.BeginDisabled();
-                    ImGui.Button("Requested, please wait...");
+                    Plugin.Authentification.validating = false;
+                    Plugin.Authentification.validated = false;
+                    Plugin.Authentification.targetMaster = null;
+                }
+                if (Plugin.Authentification.validating)
+                {
                     ImGui.EndDisabled();
+                    ImGui.Text("Requesting, please wait...");
                 }
             }
+
 
         }
     }
