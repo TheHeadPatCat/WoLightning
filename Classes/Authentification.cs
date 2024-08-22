@@ -11,14 +11,14 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using WoLightning.Types;
 
-namespace WoLightning
+namespace WoLightning.Classes
 {
 
     public class Authentification : IDisposable // This class is here to make sure the data that gets received from the server, is actually from this plugin (well not entirely, but it helps)
     {
 
         public int Version { get; set; } = 1;
-        private string? ConfigurationDirectoryPath;
+        private string? ConfigurationDirectoryPath { get; init; }
 
         // Webserver things
         private string Hash = string.Empty;
@@ -27,7 +27,7 @@ namespace WoLightning
         // Pishock things
         public string PishockName { get; set; } = string.Empty;
         public string PishockShareCode { get; set; } = string.Empty;
-        public List<Shocker> PishockShockers { get; set; } = new();
+        public List<Shocker> PishockShockers { get; set; } = [];
         public string PishockApiKey { get; set; } = string.Empty;
 
 
@@ -37,22 +37,28 @@ namespace WoLightning
         // Mastermode - Authentification Process
 
         [NonSerialized]
-        public bool validating = false;
+        public string? errorStringMaster = string.Empty;
+
         [NonSerialized]
-        public bool validated = false;
+        public bool isRequesting = false;
         [NonSerialized]
         public Player? targetMaster;
+
         [NonSerialized]
-        public String? errorString = string.Empty;
+        public bool gotRequest = false;
+        [NonSerialized]
+        public Player? targetSub;
+        
+
 
 
         // Mastermode - Master Settings
         public bool IsMaster { get; set; } = false;
-        public Dictionary<String,Player> OwnedSubs { get; set; } = new();
+        public Dictionary<string, Player> OwnedSubs { get; set; } = [];
 
         // Mastermode - Sub Settings
         public bool HasMaster { get; set; } = false;
-        public Player Master { get; set; } = null;
+        public Player? Master { get; set; }
         public bool isDisallowed { get; set; } = false; //locks the interface
 
 
@@ -107,9 +113,8 @@ namespace WoLightning
                     };
                     WebResponse response = request.GetResponse(); //will be 404
                 }
-                catch (Exception ex)
+                catch
                 {
-                    //if its 404 its a normal response
                 }
             }
             else

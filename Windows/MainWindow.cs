@@ -35,6 +35,7 @@ public class MainWindow : Window, IDisposable
     public void Dispose()
     {
         if (this.IsOpen) this.Toggle();
+        
     }
 
     public override async void Draw()

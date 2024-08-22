@@ -183,7 +183,7 @@ public class ConfigWindow : Window, IDisposable
 
         if (Plugin.Authentification.HasMaster)
         {
-            //ImGui.Text("Your Master is currently " + Plugin.Authentification.MasterNameFull);
+            ImGui.Text("You are bound to " + Plugin.Authentification.Master.Name);
         }
 
         if (Plugin.Authentification.isDisallowed)
@@ -570,6 +570,13 @@ public class ConfigWindow : Window, IDisposable
             ImGui.EndTabItem();
         }
 
+
+        if(ImGui.Button("Test OnRequest()"))
+        {
+            Plugin.Authentification.gotRequest = true;
+            Plugin.ShowMasterUI();
+        }
+
     }
     #endregion
 
@@ -731,6 +738,7 @@ public class ConfigWindow : Window, IDisposable
                     catch (ArgumentException ex)
                     {
                         trigger.Regex = null;
+                        Plugin.Log(ex);
                     }
                     Configuration.Save();
                 }

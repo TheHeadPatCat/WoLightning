@@ -141,7 +141,7 @@ namespace WoLightning
 
                 try
                 {
-                    ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 }
                 catch (Exception ex)
                 {
@@ -210,7 +210,7 @@ namespace WoLightning
 
                 try
                 {
-                    ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 }
                 catch (Exception ex)
                 {
@@ -448,7 +448,7 @@ namespace WoLightning
             }
             catch (TaskCanceledException ex)
             {
-                Plugin.Log("Running Request was Cancelled.");
+                Plugin.Error("Running Request was Cancelled.",ex);
                 return;
             }
             catch (HttpRequestException)
@@ -513,14 +513,28 @@ namespace WoLightning
 
                 if (!re.validate())
                 {
-                    Plugin.Error("We have received a invalid packet.");
+                    Plugin.Error("We have received a invalid packet.",re);
                     return;
                 }
+
+                if(!re.Sender.equals(Plugin.LocalPlayer) && !re.Target.equals(Plugin.LocalPlayer))
+                {
+                    Plugin.Error("The received packet is neither from nor for us.",re);
+                    return;
+                }
+
+                if (re.OpData != null && re.OpData.Equals("Fail-Unauthorized"))
+                {
+                    Plugin.Error("The server does not remember us sending a request.",re);
+                    return;
+                }
+
+                if(re.Operation != OperationCode.Ping) Plugin.Log(re);
 
                 String? result = Plugin.Operation.execute(originalPacket, re);
                 if (result != null)
                 {
-                    Plugin.Error("The Packet failed to execute.\nReason: " + result);
+                    Plugin.Error(result,re);
                     return;
                 }
                 

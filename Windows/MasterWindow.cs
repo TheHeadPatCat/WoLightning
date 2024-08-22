@@ -17,7 +17,6 @@ public class MasterWindow : Window, IDisposable
 
     private Player selectedMaster = null;
 
-
     public MasterWindow(Plugin plugin)
         : base("Master of Lightning##Master", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.AlwaysAutoResize)
     {
@@ -73,12 +72,11 @@ public class MasterWindow : Window, IDisposable
             ImGui.TextWrapped("\nPlease make sure that you fully trust the person, as the only ways to being released again, is through their choice, or resetting your account.");
 
 
-            if (!Plugin.Authentification.validated)
-            {
+
                 ImGui.Text("\nPlease select the Player ingame, that you want to have as your Master.");
 
                 IGameObject st = Plugin.TargetManager.Target;
-                if (!Plugin.Authentification.validating && st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+                if (!Plugin.Authentification.isRequesting && st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
                 {
                     IPlayerCharacter st1 = (IPlayerCharacter)st;
                     if (selectedMaster == null || selectedMaster.Name != st1.Name.ToString())
@@ -93,53 +91,30 @@ public class MasterWindow : Window, IDisposable
                 ImGui.InputText("##selectedMaster", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
                 ImGui.EndDisabled();
                 ImGui.SameLine();
-                if (!Plugin.Authentification.validating && ImGui.Button("X##removeSelectedMaster")) selectedMaster = null;
+                if (!Plugin.Authentification.isRequesting && ImGui.Button("X##removeSelectedMaster")) selectedMaster = null;
 
-                if (selectedMaster != null && !selectedMaster.equals(Plugin.LocalPlayer))
-                {
-
-                    if (!Plugin.Authentification.validating && ImGui.Button("Validate Player"))
-                    {
-                        Plugin.Authentification.validating = true;
-                        Plugin.Authentification.targetMaster = selectedMaster;
-                        Plugin.WebClient.sendWebserverRequest(OperationCode.RequestBecomeSub, null, selectedMaster);
-                    }
-                    else if (Plugin.Authentification.validating)
-                    {
-                        ImGui.BeginDisabled();
-                        ImGui.Button("Validation running, please wait...");
-                        ImGui.EndDisabled();
-                    }
-                }
-            }
-            else
+            if (selectedMaster != null && !selectedMaster.equals(Plugin.LocalPlayer))
             {
-                ImGui.Text("\nValidation Succeeded.\nAre you sure you want ");
-                ImGui.SameLine();
-                ImGui.TextColored(new Vector4(0.6f, 0, 0.6f, 1), Plugin.Authentification.targetMaster.getFullName());
-                ImGui.SameLine();
-                ImGui.Text(" as your Master?");
 
-                if(Plugin.Authentification.validating)ImGui.BeginDisabled();
-                if(ImGui.Button($"Yes, submit to\n{Plugin.Authentification.targetMaster.getFullName()}"))
+                if (!Plugin.Authentification.isRequesting && ImGui.Button("Request to Submit"))
                 {
-                    Plugin.Authentification.validating = true;
-                    Plugin.WebClient.sendWebserverRequest(OperationCode.RegisterMaster, null, selectedMaster);
+                    Plugin.Authentification.isRequesting = true;
+                    Plugin.Authentification.targetMaster = selectedMaster;
+                    Plugin.WebClient.sendWebserverRequest(OperationCode.RequestBecomeSub, null, selectedMaster);
                 }
-                if (ImGui.Button("Abort!"))
+                else if (Plugin.Authentification.isRequesting)
                 {
-                    Plugin.Authentification.validating = false;
-                    Plugin.Authentification.validated = false;
-                    Plugin.Authentification.targetMaster = null;
-                }
-                if (Plugin.Authentification.validating)
-                {
+                    ImGui.BeginDisabled();
+                    ImGui.Button("Requesting, please wait...");
                     ImGui.EndDisabled();
-                    ImGui.Text("Requesting, please wait...");
                 }
             }
-
-
+            else if (selectedMaster == null && Plugin.Authentification.isRequesting)
+            {
+                // We have been rejected by the Master
+                ImGui.TextColored(new Vector4(1, 0, 0, 1), "The Player rejected your request.");
+                if(ImGui.Button("Okay##rejectionAccepted")) Plugin.Authentification.isRequesting = false;
+            }
         }
     }
     
@@ -159,11 +134,37 @@ public class MasterWindow : Window, IDisposable
 
     private void drawBecomeMaster()
     {
-        if (ImGui.CollapsingHeader("Become a Master"))
+
+        if (!Plugin.Authentification.gotRequest && ImGui.CollapsingHeader("Become a Master"))
         {
             ImGui.TextWrapped("To become a Master, you need to have someone else send a submission request to you.\nTo do this, they need to navigate to this Menu, and select the 'Become a Submissive' option.");
 
             ImGui.TextWrapped("Once someone submits to you, you'll get access to a Menu here, letting you control and change several options on their behalf.");
+        }
+        else if (Plugin.Authentification.gotRequest)
+        {
+            
+                ImGui.Text("You have received a request from ");
+                ImGui.SameLine();
+                ImGui.TextColored(new Vector4(0.6f, 0, 0.6f, 1), /*Plugin.Authentification.targetSub.getFullName()*/ "Nobody");
+                ImGui.Separator();
+
+                ImGui.Text("They want to submit to you for the Mastermode.\nDo you accept?");
+
+                // Todo: add button feedback
+                if (ImGui.Button("Accept", new Vector2(ImGui.GetWindowSize().X /2 - 10, 25)))
+                {
+                    Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-Accepted", Plugin.Authentification.targetSub);
+                    Plugin.Authentification.gotRequest = false;
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Reject", new Vector2(ImGui.GetWindowSize().X /2 - 10, 25)))
+                {
+                    Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-Rejected", Plugin.Authentification.targetSub);
+                Plugin.Authentification.gotRequest = false;
+                }
+                
+            
         }
     }
 
@@ -177,7 +178,7 @@ public class MasterWindow : Window, IDisposable
         ImGui.Spacing();
         ImGui.Spacing();
         ImGui.Text("Statuslist");
-        foreach (var sub in Plugin.Authentification.OwnedSubs)
+        foreach (var (name,sub) in Plugin.Authentification.OwnedSubs)
         {
             if (sub.Online == null || sub.PluginActive == null) return;
             ImGui.Bullet();
@@ -207,6 +208,11 @@ public class MasterWindow : Window, IDisposable
         ImGui.EndDisabled();
         ImGui.Spacing();
         ImGui.Spacing();
+    }
+
+    public void Open()
+    {
+        if (!this.IsOpen) Toggle();
     }
 
 }

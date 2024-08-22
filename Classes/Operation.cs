@@ -164,8 +164,15 @@ namespace WoLightning.Classes
                     // We arent known to the server - register us.
                     if (responsePacket.OpData != null && (responsePacket.OpData.Split("-")[1] == "NotRegistered")){
                         Plugin.WebClient.sendWebserverRequest(OperationCode.Register);
+                        return null;
                     }
-                    return responsePacket.OpData;
+
+                    if(responsePacket.OpData != null && (responsePacket.OpData.Equals("Fail-InvalidKey"))){
+                        Plugin.WebClient.severWebserverConnection();
+                        Plugin.WebClient.Status = ConnectionStatus.InvalidKey;
+                        return "Cannot Login - Invalid Key";
+                    }
+                    return "Received Invalid OpData";
 
                 case OperationCode.Register:
                     if (responsePacket.OpData != null && responsePacket.OpData.Split("-")[0] == "Success")
@@ -174,6 +181,14 @@ namespace WoLightning.Classes
                         Plugin.Log("We have been registered to the Server - Key: " + responsePacket.Sender.Key);
                         return null;
                     }
+                    else if (responsePacket.OpData != null && responsePacket.OpData == "Fail-AlreadyExists")
+                    {
+                        Plugin.WebClient.severWebserverConnection();
+                        Plugin.WebClient.Status = ConnectionStatus.InvalidKey;
+                        return "Cannot Register - We already exist.";
+                    }
+
+
                     return responsePacket.OpData;
                 case OperationCode.Reset:
                     if (responsePacket.OpData != null && responsePacket.OpData == "Success-Removed")
@@ -202,11 +217,9 @@ namespace WoLightning.Classes
                     return "Not Implemented";
                 case OperationCode.RequestBecomeSub:
                     // We received the request of another playing becoming our sub
-
-                    if (!responsePacket.Target.equals(Plugin.LocalPlayer))
-                    { // We somehow arent the Target of this packet...?? (Sanity Check)
-                        Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub,"Fail-InvalidTarget");
-                        return "Invalid Target";
+                    if (responsePacket.Sender.equals(Plugin.LocalPlayer))
+                    { // confirmation
+                        return null;
                     }
                     if(responsePacket.Sender == null || !responsePacket.Sender.validate()){
                         Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Fail-InvalidSender");
@@ -218,30 +231,75 @@ namespace WoLightning.Classes
                         return "Already Exists";
                     }
 
-                    Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-RegisterPossible");
+                    //The Request is valid - show it to the master and let them decide how to respond.
+
+                    Plugin.Authentification.targetSub = responsePacket.Sender;
+                    Plugin.Authentification.gotRequest = true;
+                    Plugin.ShowMasterUI();
                     return null;
                 case OperationCode.AnswerSub:
-                    // We received the validation from the requested Master
+                    if (responsePacket.OpData == null) return null; // Confirmation that the packet worked on Master side.
 
+                    // We received the validation from the requested Master
                     if (!responsePacket.Target.equals(Plugin.LocalPlayer)) return "Invalid Target";
                     if (responsePacket.Sender == null || !responsePacket.Sender.validate()) return "Invalid Sender";
-                    if (responsePacket.OpData == null) return "No OpData";
                     if (!responsePacket.OpData.StartsWith("Success"))
                     { // Validation Failed - let the user know
-                        Plugin.Authentification.validating = false;
-                        Plugin.Authentification.errorString = responsePacket.OpData;
+                        Plugin.Authentification.isRequesting = false;
+                        Plugin.Authentification.errorStringMaster = responsePacket.OpData;
                         Plugin.Authentification.targetMaster = null;
                         return responsePacket.OpData;
                     }
-                    // Validation worked out!
-                    // Allow the user to send out the request.
-                    Plugin.Authentification.validated = true;
-                    Plugin.Authentification.validating = false;
-                    return null;
+                    // The Master responded to our request!
+                    // Check if its accepted or rejected
+                    if (responsePacket.OpData.Equals("Success-Rejected"))
+                    {
+                        Plugin.Authentification.targetMaster = null;
+                        return "Master Rejected Request";
+                    }
+                    else if (responsePacket.OpData.Equals("Success-Accepted"))
+                    {
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.RegisterMaster, null, responsePacket.Sender);
+                        return null;
+                    }
+
+                    return "Invalid Response Received";
                 case OperationCode.RegisterMaster:
-                    return "Not Implemented";
+
+                    if(responsePacket.Target == null)
+                    {
+                        return "No Target Given";
+                    }
+                    if(Plugin.Authentification.Master != null)
+                    {
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.RegisterSub, "Fail-AlreadyBound");
+                        return "Already bound to a Master";
+                    }
+                    if (!Plugin.Authentification.targetMaster.equals(responsePacket.Target)) // Make sure we cannot get spoofed
+                    {
+                        return "Invalid Master Given";
+                    }
+
+                    Plugin.Authentification.Master = responsePacket.Target;
+                    Plugin.Authentification.HasMaster = true;
+                    Plugin.Authentification.isRequesting = false;
+                    Plugin.Authentification.targetMaster = null;
+                    return null;
+
                 case OperationCode.RegisterSub:
-                    return "Not Implemented";
+                    if(Plugin.Authentification.targetSub == null) return "Invalid Request"; // We are not anticipating anyone - Dont accept the packet
+                    if (responsePacket.Target == null) return "No Sub given";
+                    if (!Plugin.Authentification.targetSub.equals(responsePacket.Target)) return "Requested Sub and Saved Sub are not equal"; // This is not the Sub we expected to accept - Dont accept the packet
+
+                    if (Plugin.Authentification.OwnedSubs.ContainsKey(responsePacket.Sender.getFullName()))
+                    {
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.RegisterSub, "Fail-AlreadyExists",responsePacket.Target);
+                        return "Already Exists";
+                    }
+
+                    Plugin.Authentification.IsMaster = true;
+                    Plugin.Authentification.OwnedSubs.Add(responsePacket.Target.getFullName(), responsePacket.Target);
+                    return null;
 
                 case OperationCode.UnbindMaster:
                     return "Not Implemented";

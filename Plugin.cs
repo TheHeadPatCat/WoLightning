@@ -24,9 +24,9 @@ public sealed class Plugin : IDalamudPlugin
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const int currentVersion = 301;
+    public const int currentVersion = 310;
     public const string randomKey = "Currently Unused";
-    
+
     public string? ConfigurationDirectoryPath { get; set; }
 
     public IPlayerCharacter LocalPlayerCharacter { get; set; }
@@ -141,10 +141,10 @@ public sealed class Plugin : IDalamudPlugin
 
             ConfigurationDirectoryPath += "\\";
 
-            TextLog = new TextLog(this,ConfigurationDirectoryPath);
+            TextLog = new TextLog(this, ConfigurationDirectoryPath);
 
             Configuration = new Configuration();
-            
+
             Configuration.Initialize(this, false, ConfigurationDirectoryPath);
 
             Authentification = new Authentification(ConfigurationDirectoryPath);
@@ -242,6 +242,8 @@ public sealed class Plugin : IDalamudPlugin
     public void ToggleMainUI() => MainWindow.Toggle();
     public void ToggleMasterUI() => MasterWindow.Toggle();
     public void ToggleMasterConfigUI() => MasterWindow.CopiedConfigWindow.Toggle();
+
+    public void ShowMasterUI() => MasterWindow.Open();
 
     #region Logging
     public void Log(string message)

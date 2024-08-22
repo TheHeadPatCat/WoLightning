@@ -39,7 +39,6 @@ namespace WoLightning.Types
         public bool validate()
         {
             return (Operation >= 0 && Sender != null && Sender.validate() && (Target == null || Target.validate()));
-
         }
 
         public override string ToString()
