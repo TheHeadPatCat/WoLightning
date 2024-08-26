@@ -567,15 +567,18 @@ public class ConfigWindow : Window, IDisposable
                         debugOpData,
                         debugPlayerTarget);
             }
+
+            if (ImGui.Button("Test OnRequest()"))
+            {
+                Plugin.Authentification.gotRequest = true;
+                Plugin.ShowMasterUI();
+            }
+
             ImGui.EndTabItem();
         }
 
 
-        if(ImGui.Button("Test OnRequest()"))
-        {
-            Plugin.Authentification.gotRequest = true;
-            Plugin.ShowMasterUI();
-        }
+        
 
     }
     #endregion

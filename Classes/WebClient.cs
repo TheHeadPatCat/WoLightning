@@ -156,7 +156,7 @@ namespace WoLightning
         {
 
             Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
-            Plugin.Log($" -> Parameters using Override -  {overrideSettings[0]} {overrideSettings[1]}% for {overrideSettings[2]}s");
+            Plugin.Log($" -> Parameters using Override");
 
             //Validation of Data
             if (Plugin.Authentification.PishockName.Length < 3

@@ -178,9 +178,10 @@ public class MasterWindow : Window, IDisposable
         ImGui.Spacing();
         ImGui.Spacing();
         ImGui.Text("Statuslist");
+        int i = 0;
         foreach (var (name,sub) in Plugin.Authentification.OwnedSubs)
         {
-            if (sub.Online == null || sub.PluginActive == null) return;
+            if (sub.Online == null || sub.PluginActive == null) break;
             ImGui.Bullet();
             ImGui.SameLine();
             if ((bool)sub.Online) ImGui.TextColored(new Vector4(0, 1, 0, 1), $"{sub.Name}##{sub.getFullName()}");
@@ -190,7 +191,9 @@ public class MasterWindow : Window, IDisposable
             else ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(1, 0, 0, 1));
             if(ImGui.Button("Pluginstate"))togglePluginState(sub);
             ImGui.PopStyleColor();
+            i++;
         }
+        if (i == 0) ImGui.TextColored(new Vector4(0.6f, 0.6f, 0.6f, 0.8f), "Fetching Data...");
     }
 
     private void togglePluginState(Player sub)

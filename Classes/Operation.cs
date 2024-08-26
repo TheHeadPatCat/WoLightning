@@ -158,6 +158,7 @@ namespace WoLightning.Classes
                     {
                         Plugin.WebClient.Status = ConnectionStatus.Connected;
                         Plugin.Log("Logged into the Webserver!");
+
                         return null;
                     }
 
@@ -212,9 +213,19 @@ namespace WoLightning.Classes
 
                 // Master Mode
                 case OperationCode.RequestUpdateMaster:
+                    // Update Authentification with Master
+
+
+
                     return "Not Implemented";
                 case OperationCode.RequestUpdateSubs:
+                    // Update Authentification with Subs
+
+
+
                     return "Not Implemented";
+
+
                 case OperationCode.RequestBecomeSub:
                     // We received the request of another playing becoming our sub
                     if (responsePacket.Sender.equals(Plugin.LocalPlayer))
