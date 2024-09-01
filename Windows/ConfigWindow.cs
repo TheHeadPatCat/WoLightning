@@ -668,11 +668,11 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
-        List<RegexTrigger> triggers = Configuration.ActivePreset.CustomMessageTriggers;
+        List<RegexTrigger> Triggers = Configuration.ActivePreset.SayCustomMessage;
         ImGui.PushFont(UiBuilder.IconFont);
         if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
         {
-            Configuration.ActivePreset.CustomMessageTriggers.Add(new());
+            Configuration.ActivePreset.SayCustomMessage.Add(new("New Trigger"));
             Configuration.Save();
         }
         ImGui.PopFont();
@@ -689,14 +689,15 @@ public class ConfigWindow : Window, IDisposable
             ImGui.TableSetupColumn(" ", ImGuiTableColumnFlags.NoResize | ImGuiTableColumnFlags.WidthFixed | ImGuiTableColumnFlags.NoSort);
             ImGui.TableHeadersRow();
 
-            for (int i = 0; i < triggers.Count; i++)
+            for (int i = 0; i < Triggers.Count; i++)
             {
-                var trigger = triggers[i];
+                var trigger = Triggers[i];
 
                 ImGui.PushID(trigger.GUID.ToString());
 
+                bool isEnabled = trigger.IsEnabled();
                 ImGui.TableNextColumn();
-                if (ImGui.Checkbox("##enabled", ref trigger.Enabled))
+                if (ImGui.Checkbox("##enabled", ref isEnabled))
                 {
                     Configuration.Save();
                 }
@@ -705,9 +706,10 @@ public class ConfigWindow : Window, IDisposable
                     ImGui.SetTooltip("Enable the trigger to be used.");
                 }
 
+                string name = trigger.Name;
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
-                if (ImGui.InputTextWithHint("##name", "", ref trigger.Name, 100))
+                if (ImGui.InputTextWithHint("##name", "", ref name, 100))
                 {
                     Configuration.Save();
                 }
@@ -746,26 +748,28 @@ public class ConfigWindow : Window, IDisposable
                     Configuration.Save();
                 }
 
+                int opMode = (int)trigger.OpMode;
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
-                if (ImGui.Combo("##mode", ref trigger.Mode, ["Shock", "Vibrate", "Beep"], 3))
+                if (ImGui.Combo("##mode", ref opMode, ["Shock", "Vibrate", "Beep"], 3))
+                {
+                    trigger.OpMode = (OpMode)opMode;
+                    Configuration.Save();
+                }
+
+                int duration = trigger.Duration;
+                ImGui.TableNextColumn();
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
+                if (ImGui.SliderInt("##duration", ref duration, 1, 10))
                 {
                     Configuration.Save();
                 }
 
+                int intensity = trigger.Intensity;
                 ImGui.TableNextColumn();
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
-                if (ImGui.SliderInt("##duration", ref trigger.Duration, 1, 10))
+                if (ImGui.SliderInt("##intensity", ref intensity, 1, 100))
                 {
-                    trigger.Duration = checkDuration(trigger.Duration);
-                    Configuration.Save();
-                }
-
-                ImGui.TableNextColumn();
-                ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
-                if (ImGui.SliderInt("##intensity", ref trigger.Intensity, 1, 100))
-                {
-                    trigger.Intensity = checkIntensity(trigger.Intensity);
                     Configuration.Save();
                 }
 
@@ -773,7 +777,7 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.PushFont(UiBuilder.IconFont);
                 if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
                 {
-                    Configuration.ActivePreset.CustomMessageTriggers.Remove(trigger);
+                    Configuration.ActivePreset.SayCustomMessage.Remove(trigger);
                     Configuration.Save();
                 }
                 ImGui.PopFont();
@@ -783,33 +787,6 @@ public class ConfigWindow : Window, IDisposable
             ImGui.EndTable();
         }
     }
-
-    private int checkDuration(int duration)
-    {
-        if (duration < 1)
-        {
-            return duration = 1;
-        }
-        else if (duration > 10)
-        {
-            return duration = 10;
-        }
-        return duration;
-    }
-
-    private int checkIntensity(int intensity)
-    {
-        if (intensity < 1)
-        {
-            return intensity = 1;
-        }
-        else if (intensity > 100)
-        {
-            return intensity = 100;
-        }
-        return intensity;
-    }
-
 
     private void createEntry(Trigger TriggerObject, string Description)
     {
@@ -853,7 +830,7 @@ public class ConfigWindow : Window, IDisposable
         int OpMode = (int)TriggerObject.OpMode;
         if (ImGui.Combo("##" + TriggerObject.Name, ref OpMode, ["Shock", "Vibrate", "Beep"], 3))
         {
-            TriggerObject.OpMode = (OpType)OpMode;
+            TriggerObject.OpMode = (OpMode)OpMode;
             changed = true;
         }
         ImGui.EndGroup();

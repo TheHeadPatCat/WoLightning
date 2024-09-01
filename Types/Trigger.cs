@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace WoLightning.Types
 {
-    public enum OpType
+    public enum OpMode
     {
         Shock = 0,
         Vibrate = 1,
@@ -15,7 +16,7 @@ namespace WoLightning.Types
     {
 
         public string Name { get; set; } // Name of the Trigger itself, used for Logging
-        public OpType OpMode { get; set; } = OpType.Shock;
+        public OpMode OpMode { get; set; } = OpMode.Shock;
         public int Intensity { get; set; } = 1;
         public int Duration { get; set; } = 1;
         public int Cooldown { get; set; } = 0;
@@ -28,6 +29,12 @@ namespace WoLightning.Types
         public Trigger(string Name)
         {
             this.Name = Name;
+        }
+
+        public Trigger(string Name, bool hasCustomData)
+        {
+            this.Name = Name;
+            setupCustomData();
         }
 
         public bool Validate()
@@ -78,5 +85,15 @@ namespace WoLightning.Types
             }
         }
 
+    }
+
+    public class RegexTrigger: Trigger
+    {
+        public Guid GUID = Guid.NewGuid();
+        public string RegexString = "(?!)";
+        public Regex? Regex = new Regex("(?!)");
+        public RegexTrigger(string Name) : base(Name)
+        {
+        }
     }
 }

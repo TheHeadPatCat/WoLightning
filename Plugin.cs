@@ -328,3 +328,14 @@ public sealed class Plugin : IDalamudPlugin
 
 
 }
+
+
+/*
+ * Random Notes
+ * Add Positionals as a trigger?
+ * 
+ * 
+ * 
+ * 
+ * 
+ */

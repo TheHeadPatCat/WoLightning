@@ -329,6 +329,9 @@ namespace WoLightning
             Plugin.Log(LocalPlayer.StatusList.ToString(),true);
         }
 
+
+
+        // Todo: Readd Deathroll
         public unsafe void HandleChatMessage(XivChatType type, int timespamp, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
             if (Plugin.ClientState.LocalPlayer == null)
@@ -385,14 +388,14 @@ namespace WoLightning
             }
             if (ActivePreset.Channels.Contains(chatType.Value)) //If the channel can be selected and is activated by the user
             {
-                List<RegexTrigger> triggers = ActivePreset.CustomMessageTriggers;
+                List<RegexTrigger> triggers = ActivePreset.SayCustomMessage;
                 foreach (RegexTrigger trigger in triggers)
                 {
                     Plugin.Log(message.TextValue,true);
-                    if (trigger.Enabled && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
+                    if (trigger.IsEnabled() && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
                         Plugin.Log($"Trigger {trigger.Name} triggered. Zap!");
-                        //Plugin.WebClient.sendPishockRequest(ActivePreset.) todo rework
+                        Plugin.WebClient.sendPishockRequest(trigger);
                     }
                 }
             }
