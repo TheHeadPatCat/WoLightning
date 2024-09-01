@@ -22,7 +22,15 @@ public class MasterWindow : Window, IDisposable
     {
         Plugin = plugin;
         Configuration = new Configuration();
-        Configuration.Initialize(Plugin, true, Plugin.ConfigurationDirectoryPath);
+        try
+        {
+            Configuration.Initialize(Plugin, true, Plugin.ConfigurationDirectoryPath);
+        }
+        catch
+        {
+            Configuration = new Configuration();
+            Configuration.Save();
+        }
         Flags = ImGuiWindowFlags.AlwaysUseWindowPadding;
         SizeConstraints = new WindowSizeConstraints
         {

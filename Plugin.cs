@@ -27,7 +27,7 @@ public sealed class Plugin : IDalamudPlugin
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const int currentVersion = 310;
+    public const int currentVersion = 400;
     public const string randomKey = "Currently Unused";
 
     public string? ConfigurationDirectoryPath { get; set; }
@@ -147,8 +147,16 @@ public sealed class Plugin : IDalamudPlugin
             TextLog = new TextLog(this, ConfigurationDirectoryPath);
 
             Configuration = new Configuration();
-
-            Configuration.Initialize(this, false, ConfigurationDirectoryPath);
+            try
+            {
+                Configuration.Initialize(this, false, ConfigurationDirectoryPath);
+            }
+            catch
+            {
+                Configuration = new Configuration();
+                Configuration.Save();
+                sendNotif("Your Configuration has been reset!");
+            }
 
             Authentification = new Authentification(ConfigurationDirectoryPath);
 
