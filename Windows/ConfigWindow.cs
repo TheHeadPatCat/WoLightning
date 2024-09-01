@@ -695,15 +695,16 @@ public class ConfigWindow : Window, IDisposable
 
                 ImGui.PushID(trigger.GUID.ToString());
 
+                createShockerSelector(trigger);
                 bool isEnabled = trigger.IsEnabled();
                 ImGui.TableNextColumn();
                 if (ImGui.Checkbox("##enabled", ref isEnabled))
                 {
-                    Configuration.Save();
+                    ImGui.OpenPopup($"Select Shockers##selectShockers{trigger.Name}");
                 }
                 if (ImGui.IsItemHovered())
                 {
-                    ImGui.SetTooltip("Enable the trigger to be used.");
+                    ImGui.SetTooltip("Select on which shockers this trigger is enabled.");
                 }
 
                 string name = trigger.Name;
@@ -711,6 +712,7 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
                 if (ImGui.InputTextWithHint("##name", "", ref name, 100))
                 {
+                    trigger.Name = name;
                     Configuration.Save();
                 }
 
@@ -740,10 +742,9 @@ public class ConfigWindow : Window, IDisposable
                     {
                         trigger.Regex = new Regex(trigger.RegexString);
                     }
-                    catch (ArgumentException ex)
+                    catch
                     {
                         trigger.Regex = null;
-                        Plugin.Log(ex);
                     }
                     Configuration.Save();
                 }
@@ -762,6 +763,7 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
                 if (ImGui.SliderInt("##duration", ref duration, 1, 10))
                 {
+                    trigger.Duration = duration;
                     Configuration.Save();
                 }
 
@@ -770,6 +772,7 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth());
                 if (ImGui.SliderInt("##intensity", ref intensity, 1, 100))
                 {
+                    trigger.Intensity = intensity;
                     Configuration.Save();
                 }
 

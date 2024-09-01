@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace WoLightning.Types
@@ -26,15 +27,10 @@ namespace WoLightning.Types
 
         [NonSerialized] public bool isModalOpen = true; // Used for Configwindow
 
+        
         public Trigger(string Name)
         {
             this.Name = Name;
-        }
-
-        public Trigger(string Name, bool hasCustomData)
-        {
-            this.Name = Name;
-            setupCustomData();
         }
 
         public bool Validate()
@@ -87,6 +83,7 @@ namespace WoLightning.Types
 
     }
 
+    [Serializable]
     public class RegexTrigger: Trigger
     {
         public Guid GUID = Guid.NewGuid();
@@ -94,6 +91,7 @@ namespace WoLightning.Types
         public Regex? Regex = new Regex("(?!)");
         public RegexTrigger(string Name) : base(Name)
         {
+            base.Name = Name;
         }
     }
 }

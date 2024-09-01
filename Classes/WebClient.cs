@@ -269,14 +269,22 @@ namespace WoLightning
 
             Plugin.Log($"Requesting Information for {ShareCode}...");
 
+            Shocker? shocker = Plugin.Authentification.PishockShockers.Find(shocker => shocker.Code == ShareCode);
+            if(shocker == null)
+            {
+                Plugin.Log(" -> Aborted as the Shocker couldnt be found!");
+                return;
+            }
+
             if (Plugin.Authentification.PishockName.Length < 3
                || Plugin.Authentification.PishockApiKey.Length < 16)
             {
                 Plugin.Log(" -> Aborted due to invalid Account Settings!");
+                shocker.Status = ShockerStatus.InvalidUser;
                 return;
             }
-            Plugin.Log($" -> Data Validated. Creating Requests...");
-
+            
+            Plugin.Log($" -> Data Validated. Creating Request...");
 
             using StringContent jsonContent = new(
             JsonSerializer.Serialize(new
@@ -289,20 +297,30 @@ namespace WoLightning
             Encoding.UTF8,
             "application/json");
 
-            Shocker shocker = Plugin.Authentification.PishockShockers.Find(shocker => shocker.Code == ShareCode);
-            if (shocker == null) return;
             shocker.Status = ShockerStatus.Unchecked;
             try
             {
                 var s = await ClientClean.PostAsync("https://do.pishock.com/api/GetShockerInfo", jsonContent);
-                if (s.StatusCode == HttpStatusCode.OK)
-                    processPishockResponse(s.Content, shocker);
-                else shocker.Status = ShockerStatus.Offline;
+                switch (s.StatusCode)
+                {
+                    case HttpStatusCode.OK:
+                        processPishockResponse(s.Content, shocker);
+                        break;
+
+                    case HttpStatusCode.NotFound:
+                        shocker.Status = ShockerStatus.DoesntExist;
+                        break;
+
+                    default:
+                        shocker.Status = ShockerStatus.NotAuthorized;
+                        break;
+                }
             }
             catch (Exception ex)
             {
                 Plugin.Error(ex.ToString());
                 Plugin.Error("Error when sending post request to pishock api");
+                shocker.Status = ShockerStatus.InvalidUser;
             }
         }
 
@@ -314,6 +332,10 @@ namespace WoLightning
                 || Plugin.Authentification.PishockApiKey.Length < 16)
             {
                 Plugin.Log(" -> Aborted due to invalid Account Settings!");
+                foreach (var shocker in Plugin.Authentification.PishockShockers)
+                {
+                    shocker.Status = ShockerStatus.InvalidUser;
+                }
                 return;
             }
             Plugin.Log($" -> Data Validated. Creating Requests...");
@@ -336,10 +358,20 @@ namespace WoLightning
                 try
                 {
                     var s = await ClientClean.PostAsync("https://do.pishock.com/api/GetShockerInfo", jsonContent);
+                    switch (s.StatusCode)
+                    {
+                        case HttpStatusCode.OK:
+                            processPishockResponse(s.Content, shocker);
+                            break;
 
-                    if (s.StatusCode == HttpStatusCode.OK)
-                        processPishockResponse(s.Content, shocker);
-                    else shocker.Status = ShockerStatus.Offline;
+                        case HttpStatusCode.NotFound:
+                            shocker.Status = ShockerStatus.DoesntExist;
+                            break;
+
+                        default:
+                            shocker.Status = ShockerStatus.NotAuthorized;
+                            break;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -401,6 +433,7 @@ namespace WoLightning
                     case HttpStatusCode.Locked:
                         Status = ConnectionStatus.DevMode;
                         Plugin.Log("The Server is currently in DevMode.");
+                        severWebserverConnection();
                         break;
 
                     // Softerrors DEPRECATED
@@ -574,6 +607,7 @@ namespace WoLightning
             using (var reader = new StreamReader(response.ReadAsStream()))
             {
                 string message = reader.ReadToEnd();
+                Plugin.Log(message);
                 message = message.Replace("\"", "");
                 message = message.Replace("{", "");
                 message = message.Replace("}", "");

@@ -19,12 +19,12 @@ namespace WoLightning.Types
         public Trigger GetPat { get; set; } = new Trigger("GetPat");
         public Trigger LoseDeathRoll { get; set; } = new Trigger("LoseDeathroll");
         public Trigger SayFirstPerson { get; set; } = new Trigger("SayFirstPerson");
-        public Trigger SayBadWord = new Trigger("SayBadWord", true);
-        public Trigger DontSayWord = new Trigger("DontSayWord", true);
+        public Trigger SayBadWord = new Trigger("SayBadWord");
+        public Trigger DontSayWord = new Trigger("DontSayWord");
 
         // Combat Triggers
-        public Trigger TakeDamage { get; set; } = new Trigger("TakeDamage", true);
-        public Trigger FailMechanic { get; set; } = new Trigger("FailMechanic", true);
+        public Trigger TakeDamage { get; set; } = new Trigger("TakeDamage");
+        public Trigger FailMechanic { get; set; } = new Trigger("FailMechanic");
         public Trigger Die { get; set; } = new Trigger("Die");
         public Trigger PartymemberDies { get; set; } = new Trigger("PartymemberDies");
         public Trigger Wipe { get; set; } = new Trigger("Wipe");

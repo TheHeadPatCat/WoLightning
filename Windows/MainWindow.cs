@@ -69,6 +69,11 @@ public class MainWindow : Window, IDisposable
 
                 case ConnectionStatus.Unavailable:
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "The web server is temporarily unavailable.\nAll other functions still work."); break;
+                case ConnectionStatus.DevMode:
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "The web server is being worked on.\nAll other functions still work."); break;
+                default:
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Received unknown response - are we up to date?"); break;
+
             }
 
             if (((int)Plugin.WebClient.Status) < 199)
@@ -175,11 +180,19 @@ public class MainWindow : Window, IDisposable
                     ImGui.SameLine();
                     switch (target.Status)
                     {
+                        case ShockerStatus.Unchecked: ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Requesting Data..."); break;
+                        case ShockerStatus.InvalidUser: ImGui.TextColored(new Vector4(1, 0, 0, 1), "Invalid Userdata"); break;
+
                         case ShockerStatus.Online: ImGui.TextColored(new Vector4(0, 1, 0, 1), "Online!"); break;
                         case ShockerStatus.Paused: ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Paused"); break;
-                        case ShockerStatus.Unchecked: ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Requesting Data..."); break;
+                        case ShockerStatus.Offline: ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Offline"); break;
+
+                        case ShockerStatus.NotAuthorized: ImGui.TextColored(new Vector4(1, 0, 0, 1), "Not Authorized!"); break;
+                        case ShockerStatus.DoesntExist: ImGui.TextColored(new Vector4(1, 0, 0, 1), "Invalid Sharecode!"); break;
+                        case ShockerStatus.AlreadyUsed: ImGui.TextColored(new Vector4(1, 0, 0, 1), "Sharecode is already used!"); break;
+
                         default:
-                            ImGui.TextColored(new Vector4(0.7f, 0, 0, 1), "Unavailable"); break;
+                            ImGui.TextColored(new Vector4(0.7f, 0, 0, 1), "Unknown Response"); break;
 
                     }
                     ImGui.Text(target.Name);

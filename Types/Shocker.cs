@@ -13,6 +13,8 @@ namespace WoLightning.Types
         NotAuthorized = 100,
         DoesntExist = 101,
         AlreadyUsed = 102,
+
+        InvalidUser = 103,
     }
 
     [Serializable]
