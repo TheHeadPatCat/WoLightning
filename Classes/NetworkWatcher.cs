@@ -343,7 +343,7 @@ namespace WoLightning
 
             string sender = senderE.ToString().ToLower();
 
-            Plugin.Log($"[Message] {type} - {sender} - {message}");
+            //Plugin.Log($"[Message] {type} - {sender} - {message}");
 
             if ((int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString().ToLower() == sender) // its proooobably a social message
             {

@@ -213,6 +213,7 @@ public class MainWindow : Window, IDisposable
                 {
                     Plugin.Authentification.Save();
                     Plugin.WebClient.requestPishockInfoAll();
+                    Plugin.validateShockerAssignments();
                     //Plugin.WebClient.sendPishockTestAll();
                 }
             }

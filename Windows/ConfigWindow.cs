@@ -411,7 +411,7 @@ public class ConfigWindow : Window, IDisposable
     {
         if (ImGui.BeginTabItem("Default Triggers"))
         {
-            ImGui.Text("Default triggers will always be prioritized over custom triggers, if passthrough is not enabled.");
+            ImGui.TextWrapped("These Triggers are premade to react to certain ingame events!\nThey will always be prioritized over custom triggers, if passthrough is not enabled.");
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
             DrawSocial();
             DrawCombat();
@@ -668,6 +668,9 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
+
+        ImGui.TextWrapped("These options let you set Letters,Words or Phrases that will trigger specified settings!");
+
         List<RegexTrigger> Triggers = Configuration.ActivePreset.SayCustomMessage;
         ImGui.PushFont(UiBuilder.IconFont);
         if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))

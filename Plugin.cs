@@ -6,8 +6,11 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection.Metadata;
 using WoLightning.Classes;
 using WoLightning.Types;
 using WoLightning.Windows;
@@ -219,6 +222,36 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler(OpenConfigFolder);
     }
 
+    public void validateShockerAssignments() // Goes through all Triggers and finds Shockers that are no longer saved - then deletes them.
+    {
+        List<Shocker> shockers = Authentification.PishockShockers;
+        foreach (var property in typeof(Preset).GetProperties())
+        {
+            //Log($"{property.Name} - {property.PropertyType}");
+            if (property.PropertyType == typeof(Trigger))
+            {
+                object? obj = property.GetValue(Configuration.ActivePreset);
+                if (obj == null) break;
+                Trigger t = (Trigger)obj;
+                bool[] marked = new bool[t.Shockers.Count];
+                int i = 0;
+                foreach(Shocker sh in t.Shockers)
+                {
+                    if (!shockers.Contains(sh)) marked[i] = true;
+                    i++;
+                }
+                i = 0;
+                foreach(bool del in marked)
+                {
+                    if (del) t.Shockers.RemoveAt(i);
+                    i++;
+                }
+            }
+        }
+        Configuration.Save();
+    }
+
+
     private void OnCommand(string command, string args)
     {
         ToggleMainUI();
@@ -237,12 +270,10 @@ public sealed class Plugin : IDalamudPlugin
         Process.Start(new ProcessStartInfo { Arguments = ConfigurationDirectoryPath, FileName = "explorer.exe" });
     }
     private void DrawUI() => WindowSystem.Draw();
-
     public void ToggleConfigUI() => ConfigWindow.Toggle();
     public void ToggleMainUI() => MainWindow.Toggle();
     public void ToggleMasterUI() => MasterWindow.Toggle();
     public void ToggleMasterConfigUI() => MasterWindow.CopiedConfigWindow.Toggle();
-
     public void ShowMasterUI() => MasterWindow.Open();
 
     #region Logging
