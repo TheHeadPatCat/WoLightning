@@ -331,7 +331,7 @@ namespace WoLightning
 
 
 
-        // Todo: Readd Deathroll
+        
         public unsafe void HandleChatMessage(XivChatType type, int timespamp, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
             if (Plugin.ClientState.LocalPlayer == null)
@@ -342,6 +342,8 @@ namespace WoLightning
             if (message == null) return; //sanity check in case we get sent bad data
 
             string sender = senderE.ToString().ToLower();
+
+            Plugin.Log($"[Message] {type} - {sender} - {message}");
 
             if ((int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString().ToLower() == sender) // its proooobably a social message
             {
@@ -381,6 +383,25 @@ namespace WoLightning
             }
 
 
+            if((int)type == 2122 && ActivePreset.LoseDeathRoll.IsEnabled()) // Deathroll
+            {
+                
+                string[] parts = message.ToString().Split(" ");
+                if (parts[1].Length < 6) // check if the name is "You" or similiar, as different languages exist
+                {
+                    foreach (string part in parts)
+                    {
+                        if (char.IsDigit(part[0])) // this is a number
+                        {
+                            if (part.Length == 1 && part == "1")
+                                Plugin.WebClient.sendPishockRequest(ActivePreset.LoseDeathRoll);
+                        }
+                    }
+                }
+            }
+
+
+
             ChatTypes? chatType = GetChatTypeFromXivChatType(type);
             if (chatType == null)
             {
@@ -394,7 +415,6 @@ namespace WoLightning
                     Plugin.Log(message.TextValue,true);
                     if (trigger.IsEnabled() && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
-                        Plugin.Log($"Trigger {trigger.Name} triggered. Zap!");
                         Plugin.WebClient.sendPishockRequest(trigger);
                     }
                 }
