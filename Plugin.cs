@@ -158,7 +158,21 @@ public sealed class Plugin : IDalamudPlugin
                 sendNotif("Your Configuration has been reset!");
             }
 
-            Authentification = new Authentification(ConfigurationDirectoryPath);
+            try
+            {
+                Authentification = new Authentification(ConfigurationDirectoryPath);
+                if (Authentification.Version < Configuration.Version)
+                {
+                    Authentification = new Authentification(ConfigurationDirectoryPath, true);
+                    sendNotif("Your Authentification has been reset!");
+                }
+            }
+            catch
+            {
+                Authentification = new Authentification(ConfigurationDirectoryPath, true);
+            }
+
+            
 
             LocalPlayerCharacter = ClientState.LocalPlayer;
             LocalPlayer = new Player(LocalPlayerCharacter.Name.ToString(), (int)LocalPlayerCharacter.HomeWorld.Id, Authentification.ServerKey, NetworkWatcher.running);

@@ -17,7 +17,7 @@ namespace WoLightning.Classes
     public class Authentification : IDisposable // This class is here to make sure the data that gets received from the server, is actually from this plugin (well not entirely, but it helps)
     {
 
-        public int Version { get; set; } = 1;
+        public int Version { get; set; } = 400;
         private string? ConfigurationDirectoryPath { get; init; }
 
         // Webserver things
@@ -74,6 +74,11 @@ namespace WoLightning.Classes
             if (File.Exists(ConfigurationDirectoryPath + "authentification.json")) f = File.ReadAllText(ConfigurationDirectoryPath + "authentification.json");
             Authentification s = DeserializeAuthentification(f);
             foreach (PropertyInfo property in typeof(Authentification).GetProperties().Where(p => p.CanWrite)) property.SetValue(this, property.GetValue(s, null), null);
+            Save();
+        }
+        public Authentification(string ConfigDirectoryPath, bool delete)
+        {
+            ConfigurationDirectoryPath = ConfigDirectoryPath;
             Save();
         }
 
