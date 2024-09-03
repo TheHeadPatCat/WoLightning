@@ -259,12 +259,14 @@ public sealed class Plugin : IDalamudPlugin
                 int i = 0;
                 foreach(Shocker sh in t.Shockers)
                 {
-                    if (!shockers.Contains(sh)) marked[i] = true;
+                    Log(sh);
+                    if (shockers.Find(sh2 => sh.Code == sh2.Code) == null) marked[i] = true;
                     i++;
                 }
                 i = 0;
                 foreach(bool del in marked)
                 {
+                    
                     if (del) t.Shockers.RemoveAt(i);
                     i++;
                 }

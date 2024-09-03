@@ -32,5 +32,7 @@ namespace WoLightning.Types
             Code = code;
         }
 
+        
+
     }
 }

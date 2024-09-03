@@ -897,17 +897,25 @@ public class ConfigWindow : Window, IDisposable
                 ImGui.TextWrapped("Please select all shockers that should activate for this trigger:");
                 foreach (var shocker in Plugin.Authentification.PishockShockers)
                 {
-                    bool isEnabled = TriggerObject.Shockers.Contains(shocker);
+                    bool isEnabled = TriggerObject.Shockers.Find(sh => sh.Code == shocker.Code) != null;
                     if (ImGui.Checkbox($"{shocker.Name}##shockerbox{shocker.Code}", ref isEnabled))
                     { // this could probably be solved more elegantly
                         if (isEnabled) TriggerObject.Shockers.Add(shocker);
-                        else TriggerObject.Shockers.Remove(shocker);
+                        else
+                        {
+                            TriggerObject.Shockers.RemoveAt(TriggerObject.Shockers.FindIndex(sh => sh.Code == shocker.Code));
+                        }
                     }
                 }
 
                 if (ImGui.Button($"Apply##apply{TriggerObject.Name}", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
                 {
                     ImGui.CloseCurrentPopup();
+                }
+
+                if (ImGui.Button($"Reset All##resetall{TriggerObject.Name}", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
+                {
+                    TriggerObject.Shockers.Clear();
                 }
             }
             ImGui.EndPopup();
