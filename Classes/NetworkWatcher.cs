@@ -343,9 +343,9 @@ namespace WoLightning
 
             string sender = senderE.ToString().ToLower();
 
-            //Plugin.Log($"[Message] {type} - {sender} - {message}");
+            Plugin.Log($"[Message] {type}({(int)type}) - {sender} - {message}");
 
-            if ((int)type <= 107 && Plugin.ClientState.LocalPlayer.Name.ToString().ToLower() == sender) // its proooobably a social message
+            if ((int)type <= 107 && sender.Contains(Plugin.ClientState.LocalPlayer.Name.ToString().ToLower())) // its proooobably a social message
             {
 
                 if (ActivePreset.SayBadWord.IsEnabled())
