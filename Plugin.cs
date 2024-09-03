@@ -27,7 +27,7 @@ public sealed class Plugin : IDalamudPlugin
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const int currentVersion = 401;
+    public const int currentVersion = 402;
     public const string randomKey = "Currently Unused";
 
     public string? ConfigurationDirectoryPath { get; set; }
@@ -247,6 +247,7 @@ public sealed class Plugin : IDalamudPlugin
     public void validateShockerAssignments() // Goes through all Triggers and finds Shockers that are no longer saved - then deletes them.
     {
         List<Shocker> shockers = Authentification.PishockShockers;
+        
         foreach (var property in typeof(Preset).GetProperties())
         {
             //Log($"{property.Name} - {property.PropertyType}");
@@ -255,6 +256,13 @@ public sealed class Plugin : IDalamudPlugin
                 object? obj = property.GetValue(Configuration.ActivePreset);
                 if (obj == null) break;
                 Trigger t = (Trigger)obj;
+
+                if (shockers.Count == 0)
+                {
+                    t.Shockers.Clear();
+                    break;
+                }
+
                 bool[] marked = new bool[t.Shockers.Count];
                 int i = 0;
                 foreach(Shocker sh in t.Shockers)
