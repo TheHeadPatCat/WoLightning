@@ -161,7 +161,7 @@ public sealed class Plugin : IDalamudPlugin
             try
             {
                 Authentification = new Authentification(ConfigurationDirectoryPath);
-                if (Authentification.Version < Configuration.Version)
+                if (Authentification.Version < new Authentification().Version)
                 {
                     Authentification = new Authentification(ConfigurationDirectoryPath, true);
                     sendNotif("Your Authentification has been reset!");
