@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
+using WoLightning.Classes;
 using WoLightning.Types;
 using static WoLightning.Types.ChatType;
 
@@ -343,7 +344,7 @@ namespace WoLightning
 
             string sender = senderE.ToString().ToLower();
 
-            Plugin.Log($"[Message] {type}({(int)type}) - {sender} - {message}");
+            //Plugin.Log($"[Message] {type}({(int)type}) - {sender} - {message}");
 
             if ((int)type <= 107 && sender.Contains(Plugin.ClientState.LocalPlayer.Name.ToString().ToLower())) // its proooobably a social message
             {
@@ -364,16 +365,10 @@ namespace WoLightning
                 //slightly different logic
                 if (ActivePreset.SayFirstPerson.IsEnabled())
                 {
-                    foreach (var word in message.ToString().Split(' '))
+                    String sanMessage = StringSanitizer.LetterOrDigit(message.ToString()).ToLower();
+                    foreach (var word in sanMessage.Split(' '))
                     {
-                        string sanWord = word.ToLower();
-                        sanWord = sanWord.Replace(".", "");
-                        sanWord = sanWord.Replace(",", "");
-                        sanWord = sanWord.Replace("!", "");
-                        sanWord = sanWord.Replace("?", "");
-                        sanWord = sanWord.Replace("\"", "");
-                        sanWord = sanWord.Replace("\'", "");
-                        if (FirstPersonWords.Contains(sanWord))
+                        if (FirstPersonWords.Contains(word))
                         {
                             Plugin.sendNotif($"You referred to yourself wrongly!");
                             Plugin.WebClient.sendPishockRequest(ActivePreset.SayFirstPerson);
