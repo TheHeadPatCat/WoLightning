@@ -14,8 +14,9 @@ namespace WoLightning
     [Serializable]
     public class Configuration : IPluginConfiguration, IDisposable
     {
-        public int PluginVersion { get; set; } = 401;
         public int Version { get; set; } = 401;
+
+
         public bool DebugEnabled { get; set; } = false;
         public bool LogEnabled { get; set; } = true;
 

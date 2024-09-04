@@ -254,13 +254,13 @@ public sealed class Plugin : IDalamudPlugin
             if (property.PropertyType == typeof(Trigger))
             {
                 object? obj = property.GetValue(Configuration.ActivePreset);
-                if (obj == null) break;
+                if (obj == null) continue;
                 Trigger t = (Trigger)obj;
 
                 if (shockers.Count == 0)
                 {
                     t.Shockers.Clear();
-                    break;
+                    continue;
                 }
 
                 bool[] marked = new bool[t.Shockers.Count];

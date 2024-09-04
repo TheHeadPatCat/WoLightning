@@ -337,12 +337,12 @@ namespace WoLightning
         {
             if (Plugin.ClientState.LocalPlayer == null)
             {
-                Plugin.Error("Wtf, LocalPlayer is null?",true);
+                Plugin.Error("Localplayer is null while we received a message - Ignoring...",true);
                 return;
             }
             if (message == null) return; //sanity check in case we get sent bad data
 
-            string sender = senderE.ToString().ToLower();
+            string sender = StringSanitizer.LetterOrDigit(senderE.ToString());
 
             //Plugin.Log($"[Message] {type}({(int)type}) - {sender} - {message}");
 

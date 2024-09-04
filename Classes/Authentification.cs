@@ -16,8 +16,9 @@ namespace WoLightning.Classes
 
     public class Authentification : IDisposable // This class is here to make sure the data that gets received from the server, is actually from this plugin (well not entirely, but it helps)
     {
-
         public int Version { get; set; } = 401;
+
+
         private string? ConfigurationDirectoryPath { get; init; }
 
         // Webserver things
