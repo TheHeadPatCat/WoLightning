@@ -311,11 +311,11 @@ namespace WoLightning
                 if (ActivePreset.TakeDamage.CustomData == null) ActivePreset.TakeDamage.setupCustomData(); //failsafe
                 if (ActivePreset.TakeDamage.CustomData["Proportional"][0] == 1)
                 {
-                    //int calcdIntensity = ActivePreset.TakeDamage.Intensity * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]);
-                    //int calcdDuration = ActivePreset.TakeDamage.Duration * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]);
-                    //Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
+                    int calcdIntensity = (int) (ActivePreset.TakeDamage.Intensity * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
+                    int calcdDuration = (int) (ActivePreset.TakeDamage.Duration * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
+                    Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
                 }
-                Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage);
+                else Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage);
             }
             if (lastHP > 0) wasDead = false;
         }

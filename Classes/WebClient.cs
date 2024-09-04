@@ -156,7 +156,7 @@ namespace WoLightning
         {
 
             Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
-            Plugin.Log($" -> Parameters using Override");
+            
 
             //Validation of Data
             if (Plugin.Authentification.PishockName.Length < 3
@@ -189,6 +189,8 @@ namespace WoLightning
             if (overrideSettings[1] > 100) overrideSettings[1] = 100;
             if (overrideSettings[2] < 1) overrideSettings[2] = 1;
             if (overrideSettings[2] > 10) overrideSettings[2] = 10;
+
+            Plugin.Log($" -> Parameters -  {overrideSettings[0]} {overrideSettings[1]}% for {overrideSettings[2]}s");
 
             Plugin.Log($" -> Data Validated. Creating Requests...");
 
