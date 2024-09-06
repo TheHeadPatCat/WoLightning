@@ -344,7 +344,7 @@ namespace WoLightning
 
             string sender = StringSanitizer.LetterOrDigit(senderE.ToString());
 
-            //Plugin.Log($"[Message] {type}({(int)type}) - {sender} - {message}");
+            
 
             if ((int)type <= 107 && sender.Contains(Plugin.ClientState.LocalPlayer.Name.ToString().ToLower())) // its proooobably a social message
             {
@@ -378,9 +378,8 @@ namespace WoLightning
             }
 
 
-            if((int)type == 2122 && ActivePreset.LoseDeathRoll.IsEnabled()) // Deathroll
+            if((int)type == 2122 && ActivePreset.LoseDeathRoll.IsEnabled() && message.Payloads.Find(pay => pay.Type == PayloadType.Icon) != null) // Deathroll
             {
-                
                 string[] parts = message.ToString().Split(" ");
                 if (parts[1].Length < 6) // check if the name is "You" or similiar, as different languages exist
                 {
@@ -388,8 +387,12 @@ namespace WoLightning
                     {
                         if (char.IsDigit(part[0])) // this is a number
                         {
+                            Plugin.Log(part[0]);
                             if (part.Length == 1 && part == "1")
+                            {
                                 Plugin.WebClient.sendPishockRequest(ActivePreset.LoseDeathRoll);
+                                Plugin.sendNotif("You lost a Deathroll!");
+                            }
                         }
                     }
                 }
@@ -407,7 +410,7 @@ namespace WoLightning
                 List<RegexTrigger> triggers = ActivePreset.SayCustomMessage;
                 foreach (RegexTrigger trigger in triggers)
                 {
-                    Plugin.Log(message.TextValue,true);
+                    //Plugin.Log(message.TextValue,true);
                     if (trigger.IsEnabled() && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
                         Plugin.WebClient.sendPishockRequest(trigger);
