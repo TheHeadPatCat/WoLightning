@@ -413,7 +413,7 @@ namespace WoLightning
                     if (trigger.IsEnabled() && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
                         Plugin.WebClient.sendPishockRequest(trigger);
-                        Plugin.sendNotif("Custom Trigger " + trigger.Name + " was activated!");
+                        Plugin.sendNotif("[CT] " + trigger.Name + " triggered!");
                     }
                 }
             }
