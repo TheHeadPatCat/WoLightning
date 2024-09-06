@@ -630,6 +630,9 @@ public class ConfigWindow : Window, IDisposable
     }
     private void DrawCustomChats()
     {
+
+        ImGui.TextWrapped("These options let you set letters, words or phrases that will trigger specified settings!\nIt's important to note that ANYONE can cause these to activate!\nExcept if you set it up to only react to your playername, of course.");
+
         if (!ImGui.CollapsingHeader("Custom Trigger Channels"))
         {
             return;
@@ -668,8 +671,6 @@ public class ConfigWindow : Window, IDisposable
         {
             return;
         }
-
-        ImGui.TextWrapped("These options let you set Letters,Words or Phrases that will trigger specified settings!");
 
         List<RegexTrigger> Triggers = Configuration.ActivePreset.SayCustomMessage;
         ImGui.PushFont(UiBuilder.IconFont);

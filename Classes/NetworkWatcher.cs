@@ -387,7 +387,6 @@ namespace WoLightning
                     {
                         if (char.IsDigit(part[0])) // this is a number
                         {
-                            Plugin.Log(part[0]);
                             if (part.Length == 1 && part == "1")
                             {
                                 Plugin.WebClient.sendPishockRequest(ActivePreset.LoseDeathRoll);
@@ -414,6 +413,7 @@ namespace WoLightning
                     if (trigger.IsEnabled() && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
                         Plugin.WebClient.sendPishockRequest(trigger);
+                        Plugin.sendNotif("Custom Trigger " + trigger.Name + " was activated!");
                     }
                 }
             }
