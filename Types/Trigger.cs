@@ -39,7 +39,7 @@ namespace WoLightning.Types
             if (Intensity < 1) Intensity = 1;
             if (Intensity > 100) Intensity = 100;
             if (Duration < 1) Duration = 1;
-            if (Duration > 10) Duration = 10;
+            if (Duration > 10 && Duration != 100 && Duration != 300) Duration = 10;
             return !(Shockers.Count < 1 || Shockers.Count > 5);
         }
         public bool IsEnabled()

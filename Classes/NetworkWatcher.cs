@@ -342,9 +342,7 @@ namespace WoLightning
             }
             if (message == null) return; //sanity check in case we get sent bad data
 
-            string sender = StringSanitizer.LetterOrDigit(senderE.ToString());
-
-            
+            string sender = StringSanitizer.LetterOrDigit(senderE.ToString()).ToLower();
 
             if ((int)type <= 107 && sender.Contains(Plugin.ClientState.LocalPlayer.Name.ToString().ToLower())) // its proooobably a social message
             {

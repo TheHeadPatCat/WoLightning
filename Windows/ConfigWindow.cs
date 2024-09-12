@@ -10,6 +10,7 @@ using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Timers;
@@ -27,6 +28,8 @@ public class ConfigWindow : Window, IDisposable
     private Plugin Plugin;
 
     private int presetIndex = 0;
+
+    List<int> durationArray = [100, 300, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
     // Badword List
     private String WordListInput = new String("");
@@ -844,8 +847,20 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.SameLine();
         ImGui.BeginGroup();
+        ImGui.Text("    Duration");
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 7);
+        int DurationIndex = durationArray.IndexOf(TriggerObject.Duration);
+        if (ImGui.Combo("##Duration" + TriggerObject.Name, ref DurationIndex, ["0.1s", "0.3s", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"], 12))
+        {
+            TriggerObject.Duration = durationArray[DurationIndex];
+            changed = true;
+        }
+        ImGui.EndGroup();
+
+        ImGui.SameLine();
+        ImGui.BeginGroup();
         ImGui.Text("    Intensity");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 1.77f - 30);
         int Intensity = TriggerObject.Intensity;
         if (ImGui.SliderInt("##Intensity" + TriggerObject.Name, ref Intensity, 1, 100))
         {
@@ -854,17 +869,7 @@ public class ConfigWindow : Window, IDisposable
         }
         ImGui.EndGroup();
 
-        ImGui.SameLine();
-        ImGui.BeginGroup();
-        ImGui.Text("    Duration");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
-        int Duration = TriggerObject.Duration;
-        if (ImGui.SliderInt("##Duration" + TriggerObject.Name, ref Duration, 1, 10))
-        {
-            TriggerObject.Duration = Duration;
-            changed = true;
-        }
-        ImGui.EndGroup();
+        
 
         if (TriggerObject.Name == "TakeDamage") createProportional(TriggerObject, "Amount of Health% to lose to hit the Limit.", 1, 100);
         if (TriggerObject.Name == "FailMechanic") createProportional(TriggerObject, "Amount of Stacks needed to hit the Limit.", 1, 8);

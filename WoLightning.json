@@ -3,7 +3,7 @@
   "Name": "Warrior of Lightning",
   "Punchline": "A integration for Pishock devices",
   "Description": "Open the main window with /wol",
-  "Changelog": " # 0.4.0.3 Warrior of Lightning \n\n Implemented Changelogs",
+  "Changelog": " # 0.4.0.4 Warrior of Lightning \n\n Small fixes and several changes in descriptions.",
   "AcceptsFeedback": true,
   "FeedbackMessage":  "Thank you for your Feedback!",
   "ApplicableVersion": "any",
