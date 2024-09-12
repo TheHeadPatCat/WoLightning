@@ -17,6 +17,7 @@ namespace WoLightning.Types
 
         // Social Triggers
         public Trigger GetPat { get; set; } = new Trigger("GetPat");
+        public Trigger GetSnapped { get; set;} = new Trigger("GetSnapped");
         public Trigger LoseDeathRoll { get; set; } = new Trigger("LoseDeathroll");
         public Trigger SayFirstPerson { get; set; } = new Trigger("SayFirstPerson");
         public Trigger SayBadWord = new Trigger("SayBadWord");

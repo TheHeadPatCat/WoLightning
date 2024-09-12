@@ -591,6 +591,7 @@ public class ConfigWindow : Window, IDisposable
         }
 
         createEntry(Configuration.ActivePreset.GetPat, "Triggers whenever you get /pet.");
+        createEntry(Configuration.ActivePreset.GetSnapped, "Triggers whenever you get /snap at.");
         createEntry(Configuration.ActivePreset.LoseDeathRoll, "Trigger whenever you lose a deathroll.",
             "Deathroll is when you use /random against another player to see who reaches 1 first.");
 

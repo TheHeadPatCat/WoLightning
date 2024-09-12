@@ -456,6 +456,11 @@ namespace WoLightning
                 Plugin.sendNotif($"You got headpatted by {sourceObj.Name}!");
                 Plugin.WebClient.sendPishockRequest(ActivePreset.GetPat);
             }
+            if (ActivePreset.GetSnapped.IsEnabled() && emoteId == 205)
+            {
+                Plugin.sendNotif($"You got snapped at by {sourceObj.Name}!");
+                Plugin.WebClient.sendPishockRequest(ActivePreset.GetSnapped);
+            }
 
         }
 
