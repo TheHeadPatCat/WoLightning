@@ -833,7 +833,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Mode");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 50);
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 4 - 50);
         int OpMode = (int)TriggerObject.OpMode;
         if (ImGui.Combo("##" + TriggerObject.Name, ref OpMode, ["Shock", "Vibrate", "Beep"], 3))
         {
@@ -845,7 +845,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Intensity");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 4);
         int Intensity = TriggerObject.Intensity;
         if (ImGui.SliderInt("##Intensity" + TriggerObject.Name, ref Intensity, 1, 100))
         {
@@ -857,11 +857,23 @@ public class ConfigWindow : Window, IDisposable
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Duration");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3);
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 4);
         int Duration = TriggerObject.Duration;
         if (ImGui.SliderInt("##Duration" + TriggerObject.Name, ref Duration, 1, 10))
         {
             TriggerObject.Duration = Duration;
+            changed = true;
+        }
+        ImGui.EndGroup();
+
+        ImGui.SameLine();
+        ImGui.BeginGroup();
+        ImGui.Text("    Mini Shock");
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 4 - 5);
+        int MiniShock = TriggerObject.MiniShock;
+        if (ImGui.Combo("##MiniShock" + TriggerObject.Name, ref MiniShock, ["False", "True"], 2))
+        {
+            TriggerObject.MiniShock = MiniShock;
             changed = true;
         }
         ImGui.EndGroup();

@@ -132,7 +132,7 @@ namespace WoLightning
                 Name = "WoLPlugin",
                 Code = shocker.Code,
                 Intensity = TriggerObject.Intensity,
-                Duration = TriggerObject.Duration,
+                Duration = TriggerObject.MiniShock == 1 ? 300 : TriggerObject.Duration,
                 Apikey = Plugin.Authentification.PishockApiKey,
                 Op = (int)TriggerObject.OpMode,
             }),
