@@ -49,7 +49,7 @@ namespace WoLightning.Classes
         public bool gotRequest = false;
         [NonSerialized]
         public Player? targetSub;
-        
+
 
 
 

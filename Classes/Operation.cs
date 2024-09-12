@@ -163,12 +163,14 @@ namespace WoLightning.Classes
                     }
 
                     // We arent known to the server - register us.
-                    if (responsePacket.OpData != null && (responsePacket.OpData.Split("-")[1] == "NotRegistered")){
+                    if (responsePacket.OpData != null && (responsePacket.OpData.Split("-")[1] == "NotRegistered"))
+                    {
                         Plugin.WebClient.sendWebserverRequest(OperationCode.Register);
                         return null;
                     }
 
-                    if(responsePacket.OpData != null && (responsePacket.OpData.Equals("Fail-InvalidKey"))){
+                    if (responsePacket.OpData != null && (responsePacket.OpData.Equals("Fail-InvalidKey")))
+                    {
                         Plugin.WebClient.severWebserverConnection();
                         Plugin.WebClient.Status = ConnectionStatus.InvalidKey;
                         return "Cannot Login - Invalid Key";
@@ -232,12 +234,14 @@ namespace WoLightning.Classes
                     { // confirmation
                         return null;
                     }
-                    if(responsePacket.Sender == null || !responsePacket.Sender.validate()){
+                    if (responsePacket.Sender == null || !responsePacket.Sender.validate())
+                    {
                         Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Fail-InvalidSender");
                         return "Invalid Sender";
                     }
 
-                    if (Plugin.Authentification.OwnedSubs.ContainsKey(responsePacket.Sender.getFullName())){
+                    if (Plugin.Authentification.OwnedSubs.ContainsKey(responsePacket.Sender.getFullName()))
+                    {
                         Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Fail-AlreadyExists");
                         return "Already Exists";
                     }
@@ -277,11 +281,11 @@ namespace WoLightning.Classes
                     return "Invalid Response Received";
                 case OperationCode.RegisterMaster:
 
-                    if(responsePacket.Target == null)
+                    if (responsePacket.Target == null)
                     {
                         return "No Target Given";
                     }
-                    if(Plugin.Authentification.Master != null)
+                    if (Plugin.Authentification.Master != null)
                     {
                         Plugin.WebClient.sendWebserverRequest(OperationCode.RegisterSub, "Fail-AlreadyBound");
                         return "Already bound to a Master";
@@ -298,13 +302,13 @@ namespace WoLightning.Classes
                     return null;
 
                 case OperationCode.RegisterSub:
-                    if(Plugin.Authentification.targetSub == null) return "Invalid Request"; // We are not anticipating anyone - Dont accept the packet
+                    if (Plugin.Authentification.targetSub == null) return "Invalid Request"; // We are not anticipating anyone - Dont accept the packet
                     if (responsePacket.Target == null) return "No Sub given";
                     if (!Plugin.Authentification.targetSub.equals(responsePacket.Target)) return "Requested Sub and Saved Sub are not equal"; // This is not the Sub we expected to accept - Dont accept the packet
 
                     if (Plugin.Authentification.OwnedSubs.ContainsKey(responsePacket.Sender.getFullName()))
                     {
-                        Plugin.WebClient.sendWebserverRequest(OperationCode.RegisterSub, "Fail-AlreadyExists",responsePacket.Target);
+                        Plugin.WebClient.sendWebserverRequest(OperationCode.RegisterSub, "Fail-AlreadyExists", responsePacket.Target);
                         return "Already Exists";
                     }
 

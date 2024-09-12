@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace WoLightning.Types
 {
@@ -13,8 +10,9 @@ namespace WoLightning.Types
         public bool breaksAuthentification { get; set; }
         public List<String> Changes { get; set; }
 
-        public UpdateEntry() {
-            
+        public UpdateEntry()
+        {
+
         }
 
     }

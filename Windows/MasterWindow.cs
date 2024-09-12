@@ -81,25 +81,25 @@ public class MasterWindow : Window, IDisposable
 
 
 
-                ImGui.Text("\nPlease select the Player ingame, that you want to have as your Master.");
+            ImGui.Text("\nPlease select the Player ingame, that you want to have as your Master.");
 
-                IGameObject st = Plugin.TargetManager.Target;
-                if (!Plugin.Authentification.isRequesting && st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+            IGameObject st = Plugin.TargetManager.Target;
+            if (!Plugin.Authentification.isRequesting && st != null && st.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+            {
+                IPlayerCharacter st1 = (IPlayerCharacter)st;
+                if (selectedMaster == null || selectedMaster.Name != st1.Name.ToString())
                 {
-                    IPlayerCharacter st1 = (IPlayerCharacter)st;
-                    if (selectedMaster == null || selectedMaster.Name != st1.Name.ToString())
-                    {
-                        selectedMaster = new Player(st1.Name.ToString(), (int)st1.HomeWorld.Id);
-                    }
+                    selectedMaster = new Player(st1.Name.ToString(), (int)st1.HomeWorld.Id);
                 }
+            }
 
-                string playerName = "None";
-                if (selectedMaster != null) playerName = selectedMaster.Name;
-                ImGui.BeginDisabled();
-                ImGui.InputText("##selectedMaster", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
-                ImGui.EndDisabled();
-                ImGui.SameLine();
-                if (!Plugin.Authentification.isRequesting && ImGui.Button("X##removeSelectedMaster")) selectedMaster = null;
+            string playerName = "None";
+            if (selectedMaster != null) playerName = selectedMaster.Name;
+            ImGui.BeginDisabled();
+            ImGui.InputText("##selectedMaster", ref playerName, 512, ImGuiInputTextFlags.ReadOnly);
+            ImGui.EndDisabled();
+            ImGui.SameLine();
+            if (!Plugin.Authentification.isRequesting && ImGui.Button("X##removeSelectedMaster")) selectedMaster = null;
 
             if (selectedMaster != null && !selectedMaster.equals(Plugin.LocalPlayer))
             {
@@ -121,11 +121,11 @@ public class MasterWindow : Window, IDisposable
             {
                 // We have been rejected by the Master
                 ImGui.TextColored(new Vector4(1, 0, 0, 1), "The Player rejected your request.");
-                if(ImGui.Button("Okay##rejectionAccepted")) Plugin.Authentification.isRequesting = false;
+                if (ImGui.Button("Okay##rejectionAccepted")) Plugin.Authentification.isRequesting = false;
             }
         }
     }
-    
+
     private void drawIsSubmissive()
     {
         ImGui.TextColored(new Vector4(1, 0.6f, 1, 1), "Submission Status");
@@ -151,28 +151,28 @@ public class MasterWindow : Window, IDisposable
         }
         else if (Plugin.Authentification.gotRequest)
         {
-            
-                ImGui.Text("You have received a request from ");
-                ImGui.SameLine();
-                ImGui.TextColored(new Vector4(0.6f, 0, 0.6f, 1), /*Plugin.Authentification.targetSub.getFullName()*/ "Nobody");
-                ImGui.Separator();
 
-                ImGui.Text("They want to submit to you for the Mastermode.\nDo you accept?");
+            ImGui.Text("You have received a request from ");
+            ImGui.SameLine();
+            ImGui.TextColored(new Vector4(0.6f, 0, 0.6f, 1), /*Plugin.Authentification.targetSub.getFullName()*/ "Nobody");
+            ImGui.Separator();
 
-                // Todo: add button feedback
-                if (ImGui.Button("Accept", new Vector2(ImGui.GetWindowSize().X /2 - 10, 25)))
-                {
-                    Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-Accepted", Plugin.Authentification.targetSub);
-                    Plugin.Authentification.gotRequest = false;
-                }
-                ImGui.SameLine();
-                if (ImGui.Button("Reject", new Vector2(ImGui.GetWindowSize().X /2 - 10, 25)))
-                {
-                    Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-Rejected", Plugin.Authentification.targetSub);
+            ImGui.Text("They want to submit to you for the Mastermode.\nDo you accept?");
+
+            // Todo: add button feedback
+            if (ImGui.Button("Accept", new Vector2(ImGui.GetWindowSize().X / 2 - 10, 25)))
+            {
+                Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-Accepted", Plugin.Authentification.targetSub);
                 Plugin.Authentification.gotRequest = false;
-                }
-                
-            
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Reject", new Vector2(ImGui.GetWindowSize().X / 2 - 10, 25)))
+            {
+                Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-Rejected", Plugin.Authentification.targetSub);
+                Plugin.Authentification.gotRequest = false;
+            }
+
+
         }
     }
 
@@ -182,12 +182,12 @@ public class MasterWindow : Window, IDisposable
         ImGui.SameLine();
         ImGui.TextColored(new Vector4(0.6f, 0, 0.6f, 1), $"{Plugin.Authentification.OwnedSubs.Count} Submissives.");
         ImGui.Separator();
-        if(ImGui.Button("Open Preset Configurator"))CopiedConfigWindow.Toggle();
+        if (ImGui.Button("Open Preset Configurator")) CopiedConfigWindow.Toggle();
         ImGui.Spacing();
         ImGui.Spacing();
         ImGui.Text("Statuslist");
         int i = 0;
-        foreach (var (name,sub) in Plugin.Authentification.OwnedSubs)
+        foreach (var (name, sub) in Plugin.Authentification.OwnedSubs)
         {
             if (sub.Online == null || sub.PluginActive == null) break;
             ImGui.Bullet();
@@ -197,7 +197,7 @@ public class MasterWindow : Window, IDisposable
             ImGui.SameLine();
             if ((bool)sub.PluginActive) ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0, 1, 0, 1));
             else ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(1, 0, 0, 1));
-            if(ImGui.Button("Pluginstate"))togglePluginState(sub);
+            if (ImGui.Button("Pluginstate")) togglePluginState(sub);
             ImGui.PopStyleColor();
             i++;
         }

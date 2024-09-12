@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace WoLightning.Types
@@ -27,7 +26,7 @@ namespace WoLightning.Types
 
         [NonSerialized] public bool isModalOpen = true; // Used for Configwindow
 
-        
+
         public Trigger(string Name)
         {
             this.Name = Name;
@@ -84,7 +83,7 @@ namespace WoLightning.Types
     }
 
     [Serializable]
-    public class RegexTrigger: Trigger
+    public class RegexTrigger : Trigger
     {
         public Guid GUID = Guid.NewGuid();
         public string RegexString = "(?!)";

@@ -9,8 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection.Metadata;
 using WoLightning.Classes;
 using WoLightning.Types;
 using WoLightning.Windows;
@@ -27,7 +25,7 @@ public sealed class Plugin : IDalamudPlugin
     private const string Failsafe = "/red";
     private const string OpenConfigFolder = "/wolfolder";
 
-    public const int currentVersion = 404;
+    public const int currentVersion = 405;
     public const string randomKey = "Currently Unused";
 
     public string? ConfigurationDirectoryPath { get; set; }
@@ -172,7 +170,7 @@ public sealed class Plugin : IDalamudPlugin
                 Authentification = new Authentification(ConfigurationDirectoryPath, true);
             }
 
-            
+
 
             LocalPlayerCharacter = ClientState.LocalPlayer;
             LocalPlayer = new Player(LocalPlayerCharacter.Name.ToString(), (int)LocalPlayerCharacter.HomeWorld.Id, Authentification.ServerKey, NetworkWatcher.running);
@@ -247,7 +245,7 @@ public sealed class Plugin : IDalamudPlugin
     public void validateShockerAssignments() // Goes through all Triggers and finds Shockers that are no longer saved - then deletes them.
     {
         List<Shocker> shockers = Authentification.PishockShockers;
-        
+
         foreach (var property in typeof(Preset).GetProperties())
         {
             //Log($"{property.Name} - {property.PropertyType}");
@@ -265,16 +263,16 @@ public sealed class Plugin : IDalamudPlugin
 
                 bool[] marked = new bool[t.Shockers.Count];
                 int i = 0;
-                foreach(Shocker sh in t.Shockers)
+                foreach (Shocker sh in t.Shockers)
                 {
                     Log(sh);
                     if (shockers.Find(sh2 => sh.Code == sh2.Code) == null) marked[i] = true;
                     i++;
                 }
                 i = 0;
-                foreach(bool del in marked)
+                foreach (bool del in marked)
                 {
-                    
+
                     if (del) t.Shockers.RemoveAt(i);
                     i++;
                 }
@@ -323,7 +321,7 @@ public sealed class Plugin : IDalamudPlugin
         TextLog.Log(obj);
     }
 
-    public void Log(string message,bool noText)
+    public void Log(string message, bool noText)
     {
         if (!this.Configuration.LogEnabled) return;
         PluginLog.Verbose(message);
@@ -358,7 +356,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginLog.Error(message);
     }
 
-    public void Error(string message,Object obj, bool noText)
+    public void Error(string message, Object obj, bool noText)
     {
         if (!this.Configuration.LogEnabled) return;
         PluginLog.Error(message);

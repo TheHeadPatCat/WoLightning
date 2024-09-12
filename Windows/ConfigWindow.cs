@@ -9,8 +9,6 @@ using Dalamud.Interface.Windowing;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Timers;
@@ -155,7 +153,7 @@ public class ConfigWindow : Window, IDisposable
             DrawCustomTriggerTab();
             //DrawPermissionsTab(); todo make work again
             // DrawCommandTab(); todo not implemented
-            if(Configuration.DebugEnabled) DrawDebugTab();
+            if (Configuration.DebugEnabled) DrawDebugTab();
 
             ImGui.EndTabBar();
         }
@@ -581,7 +579,7 @@ public class ConfigWindow : Window, IDisposable
         }
 
 
-        
+
 
     }
     #endregion
@@ -603,12 +601,12 @@ public class ConfigWindow : Window, IDisposable
             "This currently only works when writing in English.");
 
 
-        ImGui.BeginDisabled();
+        /* Todo - reimplement
         createEntry(Configuration.ActivePreset.SayBadWord, "Triggers whenever you say a word from a list.",
             "You can configure these words, once the setting is enabled.");
         if (Configuration.ActivePreset.SayBadWord.IsEnabled())
             ImGui.Text("You can find the settings for this option in the tab \"Word List\"");
-        ImGui.EndDisabled();
+        */
 
     }
     private void DrawCombat()
@@ -870,7 +868,7 @@ public class ConfigWindow : Window, IDisposable
         }
         ImGui.EndGroup();
 
-        
+
 
         if (TriggerObject.Name == "TakeDamage") createProportional(TriggerObject, "Amount of Health% to lose to hit the Limit.", 1, 100);
         if (TriggerObject.Name == "FailMechanic") createProportional(TriggerObject, "Amount of Stacks needed to hit the Limit.", 1, 8);

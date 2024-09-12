@@ -156,7 +156,7 @@ namespace WoLightning
         {
 
             Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
-            
+
 
             //Validation of Data
             if (Plugin.Authentification.PishockName.Length < 3
@@ -272,7 +272,7 @@ namespace WoLightning
             Plugin.Log($"Requesting Information for {ShareCode}...");
 
             Shocker? shocker = Plugin.Authentification.PishockShockers.Find(shocker => shocker.Code == ShareCode);
-            if(shocker == null)
+            if (shocker == null)
             {
                 Plugin.Log(" -> Aborted as the Shocker couldnt be found!");
                 return;
@@ -285,7 +285,7 @@ namespace WoLightning
                 shocker.Status = ShockerStatus.InvalidUser;
                 return;
             }
-            
+
             Plugin.Log($" -> Data Validated. Creating Request...");
 
             using StringContent jsonContent = new(
@@ -412,7 +412,7 @@ namespace WoLightning
 
             try
             {
-                
+
                 Stopwatch timeTaken = Stopwatch.StartNew();
                 var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/post/WoLightning", jsonContent);
                 timeTaken.Stop();
@@ -483,7 +483,7 @@ namespace WoLightning
             }
             catch (TaskCanceledException ex)
             {
-                Plugin.Error("Running Request was Cancelled.",ex);
+                Plugin.Error("Running Request was Cancelled.", ex);
                 return;
             }
             catch (HttpRequestException)
@@ -505,8 +505,6 @@ namespace WoLightning
             }
 
         }
-
-
 
         public void establishWebserverConnection()
         {
@@ -548,31 +546,31 @@ namespace WoLightning
 
                 if (!re.validate())
                 {
-                    Plugin.Error("We have received a invalid packet.",re);
+                    Plugin.Error("We have received a invalid packet.", re);
                     return;
                 }
 
-                if(!re.Sender.equals(Plugin.LocalPlayer) && !re.Target.equals(Plugin.LocalPlayer))
+                if (!re.Sender.equals(Plugin.LocalPlayer) && !re.Target.equals(Plugin.LocalPlayer))
                 {
-                    Plugin.Error("The received packet is neither from nor for us.",re);
+                    Plugin.Error("The received packet is neither from nor for us.", re);
                     return;
                 }
 
                 if (re.OpData != null && re.OpData.Equals("Fail-Unauthorized"))
                 {
-                    Plugin.Error("The server does not remember us sending a request.",re);
+                    Plugin.Error("The server does not remember us sending a request.", re);
                     return;
                 }
 
-                if(re.Operation != OperationCode.Ping) Plugin.Log(re);
+                if (re.Operation != OperationCode.Ping) Plugin.Log(re);
 
                 String? result = Plugin.Operation.execute(originalPacket, re);
                 if (result != null)
                 {
-                    Plugin.Error(result,re);
+                    Plugin.Error(result, re);
                     return;
                 }
-                
+
             }
             catch (Exception ex)
             {

@@ -155,15 +155,15 @@ namespace WoLightning
                     lookingForMaster.Elapsed += (sender, e) => scanForMasterCharacter();
                     lookingForMaster.Start();
                     LeashTimer.Stop();
-                    Plugin.Log("Lost Master Signature!",true);
-                    Plugin.Log("Starting Scanner...",true);
+                    Plugin.Log("Lost Master Signature!", true);
+                    Plugin.Log("Starting Scanner...", true);
                     return;
                 }
                 return;
             }
 
-            Plugin.Log($"{MasterCharacter.Name} - {MasterCharacter.Address} - {MasterCharacter.ObjectIndex}",true);
-            Plugin.Log($"Valid: {MasterCharacter.IsValid()} Master Pos: {MasterCharacter.Position} Local Pos: {Plugin.ClientState.LocalPlayer.Position} diff: {MasterCharacter.Position - Plugin.ClientState.LocalPlayer.Position}",true);
+            Plugin.Log($"{MasterCharacter.Name} - {MasterCharacter.Address} - {MasterCharacter.ObjectIndex}", true);
+            Plugin.Log($"Valid: {MasterCharacter.IsValid()} Master Pos: {MasterCharacter.Position} Local Pos: {Plugin.ClientState.LocalPlayer.Position} diff: {MasterCharacter.Position - Plugin.ClientState.LocalPlayer.Position}", true);
         }
 
 
@@ -307,12 +307,12 @@ namespace WoLightning
             if (lastHP < LocalPlayer.CurrentHp && ActivePreset.TakeDamage.IsEnabled())
             {
                 uint amount = LocalPlayer.CurrentHp - lastHP;
-                Plugin.Log($"Cur: {LocalPlayer.CurrentHp} Last: {lastHP} diff: {LocalPlayer.CurrentHp - lastHP}",true);
+                Plugin.Log($"Cur: {LocalPlayer.CurrentHp} Last: {lastHP} diff: {LocalPlayer.CurrentHp - lastHP}", true);
                 if (ActivePreset.TakeDamage.CustomData == null) ActivePreset.TakeDamage.setupCustomData(); //failsafe
                 if (ActivePreset.TakeDamage.CustomData["Proportional"][0] == 1)
                 {
-                    int calcdIntensity = (int) (ActivePreset.TakeDamage.Intensity * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
-                    int calcdDuration = (int) (ActivePreset.TakeDamage.Duration * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
+                    int calcdIntensity = (int)(ActivePreset.TakeDamage.Intensity * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
+                    int calcdDuration = (int)(ActivePreset.TakeDamage.Duration * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
                     Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
                 }
                 else Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage);
@@ -326,18 +326,18 @@ namespace WoLightning
         private void HandleStatusChange()
         {
             //64 = vuln up
-            Plugin.Log("StatusList Changed",true);
-            Plugin.Log(LocalPlayer.StatusList.ToString(),true);
+            Plugin.Log("StatusList Changed", true);
+            Plugin.Log(LocalPlayer.StatusList.ToString(), true);
         }
 
 
 
-        
+
         public unsafe void HandleChatMessage(XivChatType type, int timespamp, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
             if (Plugin.ClientState.LocalPlayer == null)
             {
-                Plugin.Error("Localplayer is null while we received a message - Ignoring...",true);
+                Plugin.Error("Localplayer is null while we received a message - Ignoring...", true);
                 return;
             }
             if (message == null) return; //sanity check in case we get sent bad data
@@ -376,7 +376,7 @@ namespace WoLightning
             }
 
 
-            if((int)type == 2122 && ActivePreset.LoseDeathRoll.IsEnabled() && message.Payloads.Find(pay => pay.Type == PayloadType.Icon) != null) // Deathroll
+            if ((int)type == 2122 && ActivePreset.LoseDeathRoll.IsEnabled() && message.Payloads.Find(pay => pay.Type == PayloadType.Icon) != null) // Deathroll
             {
                 string[] parts = message.ToString().Split(" ");
                 if (parts[1].Length < 6) // check if the name is "You" or similiar, as different languages exist

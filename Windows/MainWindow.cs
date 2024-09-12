@@ -20,13 +20,13 @@ public class MainWindow : Window, IDisposable
     public MainWindow(Plugin plugin)
         : base("Warrior of Lightning##Main", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.AlwaysAutoResize)
     {
-        
+
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(280, 250),
             MaximumSize = new Vector2(280, 2000)
         };
-        
+
 
 
         Plugin = plugin;
@@ -35,12 +35,12 @@ public class MainWindow : Window, IDisposable
     public void Dispose()
     {
         if (this.IsOpen) this.Toggle();
-        
+
     }
 
     public override async void Draw()
     {
-        
+
         try
         {
             switch (Plugin.WebClient.Status)
@@ -124,12 +124,12 @@ public class MainWindow : Window, IDisposable
                 Plugin.ToggleConfigUI();
             }
 
-            if (Plugin.WebClient.Status != ConnectionStatus.Connected)ImGui.BeginDisabled();
+            if (Plugin.WebClient.Status != ConnectionStatus.Connected) ImGui.BeginDisabled();
             if (ImGui.Button("Master Mode", new Vector2(ImGui.GetWindowSize().X - 15, 25)))
             {
                 Plugin.ToggleMasterUI();
             }
-            if (Plugin.WebClient.Status != ConnectionStatus.Connected)ImGui.EndDisabled();
+            if (Plugin.WebClient.Status != ConnectionStatus.Connected) ImGui.EndDisabled();
 
             if (Plugin.WebClient.Status != ConnectionStatus.Connected && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip($"You need to be Connected to the Webserver\nto access Mastermode!"); }
 

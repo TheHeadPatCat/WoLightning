@@ -9,11 +9,12 @@ namespace WoLightning.Classes
         private bool isFileAvailable = false;
         private Plugin Plugin { get; init; }
 
-        public TextLog(Plugin plugin,String confPath) {
+        public TextLog(Plugin plugin, String confPath)
+        {
             Plugin = plugin;
             FilePath = confPath + "log.txt";
             setupFile();
-            
+
         }
 
         public bool validateFile()
@@ -31,12 +32,13 @@ namespace WoLightning.Classes
                 if (File.Exists(FilePath)) isFileAvailable = true;
                 else throw new Exception("Cannot create Log.txt");
             }
-            else {
+            else
+            {
                 try
                 {
                     long length = new System.IO.FileInfo(FilePath).Length;
                     Plugin.PluginLog.Verbose("Log Size: " + length);
-                    if(length > 5243000)
+                    if (length > 5243000)
                     {
                         File.Delete(FilePath);
                         File.Create(FilePath).Close();

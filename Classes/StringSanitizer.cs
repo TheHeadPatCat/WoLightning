@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace WoLightning.Classes
 {
@@ -11,7 +7,7 @@ namespace WoLightning.Classes
         public static String LetterOrDigit(string s)
         {
             string output = String.Empty;
-            foreach(char c in s.ToCharArray())
+            foreach (char c in s.ToCharArray())
             {
                 if (c != ' ' && c != '\'' && !Char.IsLetterOrDigit(c)) break;
                 output += c;
