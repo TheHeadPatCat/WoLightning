@@ -46,7 +46,6 @@ namespace WoLightning.Classes
         public bool failsafe { get; set; } = false;
 
         private HttpClient? Client;
-        private HttpClient? ClientClean;
         public ClientWebserver(Plugin plugin)
         {
             Plugin = plugin;
@@ -76,6 +75,13 @@ namespace WoLightning.Classes
         {
             if (Client != null) return;
 
+            if(Plugin.Authentification.DevKey.Length == 0)
+            {
+                Plugin.Log("No Devkey detected - Stopping ClientWebserver creation.");
+                Status = ConnectionStatusWebserver.DevMode;
+                return;
+            }
+
             if (!Plugin.Authentification.acceptedEula)
             {
                 Plugin.Log("Eula isn't accepted - Stopping ClientWebserver creation.");
@@ -92,7 +98,7 @@ namespace WoLightning.Classes
 
             handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, error) => { return cert != null && handler.ClientCertificates.Contains(cert); };
             Client = new(handler) { Timeout = TimeSpan.FromSeconds(10) };
-            Plugin.Log("HttpClient successfully created!");
+            Plugin.Log("ClientWebserver successfully created!");
 
             connect();
         }
