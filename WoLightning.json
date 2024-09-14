@@ -3,7 +3,7 @@
   "Name": "Warrior of Lightning",
   "Punchline": "A integration for Pishock devices",
   "Description": "Open the main window with /wol",
-  "Changelog": " # 0.4.0.5 Warrior of Lightning \n\n Implementation of /snap trigger and support for 0.1s and 0.3s Duration Shocks.",
+  "Changelog": " # 0.4.0.6 Warrior of Lightning \n\n Minor UI tweaks and HTTP Client cleanup.",
   "AcceptsFeedback": true,
   "FeedbackMessage":  "Thank you for your Feedback!",
   "ApplicableVersion": "any",

@@ -78,7 +78,7 @@ public class ConfigWindow : Window, IDisposable
     // We give this window a constant ID using ###
     // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public ConfigWindow(Plugin plugin) : base("Warrior of Lightning Configuration##configmain")
+    public ConfigWindow(Plugin plugin) : base($"Warrior of Lightning Configuration - v{plugin.Configuration.Version}##configmain")
     {
         Flags = ImGuiWindowFlags.AlwaysUseWindowPadding;
 
@@ -98,7 +98,7 @@ public class ConfigWindow : Window, IDisposable
         timeOutRequest.Elapsed += resetRequest;
     }
 
-    public ConfigWindow(Plugin plugin, Configuration configuration, MasterWindow parent) : base("Master of Lightning Configuration##configmaster")
+    public ConfigWindow(Plugin plugin, Configuration configuration, MasterWindow parent) : base($"Master of Lightning Configuration - v{plugin.Configuration.Version}##configmaster")
     {
         Flags = ImGuiWindowFlags.AlwaysUseWindowPadding;
 
