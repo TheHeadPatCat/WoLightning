@@ -108,7 +108,7 @@ public class MasterWindow : Window, IDisposable
                 {
                     Plugin.Authentification.isRequesting = true;
                     Plugin.Authentification.targetMaster = selectedMaster;
-                    Plugin.WebClient.sendWebserverRequest(OperationCode.RequestBecomeSub, null, selectedMaster);
+                    Plugin.ClientWebserver.sendWebserverRequest(OperationCode.RequestBecomeSub, null, selectedMaster);
                 }
                 else if (Plugin.Authentification.isRequesting)
                 {
@@ -162,13 +162,13 @@ public class MasterWindow : Window, IDisposable
             // Todo: add button feedback
             if (ImGui.Button("Accept", new Vector2(ImGui.GetWindowSize().X / 2 - 10, 25)))
             {
-                Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-Accepted", Plugin.Authentification.targetSub);
+                Plugin.ClientWebserver.sendWebserverRequest(OperationCode.AnswerSub, "Success-Accepted", Plugin.Authentification.targetSub);
                 Plugin.Authentification.gotRequest = false;
             }
             ImGui.SameLine();
             if (ImGui.Button("Reject", new Vector2(ImGui.GetWindowSize().X / 2 - 10, 25)))
             {
-                Plugin.WebClient.sendWebserverRequest(OperationCode.AnswerSub, "Success-Rejected", Plugin.Authentification.targetSub);
+                Plugin.ClientWebserver.sendWebserverRequest(OperationCode.AnswerSub, "Success-Rejected", Plugin.Authentification.targetSub);
                 Plugin.Authentification.gotRequest = false;
             }
 
@@ -207,7 +207,7 @@ public class MasterWindow : Window, IDisposable
     private void togglePluginState(Player sub)
     {
         sub.PluginActive = !sub.PluginActive;
-        Plugin.WebClient.sendWebserverRequest(OperationCode.OrderEnabledChange, sub.PluginActive + "", sub);
+        Plugin.ClientWebserver.sendWebserverRequest(OperationCode.OrderEnabledChange, sub.PluginActive + "", sub);
     }
 
     private void drawLine()

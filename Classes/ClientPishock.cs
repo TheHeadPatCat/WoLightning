@@ -1,56 +1,38 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
+using System.Linq;
 using System.Net.Http;
+using System.Net;
 using System.Security.Authentication;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
-using WoLightning.Classes;
 using WoLightning.Types;
-using JsonSerializer = System.Text.Json.JsonSerializer;
+using System.Text.Json;
 
-namespace WoLightning
+namespace WoLightning.Classes
 {
-    public enum ConnectionStatus
+    public class ClientPishock : IDisposable
     {
-        NotStarted = 0,
-        NotConnected = 1,
-        Unavailable = 2, // temporarily used as server isnt active
+        public enum ConnectionStatusPishock
+        {
+            NotStarted = 0,
+            Unavailable = 1,
 
-        WontRespond = 101,
-        Outdated = 102,
-        UnknownUser = 103,
-        InvalidKey = 104,
-        FatalError = 105,
-        DevMode = 106,
+            Connecting = 199,
+            Connected = 200,
+        }
 
-        Connecting = 199,
-        Connected = 200,
-    }
 
-    public class WebClient : IDisposable
-    {
-        private readonly Plugin Plugin;
-        public string ServerVersion = string.Empty;
-        private List<double> lastPings { get; set; } = new(); // Todo implement proper Ping class instead
-
-        private readonly double maxPingsStored = 5;
-        public ConnectionStatus Status { get; set; } = ConnectionStatus.NotStarted;
-        public readonly TimerPlus PingTimer = new TimerPlus();
-        private readonly double pingSpeed = new TimeSpan(0, 0, 3).TotalMilliseconds;
-        private readonly double retrySpeed = new TimeSpan(0, 3, 0).TotalMilliseconds;
-
-        public bool failsafe { get; set; } = false;
+        private Plugin Plugin;
+        public ConnectionStatusPishock Status { get; set; } = ConnectionStatusPishock.NotStarted;
 
         private HttpClient? Client;
-        private HttpClient? ClientClean;
-        public WebClient(Plugin plugin)
+        public ClientPishock(Plugin plugin)
         {
             Plugin = plugin;
-            lastPings.EnsureCapacity(6);
         }
         public void Dispose()
         {
@@ -60,41 +42,21 @@ namespace WoLightning
                 Client.Dispose();
                 Client = null;
             }
-            PingTimer.Stop();
-            PingTimer.Dispose();
         }
-
-        public int Ping()
-        {
-            double avg = 0;
-            if (lastPings.Count > 5) lastPings = lastPings.Slice(0, 5);
-            foreach (double time in lastPings) avg += time;
-            return (int)(avg / lastPings.Count / 3); // adjusted due to the 3 second pinging
-        }
-
         public void createHttpClient()
         {
             if (Client != null) return;
 
-
-            var handler = new HttpClientHandler();
-            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-            handler.SslProtocols = SslProtocols.Tls12;
-            handler.ClientCertificates.Add(Plugin.Authentification.getCertificate());
-            handler.AllowAutoRedirect = true;
-            handler.MaxConnectionsPerServer = 2;
-
-            handler.ServerCertificateCustomValidationCallback = (sender, cert, chain, error) => { return cert != null && handler.ClientCertificates.Contains(cert); };
-            Client = new(handler) { Timeout = TimeSpan.FromSeconds(10) };
-            Plugin.Log("HttpClient successfully created!");
-
-            establishWebserverConnection();
-            ClientClean = new HttpClient();
-            requestPishockInfoAll();
+            Client = new HttpClient();
+            infoAll();
         }
 
+        public void cancelPendingRequests()
+        {
+            Client.CancelPendingRequests();
+        }
 
-        public async void sendPishockRequest(Trigger TriggerObject)
+        public async void request(Trigger TriggerObject)
         {
 
             Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
@@ -108,7 +70,7 @@ namespace WoLightning
                 return;
             }
 
-            if (failsafe)
+            if (Plugin.isFailsafeActive)
             {
                 Plugin.Log(" -> Blocked request due to failsafe mode!");
                 return;
@@ -141,7 +103,7 @@ namespace WoLightning
 
                 try
                 {
-                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                    await Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 }
                 catch (Exception ex)
                 {
@@ -152,7 +114,7 @@ namespace WoLightning
             Plugin.Log($" -> Requests sent!");
         }
 
-        public async void sendPishockRequest(Trigger TriggerObject, int[] overrideSettings)
+        public async void request(Trigger TriggerObject, int[] overrideSettings)
         {
 
             Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
@@ -166,7 +128,7 @@ namespace WoLightning
                 return;
             }
 
-            if (failsafe)
+            if (Plugin.isFailsafeActive)
             {
                 Plugin.Log(" -> Blocked request due to failsafe mode!");
                 return;
@@ -212,7 +174,7 @@ namespace WoLightning
 
                 try
                 {
-                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                    await Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 }
                 catch (Exception ex)
                 {
@@ -223,8 +185,10 @@ namespace WoLightning
             Plugin.Log($" -> Requests sent!");
         }
 
-        public async void sendPishockTestAll()
+        public async void testAll()
         {
+
+            infoAll();
 
             Plugin.Log($"Sending Test request for {Plugin.Authentification.PishockShockers.Count} shockers.");
 
@@ -255,7 +219,7 @@ namespace WoLightning
 
                 try
                 {
-                    await ClientClean.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                    await Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
                 }
                 catch (Exception ex)
                 {
@@ -266,7 +230,7 @@ namespace WoLightning
             Plugin.Log($" -> Requests sent!");
         }
 
-        public async void requestPishockInfo(string ShareCode)
+        public async void info(string ShareCode)
         {
 
             Plugin.Log($"Requesting Information for {ShareCode}...");
@@ -302,7 +266,7 @@ namespace WoLightning
             shocker.Status = ShockerStatus.Unchecked;
             try
             {
-                var s = await ClientClean.PostAsync("https://do.pishock.com/api/GetShockerInfo", jsonContent);
+                var s = await Client.PostAsync("https://do.pishock.com/api/GetShockerInfo", jsonContent);
                 switch (s.StatusCode)
                 {
                     case HttpStatusCode.OK:
@@ -326,7 +290,7 @@ namespace WoLightning
             }
         }
 
-        public async void requestPishockInfoAll()
+        public async void infoAll()
         {
             Plugin.Log($"Requesting Information for all Shockers.");
 
@@ -359,7 +323,8 @@ namespace WoLightning
 
                 try
                 {
-                    var s = await ClientClean.PostAsync("https://do.pishock.com/api/GetShockerInfo", jsonContent);
+                    var s = await Client.PostAsync("https://do.pishock.com/api/GetShockerInfo", jsonContent);
+                    Status = ConnectionStatusPishock.Connected;
                     switch (s.StatusCode)
                     {
                         case HttpStatusCode.OK:
@@ -379,204 +344,13 @@ namespace WoLightning
                 {
                     Plugin.Error(ex.ToString());
                     Plugin.Error("Error when sending post request to pishock api");
+                    Status = ConnectionStatusPishock.Unavailable;
                 }
             }
             Plugin.Log($" -> Requests sent!");
         }
 
 
-        public void sendWebserverRequest(OperationCode Op) { sendWebserverRequest(Op, null, null); }
-        public void sendWebserverRequest(OperationCode Op, String? OpData) { sendWebserverRequest(Op, OpData, null); }
-
-        public async void sendWebserverRequest(OperationCode Op, String? OpData, Player? Target)
-        {
-            if (Status == ConnectionStatus.Unavailable) return;
-
-            if (Plugin.ClientState.LocalPlayer == null ||
-                Client == null) return;
-
-
-
-
-            NetPacket packet = new NetPacket(Op, Plugin.LocalPlayer, OpData, Target);
-
-            using StringContent jsonContent = new(
-                JsonSerializer.Serialize(new
-                {
-                    hash = "n982093c09209jg0920g", // Plugin.Authentification.getHash()
-                    devKey = Plugin.Authentification.DevKey,
-                    packet,
-                }),
-            Encoding.UTF8,
-            "application/json");
-
-            try
-            {
-
-                Stopwatch timeTaken = Stopwatch.StartNew();
-                var s = await Client.PostAsync($"https://theheadpatcat.ddns.net/post/WoLightning", jsonContent);
-                timeTaken.Stop();
-                lastPings.Insert(0, timeTaken.ElapsedMilliseconds);
-                switch (s.StatusCode)
-                {
-
-                    case HttpStatusCode.OK:
-                        if (PingTimer.Interval != pingSpeed) // todo add more precise logic
-                        {
-                            PingTimer.Interval = pingSpeed;
-                            if (PingTimer.Enabled) PingTimer.Refresh();
-                            else PingTimer.Start();
-                            Plugin.Log("Reset Timer");
-                        }
-                        Status = ConnectionStatus.Connected;
-                        if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
-                        break;
-
-                    case HttpStatusCode.Locked:
-                        Status = ConnectionStatus.DevMode;
-                        Plugin.Log("The Server is currently in DevMode.");
-                        severWebserverConnection();
-                        break;
-
-                    // Softerrors DEPRECATED
-                    case HttpStatusCode.Unauthorized:
-                        Status = ConnectionStatus.UnknownUser;
-                        Plugin.Log("The Server dídnt know us, so we got registered.");
-                        if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
-                        break;
-
-                    case HttpStatusCode.UpgradeRequired:
-                        Status = ConnectionStatus.Outdated;
-                        Plugin.Log("We are running a outdated Version.");
-                        if (s.Content != null) processResponse(packet, s.Content.ReadAsStringAsync());
-                        break;
-
-                    case HttpStatusCode.Forbidden:
-                        Status = ConnectionStatus.InvalidKey;
-                        Plugin.Error("Our Key does not match the key on the Serverside.", packet);
-                        break;
-
-
-                    // Harderrors
-                    case HttpStatusCode.NotFound:
-                        Status = ConnectionStatus.FatalError;
-                        Plugin.Error("We sent a invalid Request to the Server.", packet);
-                        break;
-                    case HttpStatusCode.InternalServerError:
-                        Status = ConnectionStatus.FatalError;
-                        Plugin.Error("We sent a invalid Packet to the Server.", packet);
-                        break;
-
-                    default:
-                        Status = ConnectionStatus.FatalError;
-                        Plugin.Error($"Unknown Response {s.StatusCode}", packet);
-                        return;
-                }
-            }
-            catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
-            {
-
-                Status = ConnectionStatus.WontRespond;
-                Plugin.Log("The Server is not responding.");
-                severWebserverConnection();
-                return;
-            }
-            catch (TaskCanceledException ex)
-            {
-                Plugin.Error("Running Request was Cancelled.", ex);
-                return;
-            }
-            catch (HttpRequestException)
-            {
-
-                Status = ConnectionStatus.WontRespond;
-                Plugin.Log("The Server is online, but refused the connection.");
-                severWebserverConnection();
-                return;
-            }
-            catch (Exception ex)
-            {
-
-                Status = ConnectionStatus.FatalError;
-                Client.CancelPendingRequests();
-                Plugin.Error(ex.ToString());
-                severWebserverConnection(true);
-                return;
-            }
-
-        }
-
-        public void establishWebserverConnection()
-        {
-            PingTimer.Interval = pingSpeed;
-            PingTimer.Elapsed -= sendPing; // make sure we only have one ping event
-            PingTimer.Elapsed += sendPing;
-            PingTimer.Start();
-            sendWebserverRequest(OperationCode.Login);
-        }
-
-        public void severWebserverConnection()
-        {
-            PingTimer.Interval = retrySpeed;
-            PingTimer.Refresh();
-        }
-
-        public void severWebserverConnection(bool force)
-        {
-            PingTimer.Interval = retrySpeed;
-            if (PingTimer.Enabled) PingTimer.Elapsed -= sendPing;
-            if (PingTimer.Enabled) PingTimer.Stop();
-        }
-
-        internal void sendPing(object? o, ElapsedEventArgs? e)
-        {
-            if (Status != ConnectionStatus.Connected) sendWebserverRequest(OperationCode.Login);
-            else sendWebserverRequest(OperationCode.Ping);
-        }
-
-
-        private async void processResponse(NetPacket originalPacket, Task<String> responseString)
-        {
-            try
-            {
-                String? s = await responseString;
-                if (s == null) return;
-                NetPacket? re = JsonSerializer.Deserialize<NetPacket>(s);
-                if (re == null) return;
-
-                if (!re.validate())
-                {
-                    Plugin.Error("We have received a invalid packet.", re);
-                    return;
-                }
-
-                if (!re.Sender.equals(Plugin.LocalPlayer) && !re.Target.equals(Plugin.LocalPlayer))
-                {
-                    Plugin.Error("The received packet is neither from nor for us.", re);
-                    return;
-                }
-
-                if (re.OpData != null && re.OpData.Equals("Fail-Unauthorized"))
-                {
-                    Plugin.Error("The server does not remember us sending a request.", re);
-                    return;
-                }
-
-                if (re.Operation != OperationCode.Ping) Plugin.Log(re);
-
-                String? result = Plugin.Operation.execute(originalPacket, re);
-                if (result != null)
-                {
-                    Plugin.Error(result, re);
-                    return;
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Plugin.Error(ex.ToString());
-            }
-        }
 
         private void processPishockResponse(HttpContent response)
         {
@@ -620,18 +394,6 @@ namespace WoLightning
             }
 
         }
-
-        public bool toggleFailsafe()
-        {
-            failsafe = !failsafe;
-            //todo: kill all threads in here
-            if (failsafe) Plugin.NetworkWatcher.Dispose();
-            else Plugin.NetworkWatcher.Start();
-
-            return failsafe;
-        }
-
-
 
     }
 }

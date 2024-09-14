@@ -562,7 +562,7 @@ public class ConfigWindow : Window, IDisposable
 
             if (ImGui.Button("Test Operation", new Vector2(200, 60)))
             {
-                Plugin.WebClient.sendWebserverRequest(
+                Plugin.ClientWebserver.sendWebserverRequest(
                     Operation.getOperationCode(
                         debugOpCodes[debugOpIndex].Split(" - ")[1]),
                         debugOpData,

@@ -28,6 +28,7 @@ public sealed class Plugin : IDalamudPlugin
     public const int currentVersion = 405;
     public const string randomKey = "Currently Unused";
 
+    public bool isFailsafeActive = false;
     public string? ConfigurationDirectoryPath { get; set; }
 
     public IPlayerCharacter LocalPlayerCharacter { get; set; }
@@ -58,9 +59,10 @@ public sealed class Plugin : IDalamudPlugin
 
 
     // Handler Classes
-    public NetworkWatcher NetworkWatcher { get; init; }
+    public NetworkWatcher NetworkWatcher { get; set; }
     public EmoteReaderHooks? EmoteReaderHooks { get; set; }
-    public WebClient? WebClient { get; set; }
+    public ClientPishock? ClientPishock { get; set; }
+    public ClientWebserver? ClientWebserver { get; set; }
     public Authentification? Authentification { get; set; }
     public Configuration? Configuration { get; set; }
     public Operation Operation { get; set; }
@@ -175,7 +177,6 @@ public sealed class Plugin : IDalamudPlugin
             LocalPlayerCharacter = ClientState.LocalPlayer;
             LocalPlayer = new Player(LocalPlayerCharacter.Name.ToString(), (int)LocalPlayerCharacter.HomeWorld.Id, Authentification.ServerKey, NetworkWatcher.running);
 
-            WebClient = new WebClient(this);
             EmoteReaderHooks = new EmoteReaderHooks(this);
 
             MainWindow = new MainWindow(this);
@@ -184,7 +185,11 @@ public sealed class Plugin : IDalamudPlugin
 
             if (Configuration.ActivateOnStart) NetworkWatcher.Start();
 
-            WebClient.createHttpClient();
+            ClientWebserver = new ClientWebserver(this);
+            ClientWebserver.createHttpClient();
+
+            ClientPishock = new ClientPishock(this);
+            ClientPishock.createHttpClient();
 
             WindowSystem.AddWindow(ConfigWindow);
             WindowSystem.AddWindow(MainWindow);
@@ -209,7 +214,7 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.RemoveWindow(MasterWindow);
 
         EmoteReaderHooks.Dispose();
-        WebClient.Dispose();
+        ClientWebserver.Dispose();
 
         Configuration.Dispose();
         Authentification.Dispose();
@@ -230,7 +235,7 @@ public sealed class Plugin : IDalamudPlugin
 
 
         EmoteReaderHooks.Dispose();
-        WebClient.Dispose();
+        ClientWebserver.Dispose();
 
         Configuration.Dispose();
         Authentification.Dispose();
@@ -292,7 +297,8 @@ public sealed class Plugin : IDalamudPlugin
     }
     private void OnFailsafe(string command, string args)
     {
-        WebClient.toggleFailsafe();
+        isFailsafeActive = !isFailsafeActive;
+        ClientPishock.cancelPendingRequests();
     }
 
     private void OnOpenConfigFolder(string command, string args)

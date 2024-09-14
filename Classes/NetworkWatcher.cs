@@ -191,7 +191,7 @@ namespace WoLightning
                     if (ActivePreset.Die.IsEnabled() && LocalPlayer.CurrentHp == 0 && !wasDead)
                     {
                         Plugin.sendNotif($"You Died!");
-                        Plugin.WebClient.sendPishockRequest(ActivePreset.Die);
+                        Plugin.ClientPishock.request(ActivePreset.Die);
                         wasDead = false;
                     }
 
@@ -205,9 +205,9 @@ namespace WoLightning
                         {
                             int calcdIntensity = (int)((double)ActivePreset.TakeDamage.Intensity * ((double)amountPercent / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
                             int calcdDuration = (int)((double)ActivePreset.TakeDamage.Duration * ((double)amountPercent / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
-                            Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
+                            Plugin.ClientPishock.request(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
                         }
-                        else Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage);
+                        else Plugin.ClientPishock.request(ActivePreset.TakeDamage);
                     }
                     if (lastHP > 0) wasDead = false;
                 }
@@ -238,9 +238,9 @@ namespace WoLightning
                                     {
                                         int calcdIntensity = ActivePreset.FailMechanic.Intensity * (amount / ActivePreset.FailMechanic.CustomData["Proportional"][1]);
                                         int calcdDuration = ActivePreset.FailMechanic.Duration * (amount / ActivePreset.FailMechanic.CustomData["Proportional"][1]);
-                                        Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic, [(int)ActivePreset.FailMechanic.OpMode, calcdIntensity, calcdDuration]);
+                                        Plugin.ClientPishock.request(ActivePreset.FailMechanic, [(int)ActivePreset.FailMechanic.OpMode, calcdIntensity, calcdDuration]);
                                     }
-                                    else Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic);
+                                    else Plugin.ClientPishock.request(ActivePreset.FailMechanic);
                                 }
                                 lastVulnAmount = amount;
                             }
@@ -251,7 +251,7 @@ namespace WoLightning
                                 if (amount > lastDDownAmount)
                                 {
                                     Plugin.sendNotif($"You failed a Mechanic!");
-                                    Plugin.WebClient.sendPishockRequest(ActivePreset.FailMechanic);
+                                    Plugin.ClientPishock.request(ActivePreset.FailMechanic);
                                 }
                                 lastDDownAmount = amount;
                             }
@@ -269,7 +269,7 @@ namespace WoLightning
                         deadIndexes[lastCheckedIndex] = true;
                         amountDead++;
                         Plugin.Log($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} members are dead.");
-                        Plugin.WebClient.sendPishockRequest(ActivePreset.PartymemberDies, [ActivePreset.PartymemberDies.Intensity * (amountDead / Plugin.PartyList.Length), ActivePreset.PartymemberDies.Duration * (amountDead / Plugin.PartyList.Length)]);
+                        Plugin.ClientPishock.request(ActivePreset.PartymemberDies, [ActivePreset.PartymemberDies.Intensity * (amountDead / Plugin.PartyList.Length), ActivePreset.PartymemberDies.Duration * (amountDead / Plugin.PartyList.Length)]);
                     }
                     else if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP > 0 && deadIndexes[lastCheckedIndex])
                     {
@@ -301,7 +301,7 @@ namespace WoLightning
             if (ActivePreset.Die.IsEnabled() && LocalPlayer.CurrentHp == 0 && !wasDead)
             {
                 Plugin.sendNotif($"You Died!");
-                Plugin.WebClient.sendPishockRequest(ActivePreset.Die);
+                Plugin.ClientPishock.request(ActivePreset.Die);
                 wasDead = false;
             }
             if (lastHP < LocalPlayer.CurrentHp && ActivePreset.TakeDamage.IsEnabled())
@@ -313,9 +313,9 @@ namespace WoLightning
                 {
                     int calcdIntensity = (int)(ActivePreset.TakeDamage.Intensity * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
                     int calcdDuration = (int)(ActivePreset.TakeDamage.Duration * (amount / ActivePreset.TakeDamage.CustomData["Proportional"][1]));
-                    Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
+                    Plugin.ClientPishock.request(ActivePreset.TakeDamage, [(int)ActivePreset.TakeDamage.OpMode, calcdIntensity, calcdDuration]);
                 }
-                else Plugin.WebClient.sendPishockRequest(ActivePreset.TakeDamage);
+                else Plugin.ClientPishock.request(ActivePreset.TakeDamage);
             }
             if (lastHP > 0) wasDead = false;
         }
@@ -355,7 +355,7 @@ namespace WoLightning
                         if (message.ToString().ToLower().Contains(word.ToLower()))
                         {
                             Plugin.sendNotif($"You said the bad word: {word}!");
-                            Plugin.WebClient.sendPishockRequest(ActivePreset.SayBadWord, settings);
+                            Plugin.ClientPishock.request(ActivePreset.SayBadWord, settings);
                         }
                     }
                 }
@@ -369,7 +369,7 @@ namespace WoLightning
                         if (FirstPersonWords.Contains(word))
                         {
                             Plugin.sendNotif($"You referred to yourself wrongly!");
-                            Plugin.WebClient.sendPishockRequest(ActivePreset.SayFirstPerson);
+                            Plugin.ClientPishock.request(ActivePreset.SayFirstPerson);
                         }
                     }
                 }
@@ -387,7 +387,7 @@ namespace WoLightning
                         {
                             if (part.Length == 1 && part == "1")
                             {
-                                Plugin.WebClient.sendPishockRequest(ActivePreset.LoseDeathRoll);
+                                Plugin.ClientPishock.request(ActivePreset.LoseDeathRoll);
                                 Plugin.sendNotif("You lost a Deathroll!");
                             }
                         }
@@ -410,7 +410,7 @@ namespace WoLightning
                     //Plugin.Log(message.TextValue,true);
                     if (trigger.IsEnabled() && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
-                        Plugin.WebClient.sendPishockRequest(trigger);
+                        Plugin.ClientPishock.request(trigger);
                         Plugin.sendNotif("[CT] " + trigger.Name + " triggered!");
                     }
                 }
@@ -452,12 +452,12 @@ namespace WoLightning
             if (ActivePreset.GetPat.IsEnabled() && emoteId == 105)
             {
                 Plugin.sendNotif($"You got headpatted by {sourceObj.Name}!");
-                Plugin.WebClient.sendPishockRequest(ActivePreset.GetPat);
+                Plugin.ClientPishock.request(ActivePreset.GetPat);
             }
             if (ActivePreset.GetSnapped.IsEnabled() && emoteId == 205)
             {
                 Plugin.sendNotif($"You got snapped at by {sourceObj.Name}!");
-                Plugin.WebClient.sendPishockRequest(ActivePreset.GetSnapped);
+                Plugin.ClientPishock.request(ActivePreset.GetSnapped);
             }
 
         }
