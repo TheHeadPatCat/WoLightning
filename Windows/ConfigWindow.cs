@@ -594,7 +594,7 @@ public class ConfigWindow : Window, IDisposable
         createEntry(Configuration.ActivePreset.GetPat, "Triggers whenever you get /pet.");
         createEntry(Configuration.ActivePreset.GetSnapped, "Triggers whenever you get /snap at.");
         createEntry(Configuration.ActivePreset.SitOnFurniture, "Trigger whenever /sit onto a chair.",
-            "This Trigger will activate again after 5 seconds if you dont get off!" +
+            "This Trigger will activate again after 5 seconds (after the shock is done) if you dont get off!" +
             "\nIf you do /groundsit onto it, it wont count though.");
         createEntry(Configuration.ActivePreset.LoseDeathRoll, "Trigger whenever you lose a deathroll.",
             "Deathroll is when you use /random against another player to see who reaches 1 first.");
