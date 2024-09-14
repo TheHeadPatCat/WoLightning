@@ -90,6 +90,11 @@ namespace WoLightning.Types
             }
         }
 
+        public Trigger Clone()
+        {
+            return (MemberwiseClone() as Trigger)!;
+        }
+
     }
 
     [Serializable]

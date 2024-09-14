@@ -116,73 +116,21 @@ namespace WoLightning.Classes
 
         public async void request(Trigger TriggerObject, int[] overrideSettings)
         {
-
-            Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
-
-
-            //Validation of Data
-            if (Plugin.Authentification.PishockName.Length < 3
-                || Plugin.Authentification.PishockApiKey.Length < 16)
-            {
-                Plugin.Log(" -> Aborted due to invalid Account Settings!");
-                return;
-            }
-
-            if (Plugin.isFailsafeActive)
-            {
-                Plugin.Log(" -> Blocked request due to failsafe mode!");
-                return;
-            }
-
-            if (!TriggerObject.Validate())
-            {
-                Plugin.Log(" -> Blocked due to invalid TriggerObject!");
-                return;
-            }
-
             if (overrideSettings.Length != 3 || overrideSettings[0] < 0 || overrideSettings[0] > 2)
             {
                 Plugin.Log(" -> Blocked due to invalid OverrideSettings!");
                 return;
             }
 
-            // Clamp Settings
             if (overrideSettings[1] < 1) overrideSettings[1] = 1;
             if (overrideSettings[1] > 100) overrideSettings[1] = 100;
             if (overrideSettings[2] < 1) overrideSettings[2] = 1;
-            if (overrideSettings[2] > 10) overrideSettings[2] = 10;
-
-            Plugin.Log($" -> Parameters -  {overrideSettings[0]} {overrideSettings[1]}% for {overrideSettings[2]}s");
-
-            Plugin.Log($" -> Data Validated. Creating Requests...");
-
-            foreach (var shocker in TriggerObject.Shockers)
-            {
-                using StringContent jsonContent = new(
-            JsonSerializer.Serialize(new
-            {
-                Username = Plugin.Authentification.PishockName,
-                Name = "WoLPlugin",
-                Code = shocker.Code,
-                Intensity = overrideSettings[0],
-                Duration = overrideSettings[1],
-                Apikey = Plugin.Authentification.PishockApiKey,
-                Op = (int)TriggerObject.OpMode,
-            }),
-            Encoding.UTF8,
-            "application/json");
-
-                try
-                {
-                    await Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
-                }
-                catch (Exception ex)
-                {
-                    Plugin.Error(ex.ToString());
-                    Plugin.Error("Error when sending post request to pishock api");
-                }
-            }
-            Plugin.Log($" -> Requests sent!");
+            if (overrideSettings[2] > 10 && overrideSettings[2] != 100 && overrideSettings[2] != 300) overrideSettings[2] = 10;
+            Trigger newTrigger = TriggerObject.Clone();
+            newTrigger.OpMode = (OpMode)overrideSettings[0];
+            newTrigger.Intensity = overrideSettings[1];
+            newTrigger.Duration = overrideSettings[2];
+            request(newTrigger);
         }
 
         public async void testAll()
