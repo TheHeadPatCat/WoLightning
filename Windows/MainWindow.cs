@@ -152,7 +152,7 @@ public class MainWindow : Window, IDisposable
                 case ConnectionStatusWebserver.InvalidKey:
                     ImGui.TextColored(new Vector4(1, 0, 0, 1), "The saved key does not match with the server.\nYou may only reset it by asking the dev."); break;
                 case ConnectionStatusWebserver.DevMode:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Can't Connect - Devmode Active!"); break;
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Can't Connect - Webserver is in construction."); break;
 
                 case ConnectionStatusWebserver.Connected:
                     ImGui.TextColored(new Vector4(0, 1, 0, 1), $"Connected!"); break;
