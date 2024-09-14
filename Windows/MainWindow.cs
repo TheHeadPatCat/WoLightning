@@ -105,7 +105,7 @@ public class MainWindow : Window, IDisposable
             switch (Plugin.ClientPishock.Status)
             {
                 case ConnectionStatusPishock.NotStarted:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Starting Plugin..."); break;
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Can't connect - No Userdata."); break;
 
                 case ConnectionStatusPishock.Connecting:
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Connecting..."); break;
