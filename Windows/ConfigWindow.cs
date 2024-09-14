@@ -1035,10 +1035,6 @@ public class ConfigWindow : Window, IDisposable
 
         if (TriggerObject.Name == "TakeDamage") createProportional(TriggerObject, "Amount of Health% to lose to hit the Limit.", 1, 100);
         if (TriggerObject.Name == "FailMechanic") createProportional(TriggerObject, "Amount of Stacks needed to hit the Limit.", 1, 8);
-
-        ImGui.Separator();
-        ImGui.Spacing();
-        ImGui.Spacing();
         if (changed) Configuration.Save();
     }
 
