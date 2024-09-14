@@ -165,13 +165,13 @@ namespace WoLightning.Classes
                     // We arent known to the server - register us.
                     if (responsePacket.OpData != null && (responsePacket.OpData.Split("-")[1] == "NotRegistered"))
                     {
-                        Plugin.ClientWebserver.sendWebserverRequest(OperationCode.Register);
+                        Plugin.ClientWebserver.request(OperationCode.Register);
                         return null;
                     }
 
                     if (responsePacket.OpData != null && (responsePacket.OpData.Equals("Fail-InvalidKey")))
                     {
-                        Plugin.ClientWebserver.severWebserverConnection();
+                        Plugin.ClientWebserver.disconnect();
                         Plugin.ClientWebserver.Status = ConnectionStatusWebserver.InvalidKey;
                         return "Cannot Login - Invalid Key";
                     }
@@ -186,7 +186,7 @@ namespace WoLightning.Classes
                     }
                     else if (responsePacket.OpData != null && responsePacket.OpData == "Fail-AlreadyExists")
                     {
-                        Plugin.ClientWebserver.severWebserverConnection();
+                        Plugin.ClientWebserver.disconnect();
                         Plugin.ClientWebserver.Status = ConnectionStatusWebserver.InvalidKey;
                         return "Cannot Register - We already exist.";
                     }
@@ -198,7 +198,7 @@ namespace WoLightning.Classes
                     {
                         Plugin.Authentification.ServerKey = string.Empty;
                         Plugin.Log("Reset Userdata on Webserver.");
-                        Plugin.ClientWebserver.sendWebserverRequest(OperationCode.Login);
+                        Plugin.ClientWebserver.request(OperationCode.Login);
                         return null;
                     }
                     else
@@ -236,13 +236,13 @@ namespace WoLightning.Classes
                     }
                     if (responsePacket.Sender == null || !responsePacket.Sender.validate())
                     {
-                        Plugin.ClientWebserver.sendWebserverRequest(OperationCode.AnswerSub, "Fail-InvalidSender");
+                        Plugin.ClientWebserver.request(OperationCode.AnswerSub, "Fail-InvalidSender");
                         return "Invalid Sender";
                     }
 
                     if (Plugin.Authentification.OwnedSubs.ContainsKey(responsePacket.Sender.getFullName()))
                     {
-                        Plugin.ClientWebserver.sendWebserverRequest(OperationCode.AnswerSub, "Fail-AlreadyExists");
+                        Plugin.ClientWebserver.request(OperationCode.AnswerSub, "Fail-AlreadyExists");
                         return "Already Exists";
                     }
 
@@ -274,7 +274,7 @@ namespace WoLightning.Classes
                     }
                     else if (responsePacket.OpData.Equals("Success-Accepted"))
                     {
-                        Plugin.ClientWebserver.sendWebserverRequest(OperationCode.RegisterMaster, null, responsePacket.Sender);
+                        Plugin.ClientWebserver.request(OperationCode.RegisterMaster, null, responsePacket.Sender);
                         return null;
                     }
 
@@ -287,7 +287,7 @@ namespace WoLightning.Classes
                     }
                     if (Plugin.Authentification.Master != null)
                     {
-                        Plugin.ClientWebserver.sendWebserverRequest(OperationCode.RegisterSub, "Fail-AlreadyBound");
+                        Plugin.ClientWebserver.request(OperationCode.RegisterSub, "Fail-AlreadyBound");
                         return "Already bound to a Master";
                     }
                     if (!Plugin.Authentification.targetMaster.equals(responsePacket.Target)) // Make sure we cannot get spoofed
@@ -308,7 +308,7 @@ namespace WoLightning.Classes
 
                     if (Plugin.Authentification.OwnedSubs.ContainsKey(responsePacket.Sender.getFullName()))
                     {
-                        Plugin.ClientWebserver.sendWebserverRequest(OperationCode.RegisterSub, "Fail-AlreadyExists", responsePacket.Target);
+                        Plugin.ClientWebserver.request(OperationCode.RegisterSub, "Fail-AlreadyExists", responsePacket.Target);
                         return "Already Exists";
                     }
 

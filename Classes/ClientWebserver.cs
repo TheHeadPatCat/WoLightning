@@ -18,6 +18,7 @@ namespace WoLightning.Classes
         NotStarted = 0,
         NotConnected = 1,
         Unavailable = 2,
+        EulaNotAccepted = 3,
 
         WontRespond = 101,
         Outdated = 102,
@@ -75,6 +76,13 @@ namespace WoLightning.Classes
         {
             if (Client != null) return;
 
+            if (!Plugin.Authentification.acceptedEula)
+            {
+                Plugin.Log("Eula isn't accepted - Stopping ClientWebserver creation.");
+                Status = ConnectionStatusWebserver.EulaNotAccepted;
+                return;
+            }
+
             var handler = new HttpClientHandler();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             handler.SslProtocols = SslProtocols.Tls12;
@@ -86,14 +94,32 @@ namespace WoLightning.Classes
             Client = new(handler) { Timeout = TimeSpan.FromSeconds(10) };
             Plugin.Log("HttpClient successfully created!");
 
-            establishWebserverConnection();
+            connect();
         }
 
+        public void connect()
+        {
+            PingTimer.Interval = pingSpeed;
+            PingTimer.Elapsed -= sendPing; // make sure we only have one ping event
+            PingTimer.Elapsed += sendPing;
+            PingTimer.Start();
+            request(OperationCode.Login);
+        }
+        public void disconnect()
+        {
+            PingTimer.Interval = retrySpeed;
+            PingTimer.Refresh();
+        }
+        public void disconnect(bool force)
+        {
+            PingTimer.Interval = retrySpeed;
+            if (PingTimer.Enabled) PingTimer.Elapsed -= sendPing;
+            if (PingTimer.Enabled) PingTimer.Stop();
+        }
 
-        public void sendWebserverRequest(OperationCode Op) { sendWebserverRequest(Op, null, null); }
-        public void sendWebserverRequest(OperationCode Op, String? OpData) { sendWebserverRequest(Op, OpData, null); }
-
-        public async void sendWebserverRequest(OperationCode Op, String? OpData, Player? Target)
+        public void request(OperationCode Op) { request(Op, null, null); }
+        public void request(OperationCode Op, String? OpData) { request(Op, OpData, null); }
+        public async void request(OperationCode Op, String? OpData, Player? Target)
         {
             if (Status == ConnectionStatusWebserver.Unavailable) return;
 
@@ -140,7 +166,7 @@ namespace WoLightning.Classes
                     case HttpStatusCode.Locked:
                         Status = ConnectionStatusWebserver.DevMode;
                         Plugin.Log("The Server is currently in DevMode.");
-                        severWebserverConnection();
+                        disconnect();
                         break;
 
                     // Softerrors DEPRECATED
@@ -183,7 +209,7 @@ namespace WoLightning.Classes
 
                 Status = ConnectionStatusWebserver.WontRespond;
                 Plugin.Log("The Server is not responding.");
-                severWebserverConnection();
+                disconnect();
                 return;
             }
             catch (TaskCanceledException ex)
@@ -196,7 +222,7 @@ namespace WoLightning.Classes
 
                 Status = ConnectionStatusWebserver.WontRespond;
                 Plugin.Log("The Server is online, but refused the connection.");
-                severWebserverConnection();
+                disconnect();
                 return;
             }
             catch (Exception ex)
@@ -205,40 +231,11 @@ namespace WoLightning.Classes
                 Status = ConnectionStatusWebserver.FatalError;
                 Client.CancelPendingRequests();
                 Plugin.Error(ex.ToString());
-                severWebserverConnection(true);
+                disconnect(true);
                 return;
             }
 
         }
-
-        public void establishWebserverConnection()
-        {
-            PingTimer.Interval = pingSpeed;
-            PingTimer.Elapsed -= sendPing; // make sure we only have one ping event
-            PingTimer.Elapsed += sendPing;
-            PingTimer.Start();
-            sendWebserverRequest(OperationCode.Login);
-        }
-
-        public void severWebserverConnection()
-        {
-            PingTimer.Interval = retrySpeed;
-            PingTimer.Refresh();
-        }
-
-        public void severWebserverConnection(bool force)
-        {
-            PingTimer.Interval = retrySpeed;
-            if (PingTimer.Enabled) PingTimer.Elapsed -= sendPing;
-            if (PingTimer.Enabled) PingTimer.Stop();
-        }
-
-        internal void sendPing(object? o, ElapsedEventArgs? e)
-        {
-            if (Status != ConnectionStatusWebserver.Connected) sendWebserverRequest(OperationCode.Login);
-            else sendWebserverRequest(OperationCode.Ping);
-        }
-
 
         private async void processResponse(NetPacket originalPacket, Task<String> responseString)
         {
@@ -281,6 +278,12 @@ namespace WoLightning.Classes
             {
                 Plugin.Error(ex.ToString());
             }
+        }
+
+        internal void sendPing(object? o, ElapsedEventArgs? e)
+        {
+            if (Status != ConnectionStatusWebserver.Connected) request(OperationCode.Login);
+            else request(OperationCode.Ping);
         }
 
     }

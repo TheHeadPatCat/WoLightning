@@ -18,6 +18,9 @@ public class MainWindow : Window, IDisposable
     private Vector4 deactivatedColor = new Vector4(1, 0, 0, 1);
     private string resetKeyInput = string.Empty;
 
+    private bool isEulaModalActive = false;
+    private TimerPlus eulaTimer = new TimerPlus();
+
     // We give this window a hidden ID using ##
     // So that the user will see "My Amazing Window" as window title,
     // but for ImGui the ID is "My Amazing Window##With a hidden ID"
@@ -31,9 +34,9 @@ public class MainWindow : Window, IDisposable
             MaximumSize = new Vector2(280, 2000)
         };
 
-
-
         Plugin = plugin;
+        eulaTimer.Interval = 16000;
+        eulaTimer.AutoReset = false;
     }
 
     public void Dispose()
@@ -130,6 +133,15 @@ public class MainWindow : Window, IDisposable
                 case ConnectionStatusWebserver.Connecting:
                     ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Connecting to web server..."); break;
 
+                case ConnectionStatusWebserver.EulaNotAccepted:
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Eula isn't accepted. ");
+                    ImGui.SameLine();
+                    if (ImGui.Button("Open")) {
+                        eulaTimer.Start();
+                        isEulaModalActive = true; 
+                        ImGui.OpenPopup("WoL Webserver Eula##webserverEula"); 
+                    }
+                    break;
 
                 case ConnectionStatusWebserver.Outdated:
                     ImGui.TextColored(new Vector4(1, 0, 0, 1), "Can't Connect - Outdated Version!"); break;
@@ -287,6 +299,58 @@ public class MainWindow : Window, IDisposable
         catch (Exception e)
         {
             Plugin.Error("Something went terribly wrong!", e);
+        }
+
+
+        Vector2 center = ImGui.GetMainViewport().GetCenter();
+        ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+        ImGui.SetNextWindowSize(new Vector2(450, 465));
+
+        if (ImGui.BeginPopupModal("WoL Webserver Eula##webserverEula", ref isEulaModalActive, 
+            ImGuiWindowFlags.Modal | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.Popup))
+        {
+            ImGui.TextWrapped("This is a simple Eula for the Webserver functionality of this Plugin.\n\nThe Webserver currently has these functions:\n");
+            
+            ImGui.BulletText("Allow storage of user configurations as backups.");
+            ImGui.BulletText("Allow sharing of user made presets.");
+            ImGui.BulletText("Usage of the Mastermode feature.");
+            ImGui.BulletText("Usage of the Soulbound feature.");
+
+            ImGui.TextWrapped("" +
+                "\nTo use these features, a persistent user account will be created upon your first connection." +
+                "\nThis account is valid for the currently played FF character." +
+                "\nHowever this does also mean, your character Name and World will be saved serverside." +
+                "\n\nYou will receive a unique Key used for logins, which will then be stored in the Authentification.json file." +
+                "\nThere is no way to recover this key upon loss, so remember to keep this file safe or create a backup of it." +
+                "\n\nUpon accepting this Eula, your account will be created.");
+            ImGui.TextColored(new Vector4(1, 0, 0, 1), "This is a non-reversible option.");
+
+
+            ImGui.PushItemWidth(ImGui.GetWindowSize().X / 2);
+            if (eulaTimer.TimeLeft > 0)
+            {
+                ImGui.BeginDisabled();
+                ImGui.Button($"Wait {(int)(eulaTimer.TimeLeft / 1000)}s...##eulaAccept", new Vector2(ImGui.GetWindowSize().X / 2 - 5, 25));
+                ImGui.EndDisabled();
+            }
+            else
+            {
+                if (ImGui.Button("Accept##eulaAccept", new Vector2(ImGui.GetWindowSize().X / 2 - 5, 25)))
+                {
+                    Plugin.Authentification.acceptedEula = true;
+                    Plugin.ClientWebserver.createHttpClient();
+                    isEulaModalActive = false;
+                    ImGui.CloseCurrentPopup();
+                }
+            }
+            ImGui.SameLine();
+            ImGui.PushItemWidth(ImGui.GetWindowSize().X / 2);
+            if (ImGui.Button("Decline##eulaDecline", new Vector2(ImGui.GetWindowSize().X / 2 - 5, 25)))
+            {
+                isEulaModalActive = false;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
         }
 
     }

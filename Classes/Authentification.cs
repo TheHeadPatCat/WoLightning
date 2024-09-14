@@ -21,9 +21,10 @@ namespace WoLightning.Classes
 
         private string? ConfigurationDirectoryPath { get; init; }
 
-        // Webserver things
-        private string Hash = string.Empty;
+        // Webserver thingsprivate
+        public bool acceptedEula { get; set; } = false;
         public string ServerKey { get; set; } = string.Empty;
+        private string Hash = string.Empty;
 
         // Pishock things
         public string PishockName { get; set; } = string.Empty;
@@ -33,8 +34,7 @@ namespace WoLightning.Classes
 
 
 
-
-
+       
         // Mastermode - Authentification Process
 
         [NonSerialized]
