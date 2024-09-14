@@ -6,6 +6,7 @@ using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Timers;
 using WoLightning.Classes;
 using WoLightning.Types;
@@ -34,6 +35,10 @@ namespace WoLightning
         private readonly bool[] deadIndexes = [false, false, false, false, false, false, false, false]; //how do i polyfill
         private int amountDead = 0;
 
+        private bool sittingOnChair = false;
+        private Vector3 sittingOnChairPos = new Vector3();
+        private TimerPlus sittingOnChairTimer = new TimerPlus();
+
         IPlayerCharacter? IPlayerCharacter;
         IPlayerCharacter? MasterCharacter;
         private Timer lookingForMaster = new Timer(new TimeSpan(0, 0, 5));
@@ -52,6 +57,8 @@ namespace WoLightning
             Plugin = plugin;
             Plugin.ClientState.Login += HandleLogin;
             Plugin.ClientState.Logout += HandleLogout;
+            sittingOnChairTimer.Interval = 5000;
+            sittingOnChairTimer.Elapsed += checkSittingOnChair;
         }
 
         public void Start() //Todo only start specific services, when respective trigger is on
@@ -69,6 +76,7 @@ namespace WoLightning
             Plugin.EmoteReaderHooks.OnEmoteOutgoing += OnEmoteOutgoing;
             Plugin.EmoteReaderHooks.OnEmoteSelf += OnEmoteSelf;
             Plugin.EmoteReaderHooks.OnEmoteUnrelated += OnEmoteUnrelated;
+            Plugin.EmoteReaderHooks.OnSitEmote += OnSitEmote;
         }
         public void Stop()
         {
@@ -86,6 +94,7 @@ namespace WoLightning
             Plugin.EmoteReaderHooks.OnEmoteOutgoing -= OnEmoteOutgoing;
             Plugin.EmoteReaderHooks.OnEmoteSelf -= OnEmoteSelf;
             Plugin.EmoteReaderHooks.OnEmoteUnrelated -= OnEmoteUnrelated;
+            Plugin.EmoteReaderHooks.OnSitEmote -= OnSitEmote;
             running = false;
         }
         public void Dispose()
@@ -108,6 +117,7 @@ namespace WoLightning
             Plugin.EmoteReaderHooks.OnEmoteOutgoing -= OnEmoteOutgoing;
             Plugin.EmoteReaderHooks.OnEmoteSelf -= OnEmoteSelf;
             Plugin.EmoteReaderHooks.OnEmoteUnrelated -= OnEmoteUnrelated;
+            Plugin.EmoteReaderHooks.OnSitEmote -= OnSitEmote;
             running = false;
         }
 
@@ -330,9 +340,6 @@ namespace WoLightning
             Plugin.Log(LocalPlayer.StatusList.ToString(), true);
         }
 
-
-
-
         public unsafe void HandleChatMessage(XivChatType type, int timespamp, ref SeString senderE, ref SeString message, ref bool isHandled)
         {
             if (Plugin.ClientState.LocalPlayer == null)
@@ -464,20 +471,69 @@ namespace WoLightning
 
         private void OnEmoteUnrelated(IPlayerCharacter sourceObj, IGameObject targetObj, ushort emoteId)
         {
-            //Plugin.PluginLog.Info("[Unrelated Emote] Source: " + sourceObj.ToString() + " Target:" + targetObj + " EmoteId: " + emoteId);
+            Plugin.PluginLog.Info("[Unrelated Emote] Source: " + sourceObj.ToString() + " Target:" + targetObj + " EmoteId: " + emoteId);
             // Currently Unused
         }
 
         private void OnEmoteOutgoing(IGameObject targetObj, ushort emoteId)
         {
-            //Plugin.PluginLog.Info("[OUTGOING EMOTE] Target: " + targetObj.ToString() + " EmoteId: " + emoteId);
-            // Currently Unused.
+            Plugin.PluginLog.Info("[OUTGOING EMOTE] Target: " + targetObj.ToString() + " EmoteId: " + emoteId);
+            
         }
 
         private void OnEmoteSelf(ushort emoteId)
         {
-            //Plugin.PluginLog.Info("[SELF EMOTE] EmoteId: " + emoteId);
+            Plugin.PluginLog.Info("[SELF EMOTE] EmoteId: " + emoteId);
             // Currently Unused.
+        }
+
+        private void OnSitEmote(ushort emoteId)
+        {
+            // 50 = /sit
+            // 51 = getup from /sit
+            // 52 = /groundsit
+
+            
+            if (ActivePreset.SitOnFurniture.IsEnabled())
+            {
+                if(emoteId == 50) // /sit on Chair done
+                {
+                    sittingOnChair = true;
+                    sittingOnChairPos = Plugin.ClientState.LocalPlayer.Position;
+                    Plugin.sendNotif($"You sat on Furniture!");
+                    Plugin.ClientPishock.request(ActivePreset.SitOnFurniture);
+                    int calc = 5000;
+                    if (ActivePreset.SitOnFurniture.Duration <= 10) calc += ActivePreset.SitOnFurniture.Duration * 1000;
+                    sittingOnChairTimer.Interval = calc;
+                    sittingOnChairTimer.Start();
+                }
+                
+                if(emoteId == 52) // /sit with no furniture or /groundsit on furniture - check nearby chairs
+                {
+                    // Todo - Implement
+                }
+
+                if (emoteId == 51)
+                {
+                    sittingOnChair = false;
+                    sittingOnChairTimer.Stop();
+                }
+            }
+        }
+
+        private void checkSittingOnChair(object? sender, ElapsedEventArgs? e)
+        {
+            if (sittingOnChair && Plugin.ClientState.LocalPlayer.Position.Equals(sittingOnChairPos))
+            {
+                Plugin.sendNotif($"You are still sitting on Furniture!");
+                Plugin.ClientPishock.request(ActivePreset.SitOnFurniture);
+                sittingOnChairTimer.Refresh();
+            }
+            else
+            {
+                sittingOnChair = false;
+                sittingOnChairTimer.Stop();
+            }
         }
 
 
