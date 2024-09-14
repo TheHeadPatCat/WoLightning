@@ -31,7 +31,7 @@ namespace WoLightning.Classes
         Connected = 200,
     }
 
-    public class ClientWebserver : IDisposable
+    public class ClientWebserver : IDisposable // Todo - Rewrite.
     {
         private readonly Plugin Plugin;
         public string ServerVersion = string.Empty;

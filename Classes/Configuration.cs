@@ -14,7 +14,7 @@ namespace WoLightning
     [Serializable]
     public class Configuration : IPluginConfiguration, IDisposable
     {
-        public int Version { get; set; } = 401;
+        public int Version { get; set; } = 406;
 
 
         public bool DebugEnabled { get; set; } = false;
@@ -62,7 +62,16 @@ namespace WoLightning
                 foreach (var file in Directory.EnumerateFiles(ConfigurationDirectoryPath + "\\Presets"))
                 {
                     string p = File.ReadAllText(file);
-                    Preset tPreset = DeserializePreset(p);
+                    Preset tPreset;
+                    try
+                    {
+                        tPreset = DeserializePreset(p);
+                    }
+                    catch (Exception e)
+                    {
+                        plugin.Log(e);
+                        tPreset = new Preset("Default");
+                    }
                     Presets.Add(tPreset);
                 }
             }

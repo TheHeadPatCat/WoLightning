@@ -151,11 +151,12 @@ public sealed class Plugin : IDalamudPlugin
             {
                 Configuration.Initialize(this, false, ConfigurationDirectoryPath);
             }
-            catch
+            catch (Exception e)
             {
                 Configuration = new Configuration();
                 Configuration.Save();
-                sendNotif("Your Configuration has been reset!");
+                sendNotif("Your Configuration has been reset due to an error!");
+                Log(e);
             }
 
             try
@@ -164,12 +165,14 @@ public sealed class Plugin : IDalamudPlugin
                 if (Authentification.Version < new Authentification().Version)
                 {
                     Authentification = new Authentification(ConfigurationDirectoryPath, true);
-                    sendNotif("Your Authentification has been reset!");
+                    sendNotif("Your Authentification has been reset due to a version upgrade!");
                 }
             }
-            catch
+            catch (Exception e)
             {
                 Authentification = new Authentification(ConfigurationDirectoryPath, true);
+                sendNotif("Your Authentification has been reset due to an error!");
+                Log(e);
             }
 
 

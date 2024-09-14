@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using System.Timers;
 using WoLightning.Classes;
 using WoLightning.Types;
@@ -29,11 +30,21 @@ public class ConfigWindow : Window, IDisposable
 
     List<int> durationArray = [100, 300, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
+    private Vector4 descColor = new Vector4(0.7f, 0.7f, 0.7f, 0.8f);
+    private Vector4 nameColorOff = new Vector4(1, 1, 1, 0.9f);
+    private Vector4 nameColorOn = new Vector4(0.5f,1, 0.3f, 0.9f);
+
     // Badword List
-    private String WordListInput = new String("");
-    private int[] WordListSetting = new int[3];
-    private String selectedWord = new String("");
-    private int currentWordIndex = -1;
+    private String BadWordListInput = new String("");
+    private int[] BadWordListSetting = new int[3];
+    private String BadselectedWord = new String("");
+    private int BadcurrentWordIndex = -1;
+
+    // Enforced Word List
+    private String DontSayWordListInput = new String("");
+    private int[] DontSayWordListSetting = new int[3];
+    private String DontSayselectedWord = new String("");
+    private int DontSaycurrentWordIndex = -1;
 
 
     // Permission List
@@ -149,10 +160,11 @@ public class ConfigWindow : Window, IDisposable
         {
             DrawGeneralTab();
             DrawDefaultTriggerTab();
-            if (Configuration.ActivePreset.SayBadWord.IsEnabled()) DrawWordlistTab();
+            if (Configuration.ActivePreset.SayBadWord.IsEnabled()) DrawBadWordList();
+            if (Configuration.ActivePreset.DontSayWord.IsEnabled()) DrawEnforcedWordList();
             DrawCustomTriggerTab();
             //DrawPermissionsTab(); todo make work again
-            // DrawCommandTab(); todo not implemented
+            //DrawCommandTab(); todo not implemented
             if (Configuration.DebugEnabled) DrawDebugTab();
 
             ImGui.EndTabBar();
@@ -332,71 +344,200 @@ public class ConfigWindow : Window, IDisposable
             ImGui.EndTabItem();
         }
     }
-    private void DrawWordlistTab()
+    private void DrawBadWordList()
     {
-        if (ImGui.BeginTabItem("Word List"))
+        if (ImGui.BeginTabItem("Bad Word List"))
         {
+            ImGui.Text("If you say any of these words, you'll trigger its settings!" +
+                "\nPunctuation doesnt matter!");
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
             var SavedWordSettings = Configuration.ActivePreset.SayBadWord.CustomData;
 
-            if (ImGui.InputTextWithHint("Word to add", "Click on a entry to edit it.", ref WordListInput, 48))
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 15);
+            if (ImGui.InputTextWithHint("##BadWordInput", "Click on a entry to edit it.", ref BadWordListInput, 48))
             {
-                if (currentWordIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
+                if (BadcurrentWordIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
                 {
                     int[] copyArray = new int[3];
-                    WordListSetting.CopyTo(copyArray, 0);
-                    WordListSetting = copyArray;
+                    BadWordListSetting.CopyTo(copyArray, 0);
+                    BadWordListSetting = copyArray;
                 }
+                BadcurrentWordIndex = -1;
             }
 
-            ImGui.ListBox("Mode##Word", ref WordListSetting[0], ["Shock", "Vibrate", "Beep"], 3);
-            ImGui.SliderInt("Intensity##WordInt", ref WordListSetting[1], 1, 100);
-            ImGui.SliderInt("Duration##WordDur", ref WordListSetting[2], 1, 10);
+            //clamp
+            if (BadWordListSetting[0] < 0 || BadWordListSetting[0] > 3) BadWordListSetting[0] = 0;
 
+            if (BadWordListSetting[1] <= 0) BadWordListSetting[1] = 1;
+            if (BadWordListSetting[1] > 100) BadWordListSetting[1] = 100;
 
-            if (ImGui.Button("Add Word"))
-            {
-                if (SavedWordSettings.ContainsKey(WordListInput)) SavedWordSettings.Remove(WordListInput);
-                SavedWordSettings.Add(WordListInput, WordListSetting);
-                Configuration.ActivePreset.SayBadWord.CustomData = SavedWordSettings;
-                Configuration.Save();
-                currentWordIndex = -1;
-                WordListInput = new String("");
-                WordListSetting = new int[3];
-                selectedWord = new String("");
-            }
+            if (BadWordListSetting[2] <= 0) BadWordListSetting[2] = 100;
+            if (BadWordListSetting[2] > 10 && BadWordListSetting[2] != 100 && BadWordListSetting[2] != 300) BadWordListSetting[2] = 10;
+
+            ImGui.Separator();
+            
+            ImGui.BeginGroup();
+            ImGui.Spacing();
+            ImGui.Text("    Mode");
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 3 - 50);
+            ImGui.Combo("##Word", ref BadWordListSetting[0], ["Shock", "Vibrate", "Beep"], 3);
+            ImGui.EndGroup();
+
             ImGui.SameLine();
-            if (ImGui.Button("Remove Word"))
-            {
-                if (SavedWordSettings.ContainsKey(WordListInput)) SavedWordSettings.Remove(WordListInput);
-                Configuration.ActivePreset.SayBadWord.CustomData = SavedWordSettings;
-                Configuration.Save();
-                currentWordIndex = -1;
-                WordListInput = new String("");
-                WordListSetting = new int[3];
-                selectedWord = new String("");
+
+            ImGui.BeginGroup();
+            ImGui.Spacing();
+            ImGui.Text("    Duration");
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 4.5f);
+            int DurationIndex = durationArray.IndexOf(BadWordListSetting[2]);
+            if(ImGui.Combo("##WordDur", ref DurationIndex, ["0.1s", "0.3s", "1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s"], 12)){
+                BadWordListSetting[2] = durationArray[DurationIndex];
             }
+            ImGui.EndGroup();
+
+            ImGui.SameLine();
+
+            ImGui.BeginGroup();
+            ImGui.Spacing();
+            ImGui.Text("    Intensity");
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 2f);
+            ImGui.SliderInt("##BadWordInt", ref BadWordListSetting[1], 1, 100);
+            ImGui.EndGroup();
+
+            ImGui.Separator();
 
             ImGui.Spacing();
+
+            if (ImGui.Button("Add Word##BadWordAdd",new Vector2(ImGui.GetWindowWidth() /2 - 8,25)))
+            {
+                if (SavedWordSettings.ContainsKey(BadWordListInput)) SavedWordSettings.Remove(BadWordListInput);
+                SavedWordSettings.Add(BadWordListInput, BadWordListSetting);
+                Configuration.ActivePreset.SayBadWord.CustomData = SavedWordSettings;
+                Configuration.Save();
+                BadcurrentWordIndex = -1;
+                BadWordListInput = new String("");
+                BadWordListSetting = new int[3];
+                BadselectedWord = new String("");
+            }
+
+            ImGui.SameLine();
+
+            if (BadcurrentWordIndex == -1) ImGui.BeginDisabled();
+            if (ImGui.Button("Remove Word##BadWordRemove", new Vector2(ImGui.GetWindowWidth() / 2 - 8, 25)))
+            {
+                if (SavedWordSettings.ContainsKey(BadWordListInput)) SavedWordSettings.Remove(BadWordListInput);
+                Configuration.ActivePreset.SayBadWord.CustomData = SavedWordSettings;
+                Configuration.Save();
+                BadcurrentWordIndex = -1;
+                BadWordListInput = new String("");
+                BadWordListSetting = new int[3];
+                BadselectedWord = new String("");
+            }
+            if (BadcurrentWordIndex == -1) ImGui.EndDisabled();
+
             ImGui.Spacing();
 
             if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
 
-            if (ImGui.BeginListBox("Active Words"))
+            if (ImGui.BeginListBox("##BadWordListBox",new Vector2(ImGui.GetWindowWidth() - 15,340)))
+            {
+                int index = 0;
+                foreach (var (word, settings) in SavedWordSettings)
+                {
+                    string mode = new String("");
+                    string durS = new String("");
+                    bool is_Selected = (BadcurrentWordIndex == index);
+                    switch (settings[0]) { case 0: mode = "Shock"; break; case 1: mode = "Vibrate"; break; case 2: mode = "Beep"; break; };
+                    switch (settings[2]) { case 100: durS = "0.1s"; break; case 300: durS = "0.3s"; break; default: durS = $"{settings[2]}s"; break; }
+                    if (ImGui.Selectable($" Word: {word}  | Mode: {mode} | Intensity: {settings[1]} | Duration: {durS}", ref is_Selected))
+                    {
+                        BadselectedWord = word;
+                        BadcurrentWordIndex = index;
+                        BadWordListInput = word;
+                        BadWordListSetting = settings;
+                    }
+                    index++;
+                }
+                ImGui.EndListBox();
+            }
+
+
+            ImGui.EndTabItem();
+        }
+    }
+    private void DrawEnforcedWordList()
+    {
+        if (ImGui.BeginTabItem("Enforced Word List"))
+        {
+            if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
+
+            ImGui.Text("You have to say atleast one of the words from the list below, otherwise these settings will trigger." +
+                "\nCorrect punctuation is needed as well.");
+            createPickerBox(Configuration.ActivePreset.DontSayWord);
+
+            var SavedWordSettings = Configuration.ActivePreset.DontSayWord.CustomData;
+
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 15);
+            if (ImGui.InputTextWithHint("##DontSayWordInput", "Click on a entry to edit it.", ref DontSayWordListInput, 48))
+            {
+                if (BadcurrentWordIndex != -1) // Get rid of the old settings, otherwise we build connections between two items
+                {
+                    int[] copyArray = new int[3];
+                    BadWordListSetting.CopyTo(copyArray, 0);
+                    BadWordListSetting = copyArray;
+                }
+                BadcurrentWordIndex = -1;
+            }
+
+
+
+            ImGui.Spacing();
+
+            if (ImGui.Button("Add Word##DontSayWordAdd", new Vector2(ImGui.GetWindowWidth() / 2 - 8, 25)))
+            {
+                if (SavedWordSettings.ContainsKey(DontSayWordListInput)) SavedWordSettings.Remove(DontSayWordListInput);
+                SavedWordSettings.Add(DontSayWordListInput, DontSayWordListSetting);
+                Configuration.ActivePreset.DontSayWord.CustomData = SavedWordSettings;
+                Configuration.Save();
+                DontSaycurrentWordIndex = -1;
+                DontSayWordListInput = new String("");
+                DontSayWordListSetting = new int[3];
+                DontSayselectedWord = new String("");
+            }
+
+            ImGui.SameLine();
+
+            if (DontSaycurrentWordIndex == -1) ImGui.BeginDisabled();
+            if (ImGui.Button("Remove Word##DontSayWordRemove", new Vector2(ImGui.GetWindowWidth() / 2 - 8, 25)))
+            {
+                if (SavedWordSettings.ContainsKey(DontSayWordListInput)) SavedWordSettings.Remove(DontSayWordListInput);
+                Configuration.ActivePreset.DontSayWord.CustomData = SavedWordSettings;
+                Configuration.Save();
+                DontSaycurrentWordIndex = -1;
+                DontSayWordListInput = new String("");
+                DontSayWordListSetting = new int[3];
+                DontSayselectedWord = new String("");
+            }
+            if (DontSaycurrentWordIndex == -1) ImGui.EndDisabled();
+
+            ImGui.Spacing();
+
+            if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
+
+            if (ImGui.BeginListBox("##DontSayWordListBox", new Vector2(ImGui.GetWindowWidth() - 15, 320)))
             {
                 int index = 0;
                 foreach (var (word, settings) in SavedWordSettings)
                 {
                     var modeInt = settings[0];
                     var mode = new String("");
-                    bool is_Selected = (currentWordIndex == index);
-                    switch (modeInt) { case 0: mode = "Shock"; break; case 1: mode = "Vibrate"; break; case 2: mode = "Beep"; break; };
-                    if (ImGui.Selectable($" {word}   Mode: {mode}  Intensity: {settings[1]}  Duration: {settings[2]}", ref is_Selected))
+                    bool is_Selected = (DontSaycurrentWordIndex == index);
+                    if (ImGui.Selectable($" {word} ", ref is_Selected))
                     {
-                        selectedWord = word;
-                        currentWordIndex = index;
-                        WordListInput = word;
-                        WordListSetting = settings;
+                        DontSayselectedWord = word;
+                        DontSaycurrentWordIndex = index;
+                        DontSayWordListInput = word;
+                        DontSayWordListSetting = settings;
                     }
                     index++;
                 }
@@ -482,7 +623,7 @@ public class ConfigWindow : Window, IDisposable
                 int index = 0;
                 foreach (var (name, permissionlevel) in PermissionList)
                 {
-                    bool is_Selected = (currentWordIndex == index);
+                    bool is_Selected = (BadcurrentWordIndex == index);
                     var permissionleveltext = new String("");
                     switch (permissionlevel) { case 0: permissionleveltext = "Blocked"; break; case 1: permissionleveltext = "Whitelisted"; break; case 2: permissionleveltext = "Privileged"; break; };
                     if (ImGui.Selectable($" Player: {name}   Permission: {permissionleveltext}", ref is_Selected))
@@ -591,25 +732,27 @@ public class ConfigWindow : Window, IDisposable
             return;
         }
 
-        createEntry(Configuration.ActivePreset.GetPat, "Triggers whenever you get /pet.");
-        createEntry(Configuration.ActivePreset.GetSnapped, "Triggers whenever you get /snap at.");
-        createEntry(Configuration.ActivePreset.SitOnFurniture, "Trigger whenever /sit onto a chair.",
+        createEntry(Configuration.ActivePreset.GetPat,"Get /pet'd", "Triggers whenever a player does the /pet emote on you.");
+        createEntry(Configuration.ActivePreset.GetSnapped,"Get /snap'd" , "Triggers whenever a player does the /snap emote on you.");
+        createEntry(Configuration.ActivePreset.SitOnFurniture,"Sit on Chairs" , "Triggers whenever you /sit onto any kind of furniture.",
             "This Trigger will activate again after 5 seconds (after the shock is done) if you dont get off!" +
             "\nIf you do /groundsit onto it, it wont count though.");
-        createEntry(Configuration.ActivePreset.LoseDeathRoll, "Trigger whenever you lose a deathroll.",
+        createEntry(Configuration.ActivePreset.LoseDeathRoll,"Lose DR", "Triggers whenever you lose a deathroll.",
             "Deathroll is when you use /random against another player to see who reaches 1 first.");
 
 
-        createEntry(Configuration.ActivePreset.SayFirstPerson, "Triggers whenever you refer to yourself in the first person.",
-            "This currently only works when writing in English.");
+        createEntry(Configuration.ActivePreset.SayFirstPerson,"Mention yourself", "Triggers whenever you refer to yourself in the first person.",
+            "This currently only works when writing in English." +
+            "\nExamples: 'Me', 'I', 'Mine' and so on.");
 
 
-        /* Todo - reimplement
-        createEntry(Configuration.ActivePreset.SayBadWord, "Triggers whenever you say a word from a list.",
-            "You can configure these words, once the setting is enabled.");
-        if (Configuration.ActivePreset.SayBadWord.IsEnabled())
-            ImGui.Text("You can find the settings for this option in the tab \"Word List\"");
-        */
+        createEntry(Configuration.ActivePreset.SayBadWord,"Say a bad word", "Triggers whenever you say a bad word from a list.",
+            "You can set these words yourself in the new Tab 'Bad Word List' once this is activated."
+            ,true);
+
+        createEntry(Configuration.ActivePreset.DontSayWord,"Dont say a enforced word", "Triggers whenever you forget to say a enforced word from a list.",
+            "You can set these words yourself in the new Tab 'Enforced Word List' once this is activated."
+            , true);
 
     }
     private void DrawCombat()
@@ -619,18 +762,19 @@ public class ConfigWindow : Window, IDisposable
             return;
         }
 
-        createEntry(Configuration.ActivePreset.Wipe, "Triggers whenever all party members die.");
+        createEntry(Configuration.ActivePreset.Wipe,"Party Wipe", "Triggers whenever all party members die.");
 
-        createEntry(Configuration.ActivePreset.Die, "Triggers whenever you die.");
+        createEntry(Configuration.ActivePreset.Die,"Death", "Triggers whenever you die.");
 
-        createEntry(Configuration.ActivePreset.PartymemberDies, "Triggers whenever any party member dies.",
-            "This delivers scaling shocks based on the amount of party members that are dead, up to your selected maximum.");
+        createEntry(Configuration.ActivePreset.PartymemberDies,"Party member death" , "Triggers whenever any party member dies, this includes you.",
+            "This delivers proportional shocks, based on how many players are dead - up to your set limit.");
 
-        createEntry(Configuration.ActivePreset.FailMechanic, "Triggers whenever you fail a mechanic.",
+        createEntry(Configuration.ActivePreset.FailMechanic,"Fail a Mechanic", "Triggers whenever you fail a mechanic.",
             "This will trigger whenever you get a [Vulnerability Up] or [Damage Down] debuff.");
 
-        createEntry(Configuration.ActivePreset.TakeDamage, "Triggers whenever you take damage of any kind.",
-            "This will go off a lot, so be warned! It does mean literally any damage, from mobs to DoTs and even fall damage!\nIf it ever gets too much, remember to set the cooldown higher in \"General Settings!\"");
+        createEntry(Configuration.ActivePreset.TakeDamage,"Take Damage", "Triggers whenever you take damage of any kind.",
+            "This will go off a lot, so be warned!" +
+            "\nIt does mean literally any damage, from mobs to DoTs and even fall damage!");
 
     }
     private void DrawCustomChats()
@@ -681,7 +825,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.PushFont(UiBuilder.IconFont);
         if (ImGui.Button(FontAwesomeIcon.Plus.ToIconString(), ImGui.GetFrameHeight() * Vector2.One))
         {
-            Configuration.ActivePreset.SayCustomMessage.Add(new("New Trigger"));
+            Configuration.ActivePreset.SayCustomMessage.Add(new("New Trigger",false));
             Configuration.Save();
         }
         ImGui.PopFont();
@@ -800,31 +944,47 @@ public class ConfigWindow : Window, IDisposable
         }
     }
 
-    private void createEntry(Trigger TriggerObject, string Description)
-    {
-        createShockerSelector(TriggerObject);
-        bool enabled = TriggerObject.IsEnabled();
-        if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
-        {
-            ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
-        }
-        ImGui.SameLine();
-        ImGui.Text($"{Description}");
-        if (enabled) createPickerBox(TriggerObject);
-    }
 
-    private void createEntry(Trigger TriggerObject, string Description, string Hint)
+
+
+
+
+
+    private void createEntry(Trigger TriggerObject, string Name, string Description) { createEntry(TriggerObject, Name, Description, "", false); }
+    private void createEntry(Trigger TriggerObject, string Name, string Description, bool noOptions) { createEntry(TriggerObject, Name,  Description, "", noOptions); }
+
+    private void createEntry(Trigger TriggerObject, string Name, string Description, string Hint) { createEntry(TriggerObject, Name, Description, Hint, false); }
+
+    private void createEntry(Trigger TriggerObject, string Name, string Description, string Hint, bool noOptions)
     {
         createShockerSelector(TriggerObject);
         bool enabled = TriggerObject.IsEnabled();
+        ImGui.BeginGroup();
+        ImGui.Spacing();
+        ImGui.Spacing();
         if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
             ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
+        ImGui.EndGroup();
+
         ImGui.SameLine();
-        ImGui.Text($"{Description}");
-        ImGui.SameLine();
-        ImGui.TextDisabled("(?)");
-        if (ImGui.IsItemHovered()) { ImGui.SetTooltip(Hint); }
-        if (enabled) createPickerBox(TriggerObject);
+        ImGui.BeginGroup();
+        if (enabled) ImGui.TextColored(nameColorOn,"  " + Name);
+        else ImGui.TextColored(nameColorOff, "  " + Name);
+        ImGui.TextColored(descColor,$"  {Description}");
+        if (Hint.Length > 0)
+        {
+            ImGui.SameLine();
+            ImGui.TextDisabled("(?)");
+            if (ImGui.IsItemHovered()) { ImGui.SetTooltip(Hint); }
+        }
+        ImGui.EndGroup();
+
+        if (!noOptions && enabled)
+        {
+            createPickerBox(TriggerObject);
+        }
+        ImGui.Spacing();
+        ImGui.Separator();
     }
 
     private void createPickerBox(Trigger TriggerObject)

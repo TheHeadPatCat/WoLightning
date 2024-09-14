@@ -263,6 +263,23 @@ namespace WoLightning
                     }
                 }
 
+                if (ActivePreset.DontSayWord.IsEnabled())
+                {
+                    bool found = false;
+                    foreach (var (word, settings) in ActivePreset.DontSayWord.CustomData)
+                    {
+                        if (message.ToString().Contains(word))
+                        {
+                            found = true;
+                        }
+                    }
+                    if (!found)
+                    {
+                        Plugin.sendNotif($"You forgot to say a enforced word!");
+                        Plugin.ClientPishock.request(ActivePreset.DontSayWord);
+                    }
+                }
+
                 //slightly different logic
                 if (ActivePreset.SayFirstPerson.IsEnabled())
                 {

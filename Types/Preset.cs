@@ -16,20 +16,20 @@ namespace WoLightning.Types
 
 
         // Social Triggers
-        public Trigger GetPat { get; set; } = new Trigger("GetPat");
-        public Trigger GetSnapped { get; set; } = new Trigger("GetSnapped");
-        public Trigger LoseDeathRoll { get; set; } = new Trigger("LoseDeathroll");
-        public Trigger SitOnFurniture { get; set; } = new Trigger("SitOnFurniture");
-        public Trigger SayFirstPerson { get; set; } = new Trigger("SayFirstPerson");
-        public Trigger SayBadWord = new Trigger("SayBadWord");
-        public Trigger DontSayWord = new Trigger("DontSayWord");
+        public Trigger GetPat { get; set; } = new Trigger("GetPat",false);
+        public Trigger GetSnapped { get; set; } = new Trigger("GetSnapped", false);
+        public Trigger LoseDeathRoll { get; set; } = new Trigger("LoseDeathroll", false);
+        public Trigger SitOnFurniture { get; set; } = new Trigger("SitOnFurniture", false);
+        public Trigger SayFirstPerson { get; set; } = new Trigger("SayFirstPerson", false);
+        public Trigger SayBadWord = new Trigger("SayBadWord", true);
+        public Trigger DontSayWord = new Trigger("DontSayWord", true);
 
         // Combat Triggers
-        public Trigger TakeDamage { get; set; } = new Trigger("TakeDamage");
-        public Trigger FailMechanic { get; set; } = new Trigger("FailMechanic");
-        public Trigger Die { get; set; } = new Trigger("Die");
-        public Trigger PartymemberDies { get; set; } = new Trigger("PartymemberDies");
-        public Trigger Wipe { get; set; } = new Trigger("Wipe");
+        public Trigger TakeDamage { get; set; } = new Trigger("TakeDamage", true);
+        public Trigger FailMechanic { get; set; } = new Trigger("FailMechanic", true);
+        public Trigger Die { get; set; } = new Trigger("Die", false);
+        public Trigger PartymemberDies { get; set; } = new Trigger("PartymemberDies", false);
+        public Trigger Wipe { get; set; } = new Trigger("Wipe", false);
 
         // Custom Triggers
         public List<RegexTrigger> SayCustomMessage { get; set; } = new List<RegexTrigger>();
