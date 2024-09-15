@@ -3,7 +3,7 @@
   "Name": "Warrior of Lightning",
   "Punchline": "A integration for Pishock devices",
   "Description": "Open the main window with /wol",
-  "Changelog": " # 0.4.1.0 Warrior of Lightning \n\n Implemented SayBadWord and DontSayWord Triggers\n + Major UI cleanup",
+  "Changelog": " # 0.4.1.1 Warrior of Lightning \n\n Implemented Cooldowns\n+ Minor UI Cleanup",
   "AcceptsFeedback": true,
   "FeedbackMessage":  "Thank you for your Feedback!",
   "ApplicableVersion": "any",
