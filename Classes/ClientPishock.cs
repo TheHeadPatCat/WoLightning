@@ -117,7 +117,8 @@ namespace WoLightning.Classes
                 Plugin.NotificationManager.AddNotification(result);
             }
 
-            foreach (var shocker in TriggerObject.Shockers)
+            List<Shocker> saveCopy = TriggerObject.Shockers;
+            foreach (var shocker in saveCopy)
             {
                 StringContent jsonContent;
                 if (overrideSettings != null)
@@ -153,7 +154,7 @@ namespace WoLightning.Classes
                     "application/json");
                 }
 
-                try { await Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent); }
+                try { Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent); }
                 catch (Exception ex)
                 {
                     Plugin.Error(ex.ToString());
@@ -338,7 +339,7 @@ namespace WoLightning.Classes
 
         private void processPishockResponse(HttpContent response)
         {
-
+            Status = ConnectionStatusPishock.Connected;
             using (var reader = new StreamReader(response.ReadAsStream()))
             {
                 string message = reader.ReadToEnd();
@@ -362,6 +363,7 @@ namespace WoLightning.Classes
         {
 
             shocker.Status = ShockerStatus.Online;
+            Status = ConnectionStatusPishock.Connected;
             using (var reader = new StreamReader(response.ReadAsStream()))
             {
                 string message = reader.ReadToEnd();
