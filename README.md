@@ -15,38 +15,32 @@ Or if you want to be fancy, open a Issue. That also works.
 
 
 ## Current Features
- - Premade Triggers for:  
- Getting /pet  
+ - Social Triggers:  
+ Getting /pet'd  
+ Getting /snap'd at (By [thattuys](https://github.com/thattuys))  
+ Sitting on Furniture  
  Losing a Deathroll  
- Taking Damage  
- Getting a "Vulnerabity Up" Stack (so failing a mechanic)  
+ Saying specific phrases/words or not saying them  
+ 
+ - Combat Triggers:  
+ Party Wipes  
  Dying  
- Wiping  
- Saying specific phrases/words  
-- Creation of Custom Triggers (Created by [Lexiconmage](https://github.com/lexiconmage))
-- A Whitelist/Blacklist
-- Presets and Preset Sharing
-- Master Mode  
+ Any Partymember dying  
+ Failing Mechanics  
+ Taking Damage (Proprtional calculation supported)  
+ 
+- Creation of Custom Triggers (By [Lexiconmage](https://github.com/lexiconmage))
+
+- Preset profiles    
+- Master Mode [CURRENTLY DISABLED]  
   Allows another player to take control over your Configuration.
 - A safeword with /red  
   This disables all Pishock functionality from the plugin until used again.
-- "Death mode" (Created by [Lexiconmage](https://github.com/lexiconmage))  
-  Will shock you on any partymembers death - increasing in intensity with more members dead!
  
   ![Preview of Configuration](etc/configPreview.png)
   
 
-
 ## Installation:
-
-### One note beforehand:
-Once you install and activate this plugin, it will connect to a Webserver i created.  
-This is to make the Master Mode work and nothing else, for now.  
-It will however store your Ingame Character Name for the time being.  
-I do check on when the last connection to that server was, and delete those
-characters out of the database after 30 days.  
-If you however feel uncomfortable with this, or simply dont trust me, you can message me anytime and i will manually remove your entry.
-
 
 Ingame, open the Dalamud Settings, navigate to the "Experimental" Tab and scroll down.
 There you find "Custom Plugin Repositories" - Important do not mix this up with "Dev Plugins" at the top!  
@@ -68,13 +62,9 @@ Firstly, on the very bottom, you need to put in your PiShock Username, then a sh
 - The Sharecode can be get from the big "Share" button on your shocker, press that and click on "+ Code". Then copy that and put it into the box.
 - API Key is found in the menu at the very top right, under "Account". You can generate one here, if you have never used one before, otherwise use your existing one that you have saved somewhere (otherwise other integrations will lose their key)
 
-Now you can open the Configuration, with the Button below.
+To finish it off, press the "Save & Test" button and see if your shockers vibrate within around 3 seconds!  
 
 ## Configuration
-
-Once you have done these three steps, you can go ahead and press Test Connection!
-If you shocker vibrates within around 3 seconds, everything is working as intended.
-If not, then you will probably have to recheck if everything you entered is correct - there is sadly no way to know what went wrong...
 
 After you have gotten all of this behind you, you can start customizing your experience!
 Simply enable whichever trigger you like and set the according values to your liking.
