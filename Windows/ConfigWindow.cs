@@ -960,15 +960,31 @@ public class ConfigWindow : Window, IDisposable
         createShockerSelector(TriggerObject);
         bool enabled = TriggerObject.IsEnabled();
         ImGui.BeginGroup();
-        ImGui.Spacing();
-        ImGui.Spacing();
+        if (noOptions || !enabled)
+        {
+            ImGui.Spacing();
+            ImGui.Spacing();
+        }
         if (ImGui.Checkbox($"##checkBox{TriggerObject.Name}", ref enabled))
             ImGui.OpenPopup($"Select Shockers##selectShockers{TriggerObject.Name}");
+        bool isOptionsOpened = TriggerObject.isOptionsOpen;
+        if (!noOptions && enabled)
+        {
+            if (isOptionsOpened && ImGui.ArrowButton("##collapse" + TriggerObject.Name, ImGuiDir.Down))
+            {
+                TriggerObject.isOptionsOpen = !isOptionsOpened;
+            }
+            if (!isOptionsOpened && ImGui.ArrowButton("##collapse" + TriggerObject.Name, ImGuiDir.Right))
+            {
+                TriggerObject.isOptionsOpen = !isOptionsOpened;
+            }
+        }
         ImGui.EndGroup();
 
         ImGui.SameLine();
         ImGui.BeginGroup();
-        if (enabled) ImGui.TextColored(nameColorOn,"  " + Name);
+        if (!noOptions && enabled) ImGui.Spacing();
+        if (enabled) ImGui.TextColored(nameColorOn,"  " + Name + $"  [{TriggerObject.OpMode}]");
         else ImGui.TextColored(nameColorOff, "  " + Name);
         ImGui.TextColored(descColor,$"  {Description}");
         if (Hint.Length > 0)
@@ -978,8 +994,8 @@ public class ConfigWindow : Window, IDisposable
             if (ImGui.IsItemHovered()) { ImGui.SetTooltip(Hint); }
         }
         ImGui.EndGroup();
-
-        if (!noOptions && enabled)
+        
+        if (isOptionsOpened)
         {
             createPickerBox(TriggerObject);
         }
@@ -1022,7 +1038,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.SameLine();
         ImGui.BeginGroup();
         ImGui.Text("    Intensity");
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 1.77f - 30);
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 1.85f - 30);
         int Intensity = TriggerObject.Intensity;
         if (ImGui.SliderInt("##Intensity" + TriggerObject.Name, ref Intensity, 1, 100))
         {
@@ -1031,10 +1047,17 @@ public class ConfigWindow : Window, IDisposable
         }
         ImGui.EndGroup();
 
-
-
         if (TriggerObject.Name == "TakeDamage") createProportional(TriggerObject, "Amount of Health% to lose to hit the Limit.", 1, 100);
         if (TriggerObject.Name == "FailMechanic") createProportional(TriggerObject, "Amount of Stacks needed to hit the Limit.", 1, 8);
+
+        int Cooldown = TriggerObject.Cooldown;
+        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 1.25f - 30);
+        if (ImGui.SliderInt("Cooldown (sec) ##Cooldown" + TriggerObject.Name, ref Cooldown, 0, 60))
+        {
+            TriggerObject.Cooldown = Cooldown;
+            changed = true;
+        }
+
         if (changed) Configuration.Save();
     }
 
@@ -1043,11 +1066,12 @@ public class ConfigWindow : Window, IDisposable
         // Todo add proper formatting, this popup looks terrible
         Vector2 center = ImGui.GetMainViewport().GetCenter();
         ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
-        ImGui.SetNextWindowSize(new Vector2(400, 250));
+        ImGui.SetNextWindowSize(new Vector2(400, 400));
         bool isModalOpen = TriggerObject.isModalOpen;
-        if (ImGui.BeginPopupModal($"Select Shockers##selectShockers{TriggerObject.Name}", ref isModalOpen, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.Popup | ImGuiWindowFlags.NoTitleBar))
+        if (ImGui.BeginPopupModal($"Select Shockers##selectShockers{TriggerObject.Name}", ref isModalOpen,
+            ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.Popup | ImGuiWindowFlags.NoDecoration))
         {
-
+            
             if (Plugin.Authentification.PishockShockers.Count == 0)
             {
                 ImGui.TextWrapped("Please add Shockers first via the \"Account Settings\" in the main window.");
@@ -1058,17 +1082,14 @@ public class ConfigWindow : Window, IDisposable
             }
             else
             {
-                ImGui.TextWrapped("Please select all shockers that should activate for this trigger:");
+                ImGui.Text("Please select all shockers that should activate for this trigger:");
                 foreach (var shocker in Plugin.Authentification.PishockShockers)
                 {
                     bool isEnabled = TriggerObject.Shockers.Find(sh => sh.Code == shocker.Code) != null;
                     if (ImGui.Checkbox($"{shocker.Name}##shockerbox{shocker.Code}", ref isEnabled))
                     { // this could probably be solved more elegantly
                         if (isEnabled) TriggerObject.Shockers.Add(shocker);
-                        else
-                        {
-                            TriggerObject.Shockers.RemoveAt(TriggerObject.Shockers.FindIndex(sh => sh.Code == shocker.Code));
-                        }
+                        else TriggerObject.Shockers.RemoveAt(TriggerObject.Shockers.FindIndex(sh => sh.Code == shocker.Code));
                     }
                 }
 

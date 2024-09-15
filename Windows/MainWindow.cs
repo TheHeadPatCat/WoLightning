@@ -50,52 +50,6 @@ public class MainWindow : Window, IDisposable
 
         try
         {
-            /*
-            switch (Plugin.ClientWebserver.Status)
-            {
-                case ConnectionStatus.NotStarted:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Starting Plugin..."); break;
-                case ConnectionStatus.NotConnected:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), $"Not Connected to the Webserver."); break;
-                case ConnectionStatus.Connected:
-                    ImGui.TextColored(new Vector4(0, 1, 0, 1), $"Connected!\nAverage Ping: {Plugin.ClientWebserver.Ping()}ms"); break;
-                case ConnectionStatus.Connecting:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1), "Connecting to web server..."); break;
-                case ConnectionStatus.UnknownUser:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "The Server does not know us. Registering..."); break;
-
-
-                case ConnectionStatus.Outdated:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "Can't Connect - Outdated Version!"); break;
-                case ConnectionStatus.WontRespond:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), $"The Server is offline.\nRetrying in {(int)TimeSpan.FromMilliseconds(Plugin.ClientWebserver.PingTimer.TimeLeft).TotalSeconds}s..."); break;
-                case ConnectionStatus.FatalError:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "Something went wrong!\nPlease check the /xllog window."); break;
-                case ConnectionStatus.InvalidKey:
-                    ImGui.TextColored(new Vector4(1, 0, 0, 1), "The saved key does not match with the server.\nYou may only reset it by asking the dev."); break;
-
-
-                case ConnectionStatus.Unavailable:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "The web server is temporarily unavailable.\nAll other functions still work."); break;
-                case ConnectionStatus.DevMode:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "The web server is being worked on.\nAll other functions still work."); break;
-                default:
-                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 0.7f), "Received unknown response - are we up to date?"); break;
-
-            }
-            
-            if (((int)Plugin.ClientWebserver.Status) < 199)
-            {
-                ImGui.SameLine();
-                if (ImGui.Button("O", new Vector2(30, 30)))
-                {
-                    Plugin.ClientWebserver.establishWebserverConnection();
-                }
-                if (ImGui.IsItemHovered()) ImGui.SetTooltip("Reconnect");
-            }
-            */
-
-
             ImGui.Text("Pishock API");
 
             ImGui.SameLine();
@@ -187,8 +141,6 @@ public class MainWindow : Window, IDisposable
                 Plugin.NetworkWatcher.Dispose();
             }
 
-
-
             var ActivateOnStart = Plugin.Configuration.ActivateOnStart;
 
             if (ImGui.Checkbox("Activate whenever the game starts.", ref ActivateOnStart))
@@ -210,7 +162,6 @@ public class MainWindow : Window, IDisposable
             if (Plugin.ClientWebserver.Status != ConnectionStatusWebserver.Connected) ImGui.EndDisabled();
 
             if (Plugin.ClientWebserver.Status != ConnectionStatusWebserver.Connected && ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) { ImGui.SetTooltip($"You need to be Connected to the Webserver\nto access Mastermode!"); }
-
 
 
             ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 15);
