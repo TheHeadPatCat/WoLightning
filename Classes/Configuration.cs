@@ -21,7 +21,7 @@ namespace WoLightning
         public bool LogEnabled { get; set; } = true;
 
         // Preset Settings
-        [NonSerialized] public Preset ActivePreset = new("Default");
+        [NonSerialized] public Preset ActivePreset = new("Default","Unknown");
         [NonSerialized] public List<Preset> Presets = new();
         [NonSerialized] public List<String> PresetNames = new(); // used for comboBoxes
         [NonSerialized] public int PresetIndex = 0;
@@ -57,7 +57,7 @@ namespace WoLightning
             foreach (PropertyInfo property in typeof(Configuration).GetProperties().Where(p => p.CanWrite)) property.SetValue(this, property.GetValue(s, null), null);
 
 
-            if (Directory.Exists(ConfigurationDirectoryPath + "\\Presets"))
+            if (Directory.Exists(ConfigurationDirectoryPath + "\\Presets")) // Todo only open presets when we swap them
             {
                 foreach (var file in Directory.EnumerateFiles(ConfigurationDirectoryPath + "\\Presets"))
                 {
@@ -70,14 +70,14 @@ namespace WoLightning
                     catch (Exception e)
                     {
                         plugin.Log(e);
-                        tPreset = new Preset("Default");
+                        tPreset = new Preset("Default", plugin.LocalPlayer.getFullName());
                     }
                     Presets.Add(tPreset);
                 }
             }
             if (Presets.Count == 0)
             {
-                ActivePreset = new Preset("Default");
+                ActivePreset = new Preset("Default", plugin.LocalPlayer.getFullName());
                 Presets.Add(ActivePreset);
                 Save();
                 loadPreset("Default");
@@ -124,6 +124,7 @@ namespace WoLightning
             ActivePreset = Presets.Find(preset => preset.Name == Name);
             PresetIndex = Presets.IndexOf(ActivePreset);
             LastPresetName = ActivePreset.Name;
+            ActivePreset.resetInvalidTriggers();
             return true;
         }
 
@@ -143,8 +144,8 @@ namespace WoLightning
 
             File.Delete(ConfigurationDirectoryPath + "\\Presets\\" + target.Name + ".json");
             Presets.Remove(target);
-            if (!Presets.Exists(preset => preset.Name == "Default")) Presets.Add(new Preset("Default"));
-            loadPreset("Default");
+            if (!Presets.Exists(preset => preset.Name == "Default")) Presets.Add(new Preset("Default", plugin.LocalPlayer.getFullName()));
+            loadPreset("Default");  
             Save();
         }
 

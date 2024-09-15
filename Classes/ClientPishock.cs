@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 using System.Timers;
 using WoLightning.Types;
 using System.Text.Json;
+using Dalamud.Interface.ImGuiNotification;
+using Dalamud.Plugin.Services;
+using System.Security.AccessControl;
 
 namespace WoLightning.Classes
 {
@@ -56,13 +59,17 @@ namespace WoLightning.Classes
             Client.CancelPendingRequests();
         }
 
-        public async void request(Trigger TriggerObject)
+        public async void request(Trigger TriggerObject){ request(TriggerObject, null, null); }
+        public async void request(Trigger TriggerObject, string overrideNotif) { request(TriggerObject, overrideNotif, null); }
+        public async void request(Trigger TriggerObject, int[] overrideSettings) { request(TriggerObject, null, overrideSettings); }
+        public async void request(Trigger TriggerObject, string? overrideNotif, int[]? overrideSettings) 
         {
-
             Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
             Plugin.Log($" -> Parameters -  {TriggerObject.OpMode} {TriggerObject.Intensity}% for {TriggerObject.Duration}s");
 
+
             //Validation of Data
+            #region Validation
             if (Plugin.Authentification.PishockName.Length < 3
                 || Plugin.Authentification.PishockApiKey.Length < 16)
             {
@@ -82,56 +89,84 @@ namespace WoLightning.Classes
                 return;
             }
 
+            if (TriggerObject.hasCooldown())
+            {
+                Plugin.Log($" -> Blocked due to Cooldown!\n{TriggerObject.CooldownTimer.TimeLeft / 1000}");
+                return;
+            }
 
             Plugin.Log($" -> Data Validated. Creating Requests...");
 
+            #endregion Validation
+
+            if (overrideNotif != null) Plugin.sendNotif(overrideNotif);
+            else if (TriggerObject.NotifMessage != null) Plugin.sendNotif(TriggerObject.NotifMessage);
+
+            TriggerObject.startCooldown();
+            if (Plugin.Configuration.ActivePreset.showCooldownNotifs)
+            {
+                Notification result = new Notification();
+                int calc = TriggerObject.Cooldown;
+                if (TriggerObject.Duration <= 10) calc += TriggerObject.Duration;
+                result.InitialDuration = new TimeSpan(0, 0, calc);
+
+                result.Title = "Warrior of Lighting";
+                result.Type = NotificationType.Info;
+                result.Content = $"{TriggerObject.Name} Cooldown";
+                Plugin.NotificationManager.AddNotification(result);
+            }
+
             foreach (var shocker in TriggerObject.Shockers)
             {
-                using StringContent jsonContent = new(
-            JsonSerializer.Serialize(new
-            {
-                Username = Plugin.Authentification.PishockName,
-                Name = "WoLPlugin",
-                Code = shocker.Code,
-                Intensity = TriggerObject.Intensity,
-                Duration = TriggerObject.Duration,
-                Apikey = Plugin.Authentification.PishockApiKey,
-                Op = (int)TriggerObject.OpMode,
-            }),
-            Encoding.UTF8,
-            "application/json");
-
-                try
+                StringContent jsonContent;
+                if (overrideSettings != null)
                 {
-                    await Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+                    jsonContent = new(
+                    JsonSerializer.Serialize(new
+                    {
+                        Username = Plugin.Authentification.PishockName,
+                        Name = "WoLPlugin",
+                        Code = shocker.Code,
+                        Intensity = overrideSettings[1],
+                        Duration = overrideSettings[2],
+                        Apikey = Plugin.Authentification.PishockApiKey,
+                        Op = (int)overrideSettings[0],
+                    }),
+                    Encoding.UTF8,
+                    "application/json");
                 }
+                else
+                {
+                    jsonContent = new(
+                    JsonSerializer.Serialize(new
+                    {
+                        Username = Plugin.Authentification.PishockName,
+                        Name = "WoLPlugin",
+                        Code = shocker.Code,
+                        Intensity = TriggerObject.Intensity,
+                        Duration = TriggerObject.Duration,
+                        Apikey = Plugin.Authentification.PishockApiKey,
+                        Op = (int)TriggerObject.OpMode,
+                    }),
+                    Encoding.UTF8,
+                    "application/json");
+                }
+
+                try { await Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent); }
                 catch (Exception ex)
                 {
                     Plugin.Error(ex.ToString());
                     Plugin.Error("Error when sending post request to pishock api");
                 }
             }
+
             Plugin.Log($" -> Requests sent!");
+            
+
+            
+
         }
 
-        public async void request(Trigger TriggerObject, int[] overrideSettings)
-        {
-            if (overrideSettings.Length != 3 || overrideSettings[0] < 0 || overrideSettings[0] > 2)
-            {
-                Plugin.Log(" -> Blocked due to invalid OverrideSettings!");
-                return;
-            }
-
-            if (overrideSettings[1] < 1) overrideSettings[1] = 1;
-            if (overrideSettings[1] > 100) overrideSettings[1] = 100;
-            if (overrideSettings[2] < 1) overrideSettings[2] = 1;
-            if (overrideSettings[2] > 10 && overrideSettings[2] != 100 && overrideSettings[2] != 300) overrideSettings[2] = 10;
-            Trigger newTrigger = TriggerObject.Clone();
-            newTrigger.OpMode = (OpMode)overrideSettings[0];
-            newTrigger.Intensity = overrideSettings[1];
-            newTrigger.Duration = overrideSettings[2];
-            request(newTrigger);
-        }
 
         public async void testAll()
         {

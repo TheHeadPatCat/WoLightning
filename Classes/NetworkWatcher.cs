@@ -138,7 +138,6 @@ namespace WoLightning
             }
             if (ActivePreset.Die.IsEnabled() && LocalPlayer.CurrentHp == 0 && !wasDead)
             {
-                Plugin.sendNotif($"You Died!");
                 Plugin.ClientPishock.request(ActivePreset.Die);
                 wasDead = false;
             }
@@ -180,7 +179,6 @@ namespace WoLightning
                         Plugin.Log("Found Vuln Up - Amount: " + amount + " lastVulnCount: " + lastVulnAmount);
                         if (amount > lastVulnAmount)
                         {
-                            Plugin.sendNotif($"You failed a Mechanic!");
                             if (ActivePreset.FailMechanic.CustomData == null) ActivePreset.FailMechanic.setupCustomData(); //failsafe
                             if (ActivePreset.FailMechanic.CustomData["Proportional"][0] == 1)
                             {
@@ -198,8 +196,7 @@ namespace WoLightning
                         foundDDown = true;
                         var amount = status.StackCount;
                         if (amount > lastDDownAmount)
-                        {
-                            Plugin.sendNotif($"You failed a Mechanic!");
+                        { 
                             if (ActivePreset.FailMechanic.CustomData == null) ActivePreset.FailMechanic.setupCustomData(); //failsafe
                             if (ActivePreset.FailMechanic.CustomData["Proportional"][0] == 1)
                             {
@@ -257,8 +254,7 @@ namespace WoLightning
 
                         if (message.ToString().ToLower().Contains(word.ToLower()))
                         {
-                            Plugin.sendNotif($"You said the bad word: {word}!");
-                            Plugin.ClientPishock.request(ActivePreset.SayBadWord, settings);
+                            Plugin.ClientPishock.request(ActivePreset.SayBadWord, $"You said the bad word: {word}!", settings);
                         }
                     }
                 }
@@ -275,7 +271,6 @@ namespace WoLightning
                     }
                     if (!found)
                     {
-                        Plugin.sendNotif($"You forgot to say a enforced word!");
                         Plugin.ClientPishock.request(ActivePreset.DontSayWord);
                     }
                 }
@@ -288,7 +283,6 @@ namespace WoLightning
                     {
                         if (FirstPersonWords.Contains(word))
                         {
-                            Plugin.sendNotif($"You referred to yourself wrongly!");
                             Plugin.ClientPishock.request(ActivePreset.SayFirstPerson);
                         }
                     }
@@ -308,7 +302,6 @@ namespace WoLightning
                             if (part.Length == 1 && part == "1")
                             {
                                 Plugin.ClientPishock.request(ActivePreset.LoseDeathRoll);
-                                Plugin.sendNotif("You lost a Deathroll!");
                             }
                         }
                     }
@@ -330,8 +323,7 @@ namespace WoLightning
                     //Plugin.Log(message.TextValue,true);
                     if (trigger.IsEnabled() && trigger.Regex != null && trigger.Regex.IsMatch(message.TextValue))
                     {
-                        Plugin.ClientPishock.request(trigger);
-                        Plugin.sendNotif("[CT] " + trigger.Name + " triggered!");
+                        Plugin.ClientPishock.request(trigger, "[CT] " + trigger.Name + " triggered!");
                     }
                 }
             }
@@ -368,32 +360,30 @@ namespace WoLightning
 
             if (ActivePreset.GetPat.IsEnabled() && emoteId == 105)
             {
-                Plugin.sendNotif($"You got headpatted by {sourceObj.Name}!");
-                Plugin.ClientPishock.request(ActivePreset.GetPat);
+                Plugin.ClientPishock.request(ActivePreset.GetPat, $"You got pat'd by {sourceObj.Name}!");
             }
             if (ActivePreset.GetSnapped.IsEnabled() && emoteId == 205)
             {
-                Plugin.sendNotif($"You got snapped at by {sourceObj.Name}!");
-                Plugin.ClientPishock.request(ActivePreset.GetSnapped);
+                Plugin.ClientPishock.request(ActivePreset.GetSnapped, $"You got snapped at by {sourceObj.Name}!");
             }
 
         }
 
         private void OnEmoteUnrelated(IPlayerCharacter sourceObj, IGameObject targetObj, ushort emoteId)
         {
-            Plugin.PluginLog.Info("[Unrelated Emote] Source: " + sourceObj.ToString() + " Target:" + targetObj + " EmoteId: " + emoteId);
+            //Plugin.PluginLog.Info("[Unrelated Emote] Source: " + sourceObj.ToString() + " Target:" + targetObj + " EmoteId: " + emoteId);
             // Currently Unused
         }
 
         private void OnEmoteOutgoing(IGameObject targetObj, ushort emoteId)
         {
-            Plugin.PluginLog.Info("[OUTGOING EMOTE] Target: " + targetObj.ToString() + " EmoteId: " + emoteId);
+            //Plugin.PluginLog.Info("[OUTGOING EMOTE] Target: " + targetObj.ToString() + " EmoteId: " + emoteId);
             
         }
 
         private void OnEmoteSelf(ushort emoteId)
         {
-            Plugin.PluginLog.Info("[SELF EMOTE] EmoteId: " + emoteId);
+            //Plugin.PluginLog.Info("[SELF EMOTE] EmoteId: " + emoteId);
             // Currently Unused.
         }
 
@@ -409,7 +399,6 @@ namespace WoLightning
                 {
                     sittingOnChair = true;
                     sittingOnChairPos = Plugin.ClientState.LocalPlayer.Position;
-                    Plugin.sendNotif($"You sat on Furniture!");
                     Plugin.ClientPishock.request(ActivePreset.SitOnFurniture);
                     int calc = 5000;
                     if (ActivePreset.SitOnFurniture.Duration <= 10) calc += ActivePreset.SitOnFurniture.Duration * 1000;
@@ -434,8 +423,7 @@ namespace WoLightning
         {
             if (sittingOnChair && Plugin.ClientState.LocalPlayer.Position.Equals(sittingOnChairPos))
             {
-                Plugin.sendNotif($"You are still sitting on Furniture!");
-                Plugin.ClientPishock.request(ActivePreset.SitOnFurniture);
+                Plugin.ClientPishock.request(ActivePreset.SitOnFurniture, $"You are still sitting on Furniture!");
                 sittingOnChairTimer.Refresh();
             }
             else

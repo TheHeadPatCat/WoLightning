@@ -33,6 +33,7 @@ public class ConfigWindow : Window, IDisposable
     private Vector4 descColor = new Vector4(0.7f, 0.7f, 0.7f, 0.8f);
     private Vector4 nameColorOff = new Vector4(1, 1, 1, 0.9f);
     private Vector4 nameColorOn = new Vector4(0.5f,1, 0.3f, 0.9f);
+    private Vector4 nameColorReset = new Vector4(0.7f, 0.3f, 0, 1);
 
     // Badword List
     private String BadWordListInput = new String("");
@@ -181,7 +182,7 @@ public class ConfigWindow : Window, IDisposable
                 Configuration = new Configuration();
                 Configuration.Initialize(Plugin, isAlternative, Plugin.ConfigurationDirectoryPath, true);
 
-                Configuration.Presets.Add(new Preset("Default"));
+                Configuration.Presets.Add(new Preset("Default", Plugin.LocalPlayer.getFullName()));
                 Configuration.Save();
                 Configuration.loadPreset(addInput);
                 Configuration.deletePreset(Configuration.ActivePreset);
@@ -256,7 +257,7 @@ public class ConfigWindow : Window, IDisposable
             {
                 if (addInput.Length > 0)
                 {
-                    Preset tPreset = new Preset(addInput);
+                    Preset tPreset = new Preset(addInput,"Unknwon");
                     Configuration.Presets.Add(tPreset);
                     Configuration.Save();
                     Configuration.loadPreset(addInput);
@@ -312,33 +313,17 @@ public class ConfigWindow : Window, IDisposable
         if (ImGui.BeginTabItem("General"))
         {
             if (Plugin.Authentification.isDisallowed) ImGui.BeginDisabled();
-            var IsPassthroughAllowed = Configuration.ActivePreset.IsPassthroughAllowed;
 
-            if (ImGui.Checkbox("Allow passthrough of triggers?", ref IsPassthroughAllowed))
+            bool showCooldownNotifs = Configuration.ActivePreset.showCooldownNotifs;
+            if(ImGui.Checkbox("Show Cooldown Notifications", ref showCooldownNotifs))
             {
-                Configuration.ActivePreset.IsPassthroughAllowed = IsPassthroughAllowed;
+                Configuration.ActivePreset.showCooldownNotifs = showCooldownNotifs;
                 Configuration.Save();
             }
             ImGui.SameLine();
-            ImGui.TextDisabled("(?)");
-            if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This will make it possible for multiple triggers to happen at once (ex. damage and death)"); }
-
-            var GlobalTriggerCooldown = Configuration.ActivePreset.globalTriggerCooldown;
-            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() - 240);
-            if (ImGui.SliderInt("Global cooldown of triggers (sec)", ref GlobalTriggerCooldown, 3, 300))
-            {
-                Configuration.ActivePreset.globalTriggerCooldown = GlobalTriggerCooldown;
-                Configuration.Save();
-            }
-            ImGui.SameLine();
-            ImGui.TextDisabled("(?)");
-            if (ImGui.IsItemHovered()) { ImGui.SetTooltip("This sets a cooldown on how often you can be shocked, in seconds.\nThere is a 0.75 second delay before the cooldown triggers,\nto ensure that passthrough still works."); }
-
-            ImGui.Spacing();
-            ImGui.Spacing();
-            ImGui.Spacing();
-            ImGui.Spacing();
-            ImGui.Spacing();
+            ImGui.TextDisabled(" (?)");
+            if (ImGui.IsItemHovered()) { ImGui.SetTooltip("Activating this will show little Windows on the bottom right" +
+                "\nthat will tell you how much time is left until that trigger can activate again."); }
 
             if (Plugin.Authentification.isDisallowed) ImGui.EndDisabled();
             ImGui.EndTabItem();
@@ -986,6 +971,13 @@ public class ConfigWindow : Window, IDisposable
         if (!noOptions && enabled) ImGui.Spacing();
         if (enabled) ImGui.TextColored(nameColorOn,"  " + Name + $"  [{TriggerObject.OpMode}]");
         else ImGui.TextColored(nameColorOff, "  " + Name);
+
+        if (TriggerObject.hasBeenReset)
+        {
+            ImGui.SameLine();
+            ImGui.TextColored(nameColorReset, " (has been reset)");
+        }
+
         ImGui.TextColored(descColor,$"  {Description}");
         if (Hint.Length > 0)
         {
@@ -995,7 +987,7 @@ public class ConfigWindow : Window, IDisposable
         }
         ImGui.EndGroup();
         
-        if (isOptionsOpened)
+        if (isOptionsOpened && enabled)
         {
             createPickerBox(TriggerObject);
         }
@@ -1095,6 +1087,7 @@ public class ConfigWindow : Window, IDisposable
 
                 if (ImGui.Button($"Apply##apply{TriggerObject.Name}", new Vector2(ImGui.GetWindowSize().X / 2, 25)))
                 {
+                    TriggerObject.hasBeenReset = false;
                     ImGui.CloseCurrentPopup();
                 }
 
