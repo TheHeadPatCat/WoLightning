@@ -458,7 +458,7 @@ public class ConfigWindow : Window, IDisposable
 
             ImGui.Text("You have to say atleast one of the words from the list below, otherwise these settings will trigger." +
                 "\nCorrect punctuation is needed as well.");
-            createPickerBox(Configuration.ActivePreset.DontSayWord);
+            createPickerBox(Configuration.ActivePreset.DontSayWord,true);
 
             var SavedWordSettings = Configuration.ActivePreset.DontSayWord.CustomData;
 
@@ -721,7 +721,7 @@ public class ConfigWindow : Window, IDisposable
         createEntry(Configuration.ActivePreset.GetSnapped,"Get /snap'd" , "Triggers whenever a player does the /snap emote on you.");
         createEntry(Configuration.ActivePreset.SitOnFurniture,"Sit on Chairs" , "Triggers whenever you /sit onto any kind of furniture.",
             "This Trigger will activate again after 5 seconds (after the shock is done) if you dont get off!" +
-            "\nIf you do /groundsit onto it, it wont count though.");
+            "\nIf you do /groundsit onto it, it wont count though.",false,true);
         createEntry(Configuration.ActivePreset.LoseDeathRoll,"Lose DR", "Triggers whenever you lose a deathroll.",
             "Deathroll is when you use /random against another player to see who reaches 1 first.");
 
@@ -733,11 +733,11 @@ public class ConfigWindow : Window, IDisposable
 
         createEntry(Configuration.ActivePreset.SayBadWord,"Say a bad word", "Triggers whenever you say a bad word from a list.",
             "You can set these words yourself in the new Tab 'Bad Word List' once this is activated."
-            ,true);
+            ,true,true);
 
         createEntry(Configuration.ActivePreset.DontSayWord,"Dont say a enforced word", "Triggers whenever you forget to say a enforced word from a list.",
             "You can set these words yourself in the new Tab 'Enforced Word List' once this is activated."
-            , true);
+            , true,false);
 
     }
     private void DrawCombat()
@@ -935,12 +935,11 @@ public class ConfigWindow : Window, IDisposable
 
 
 
-    private void createEntry(Trigger TriggerObject, string Name, string Description) { createEntry(TriggerObject, Name, Description, "", false); }
-    private void createEntry(Trigger TriggerObject, string Name, string Description, bool noOptions) { createEntry(TriggerObject, Name,  Description, "", noOptions); }
+    private void createEntry(Trigger TriggerObject, string Name, string Description) { createEntry(TriggerObject, Name, Description, "", false, false); }
+    private void createEntry(Trigger TriggerObject, string Name, string Description, bool noOptions) { createEntry(TriggerObject, Name,  Description, "", noOptions, false); }
+    private void createEntry(Trigger TriggerObject, string Name, string Description, string Hint) { createEntry(TriggerObject, Name, Description, Hint, false, false); }
 
-    private void createEntry(Trigger TriggerObject, string Name, string Description, string Hint) { createEntry(TriggerObject, Name, Description, Hint, false); }
-
-    private void createEntry(Trigger TriggerObject, string Name, string Description, string Hint, bool noOptions)
+    private void createEntry(Trigger TriggerObject, string Name, string Description, string Hint, bool noOptions, bool noCooldown)
     {
         createShockerSelector(TriggerObject);
         bool enabled = TriggerObject.IsEnabled();
@@ -989,13 +988,13 @@ public class ConfigWindow : Window, IDisposable
         
         if (isOptionsOpened && enabled)
         {
-            createPickerBox(TriggerObject);
+            createPickerBox(TriggerObject,noCooldown);
         }
         ImGui.Spacing();
         ImGui.Separator();
     }
 
-    private void createPickerBox(Trigger TriggerObject)
+    private void createPickerBox(Trigger TriggerObject,bool noCooldown)
     {
         bool changed = false;
 
@@ -1042,12 +1041,15 @@ public class ConfigWindow : Window, IDisposable
         if (TriggerObject.Name == "TakeDamage") createProportional(TriggerObject, "Amount of Health% to lose to hit the Limit.", 1, 100);
         if (TriggerObject.Name == "FailMechanic") createProportional(TriggerObject, "Amount of Stacks needed to hit the Limit.", 1, 8);
 
-        int Cooldown = TriggerObject.Cooldown;
-        ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 1.25f - 30);
-        if (ImGui.SliderInt("Cooldown (sec) ##Cooldown" + TriggerObject.Name, ref Cooldown, 0, 60))
+        if (!noCooldown)
         {
-            TriggerObject.Cooldown = Cooldown;
-            changed = true;
+            int Cooldown = TriggerObject.Cooldown;
+            ImGui.SetNextItemWidth(ImGui.GetWindowWidth() / 1.25f - 30);
+            if (ImGui.SliderInt("Cooldown (sec) ##Cooldown" + TriggerObject.Name, ref Cooldown, 0, 60))
+            {
+                TriggerObject.Cooldown = Cooldown;
+                changed = true;
+            }
         }
 
         if (changed) Configuration.Save();

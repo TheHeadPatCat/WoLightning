@@ -103,7 +103,7 @@ namespace WoLightning.Classes
             else if (TriggerObject.NotifMessage != null) Plugin.sendNotif(TriggerObject.NotifMessage);
 
             TriggerObject.startCooldown();
-            if (Plugin.Configuration.ActivePreset.showCooldownNotifs)
+            if (Plugin.Configuration.ActivePreset.showCooldownNotifs && TriggerObject.Cooldown > 1)
             {
                 Notification result = new Notification();
                 int calc = TriggerObject.Cooldown;
