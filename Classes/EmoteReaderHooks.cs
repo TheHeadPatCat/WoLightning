@@ -66,7 +66,7 @@ namespace WoLightning
                         if (instigatorOb == null || targetOb == null) //bad data or special emote
                         {
                             if (log) Plugin.PluginLog.Verbose($"inst {instigatorOb} - targ {targetOb}");
-                            if (emoteId >= 50 && emoteId <= 52) OnSitEmote?.Invoke(emoteId); // /sit - getup - /groundsit
+                            if (emoteId >= 50 && emoteId <= 52 && instigatorOb.GameObjectId == Plugin.ClientState.LocalPlayer.GameObjectId) OnSitEmote?.Invoke(emoteId); // /sit - getup - /groundsit
                             hookEmote.Original(unk, instigatorAddr, emoteId, targetId, unk2);
                             return;
                         }
