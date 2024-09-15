@@ -65,8 +65,9 @@ namespace WoLightning.Classes
         public async void request(Trigger TriggerObject, string? overrideNotif, int[]? overrideSettings) 
         {
             Plugin.Log($"{TriggerObject.Name} fired - sending request for {TriggerObject.Shockers.Count} shockers.");
-            Plugin.Log($" -> Parameters -  {TriggerObject.OpMode} {TriggerObject.Intensity}% for {TriggerObject.Duration}s");
-
+            
+            if(overrideSettings != null) Plugin.Log($" -> Override Parameters -  {overrideSettings[0]} {overrideSettings[1]}% for {overrideSettings[2]}s");
+            else Plugin.Log($" -> Parameters -  {TriggerObject.OpMode} {TriggerObject.Intensity}% for {TriggerObject.Duration}s");
 
             //Validation of Data
             #region Validation
