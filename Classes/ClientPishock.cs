@@ -118,7 +118,7 @@ namespace WoLightning.Classes
             }
 
             List<Shocker> saveCopy = TriggerObject.Shockers;
-            foreach (var shocker in saveCopy)
+            Task tasks = Task.WhenAll(saveCopy.ConvertAll(shocker =>
             {
                 StringContent jsonContent;
                 if (overrideSettings != null)
@@ -154,19 +154,22 @@ namespace WoLightning.Classes
                     "application/json");
                 }
 
-                try { Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent); }
-                catch (Exception ex)
+                return Client.PostAsync("https://do.pishock.com/api/apioperate", jsonContent);
+            }));
+            try
+            {
+                await tasks;
+                Plugin.Log($" -> Requests sent!");
+            }
+            catch (Exception)
+            {
+                if (tasks.Exception != null)
                 {
-                    Plugin.Error(ex.ToString());
+                    Plugin.Error(tasks.Exception.ToString());
                     Plugin.Error("Error when sending post request to pishock api");
                 }
             }
-
-            Plugin.Log($" -> Requests sent!");
             
-
-            
-
         }
 
 
