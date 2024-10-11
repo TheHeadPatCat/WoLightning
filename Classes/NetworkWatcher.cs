@@ -221,7 +221,7 @@ namespace WoLightning
                 deadIndexes[lastCheckedIndex] = true;
                 amountDead++;
                 Plugin.Log($"(Deathmode) - Player died - {amountDead}/{Plugin.PartyList.Length} members are dead.");
-                Plugin.ClientPishock.request(ActivePreset.PartymemberDies, [ActivePreset.PartymemberDies.Intensity * (amountDead / Plugin.PartyList.Length), ActivePreset.PartymemberDies.Duration * (amountDead / Plugin.PartyList.Length)]);
+                Plugin.ClientPishock.request(ActivePreset.PartymemberDies, [(int)ActivePreset.PartymemberDies.OpMode, ActivePreset.PartymemberDies.Intensity * (amountDead / Plugin.PartyList.Length), ActivePreset.PartymemberDies.Duration * (amountDead / Plugin.PartyList.Length)]);
             }
             else if (Plugin.PartyList[lastCheckedIndex].ObjectId > 0 && Plugin.PartyList[lastCheckedIndex].CurrentHP > 0 && deadIndexes[lastCheckedIndex])
             {
