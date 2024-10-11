@@ -61,7 +61,7 @@ namespace WoLightning
             Plugin.Framework.Update += checkLocalPlayerState;
 
             Plugin.ChatGui.ChatMessage += HandleChatMessage;
-            Plugin.ClientState.TerritoryChanged += HandlePlayerTerritoryChange;
+            //Plugin.ClientState.TerritoryChanged += HandlePlayerTerritoryChange;
             Plugin.EmoteReaderHooks.OnEmoteIncoming += OnEmoteIncoming;
             Plugin.EmoteReaderHooks.OnEmoteOutgoing += OnEmoteOutgoing;
             Plugin.EmoteReaderHooks.OnEmoteSelf += OnEmoteSelf;
@@ -74,7 +74,7 @@ namespace WoLightning
             Plugin.Framework.Update -= checkLocalPlayerState;
 
             Plugin.ChatGui.ChatMessage -= HandleChatMessage;
-            Plugin.ClientState.TerritoryChanged -= HandlePlayerTerritoryChange;
+            //Plugin.ClientState.TerritoryChanged -= HandlePlayerTerritoryChange;
             Plugin.EmoteReaderHooks.OnEmoteIncoming -= OnEmoteIncoming;
             Plugin.EmoteReaderHooks.OnEmoteOutgoing -= OnEmoteOutgoing;
             Plugin.EmoteReaderHooks.OnEmoteSelf -= OnEmoteSelf;
@@ -90,7 +90,7 @@ namespace WoLightning
             Plugin.ChatGui.ChatMessage -= HandleChatMessage;
             Plugin.ClientState.Login -= HandleLogin;
             Plugin.ClientState.Logout -= HandleLogout;
-            Plugin.ClientState.TerritoryChanged -= HandlePlayerTerritoryChange;
+            //Plugin.ClientState.TerritoryChanged -= HandlePlayerTerritoryChange;
             Plugin.EmoteReaderHooks.OnEmoteIncoming -= OnEmoteIncoming;
             Plugin.EmoteReaderHooks.OnEmoteOutgoing -= OnEmoteOutgoing;
             Plugin.EmoteReaderHooks.OnEmoteSelf -= OnEmoteSelf;
@@ -105,6 +105,7 @@ namespace WoLightning
             {
                 if (LocalPlayer == null)
                 {
+                    if (Plugin.ClientState.LocalPlayer == null) return;
                     LocalPlayer = Plugin.ClientState.LocalPlayer;
                     lastHP = LocalPlayer.CurrentHp;
                     lastMaxHP = LocalPlayer.MaxHp;
